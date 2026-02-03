@@ -1,10 +1,10 @@
-# Endpoint.DotNet
+# CodeGenerator.DotNet
 
-The .NET-specific code generation module for the Endpoint framework. This library provides comprehensive templates and generators for creating C# code, ASP.NET Core applications, and .NET solution structures.
+The .NET-specific code generation module for the CodeGenerator framework. This library provides comprehensive templates and generators for creating C# code, ASP.NET Core applications, and .NET solution structures.
 
 ## Overview
 
-Endpoint.DotNet is the primary module for generating .NET code. It includes:
+CodeGenerator.DotNet is the primary module for generating .NET code. It includes:
 
 - **Code Generation Engine**: Application builder pattern for flexible code generation
 - **Extensive Template Library**: 27+ template categories for various .NET patterns
@@ -14,48 +14,38 @@ Endpoint.DotNet is the primary module for generating .NET code. It includes:
 ## Project Structure
 
 ```
-Endpoint.DotNet/
+CodeGenerator.DotNet/
 ├── Artifacts/          # .NET-specific artifact generators
 ├── Events/             # Generation event definitions
-├── Exceptions/         # Custom exception types
 ├── Extensions/         # Extension methods
 ├── Options/            # Configuration options
 ├── Services/           # Core generation services
 ├── Syntax/             # C# syntax generators (27 categories)
-├── Templates/          # DotLiquid templates
-│   ├── Angular/        # Angular-related templates
-│   ├── Api/            # API templates
-│   ├── Application/    # Application layer templates
-│   ├── BuildingBlocks/ # Shared building blocks
-│   ├── Console/        # Console app templates
-│   ├── DddApp/         # DDD application templates
-│   ├── Domain/         # Domain layer templates
-│   ├── Global/         # Global configuration templates
-│   ├── Infrastructure/ # Infrastructure templates
-│   ├── IntegrationTests/ # Integration test templates
-│   ├── Lit/            # Lit component templates
-│   ├── SharedKernel/   # Shared kernel templates
-│   ├── SpecFlow/       # SpecFlow test templates
-│   └── ...             # Additional templates
-└── CodeGeneratorApplication.cs  # Main application builder
+└── Templates/          # DotLiquid templates
+    ├── Angular/        # Angular-related templates
+    ├── Api/            # API templates
+    ├── Application/    # Application layer templates
+    ├── BuildingBlocks/ # Shared building blocks
+    ├── Console/        # Console app templates
+    ├── DddApp/         # DDD application templates
+    ├── Domain/         # Domain layer templates
+    ├── Global/         # Global configuration templates
+    ├── Infrastructure/ # Infrastructure templates
+    ├── IntegrationTests/ # Integration test templates
+    ├── Lit/            # Lit component templates
+    ├── SharedKernel/   # Shared kernel templates
+    ├── SpecFlow/       # SpecFlow test templates
+    └── ...             # Additional templates
 ```
 
 ## Key Features
 
-### Code Generator Application
+### Service Registration
 
 ```csharp
-using Endpoint.DotNet;
+using Microsoft.Extensions.DependencyInjection;
 
-var app = CodeGeneratorApplication.CreateBuilder()
-    .ConfigureServices(services =>
-    {
-        services.AddDotNetServices();
-        // Add additional services
-    })
-    .Build();
-
-await app.RunAsync();
+services.AddDotNetServices();
 ```
 
 ### Template Categories
@@ -78,14 +68,14 @@ The module includes extensive C# syntax generators for:
 
 ## Dependencies
 
-- **Endpoint** (Core) - Foundation library
+- **CodeGenerator.Core** - Foundation library
 - **Microsoft.CodeAnalysis.CSharp** - Roslyn APIs
 - **DotLiquid** - Template engine
 - **MediatR** - Request/response handling
 
 ## NuGet Package
 
-- **Package ID**: `Quinntyne.Endpoint.Core`
+- **Package ID**: `QuinntyneBrown.CodeGenerator.Core`
 - **Version**: 1.0.12
 
 ## Target Framework

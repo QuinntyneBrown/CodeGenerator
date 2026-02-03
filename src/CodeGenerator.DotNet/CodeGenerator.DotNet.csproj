@@ -8,13 +8,14 @@
     <PackageTags>clean-architecture;source-generator;application-code;scaffolding</PackageTags>
     <RepositoryUrl>https://github.com/QuinntyneBrown/CodeGenerator</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <AssemblyVersion>1.0.12</AssemblyVersion>
-    <FileVersion>1.0.12</FileVersion>
-    <Version>1.0.12</Version>
+    <AssemblyVersion>1.0.0</AssemblyVersion>
+    <FileVersion>1.0.0</FileVersion>
+    <Version>1.0.0</Version>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageId>Quinntyne.CodeGenerator.Core</PackageId>
-    <Title>CodeGenerator Core</Title>
+    <PackageId>QuinntyneBrown.CodeGenerator.DotNet</PackageId>
+    <Title>CodeGenerator DotNet</Title>
+    <Description>.NET code generation with C# syntax, templates, and solution scaffolding for the CodeGenerator framework</Description>
     <NoWarn>$(NoWarn);1998;4014;SA1101;SA1600;SA1200;SA1633</NoWarn>
   </PropertyGroup>
   <ItemGroup>
