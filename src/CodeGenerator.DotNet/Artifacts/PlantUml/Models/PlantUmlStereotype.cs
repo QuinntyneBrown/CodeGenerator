@@ -1,0 +1,14 @@
+// Copyright (c) Quinntyne Brown. All Rights Reserved.
+// Licensed under the MIT License. See License.txt in the project root for license information.
+
+namespace CodeGenerator.DotNet.Artifacts.PlantUml.Models;
+
+public enum PlantUmlStereotype
+{
+    None,
+    Aggregate,
+    Entity,
+    ValueObject,
+    Enum,
+    Service
+}
