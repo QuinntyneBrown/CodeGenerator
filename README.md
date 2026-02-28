@@ -19,6 +19,12 @@ Install the CLI tool globally:
 dotnet tool install -g QuinntyneBrown.CodeGenerator.Cli
 ```
 
+Update to the latest version:
+
+```bash
+dotnet tool update -g QuinntyneBrown.CodeGenerator.Cli
+```
+
 Create a new code generator project:
 
 ```bash
