@@ -37,6 +37,8 @@ public class CreateCodeGeneratorCommand : RootCommand
         AddOption(nameOption);
         AddOption(outputOption);
 
+        AddCommand(new InstallCommand(serviceProvider));
+
         this.SetHandler(HandleAsync, nameOption, outputOption);
     }
 

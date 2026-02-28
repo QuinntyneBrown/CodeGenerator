@@ -60,6 +60,22 @@ eng\scripts\install-cli.bat
 
 This will build, pack, and install your CLI globally, allowing you to run it from anywhere using `mycodegenerator-cli`.
 
+### Installing the Claude Skill
+
+Install a Claude skill file into your project so Claude knows how to use the CodeGenerator APIs:
+
+```bash
+create-code-cli install
+```
+
+Or specify a target directory:
+
+```bash
+create-code-cli install -o ./MyProject
+```
+
+This creates `.claude/skills/code-generator.md` in the target directory with comprehensive documentation on all CodeGenerator models, factories, and generation patterns.
+
 ## Installation
 
 ```bash
