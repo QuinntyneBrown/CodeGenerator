@@ -34,15 +34,21 @@ public class CreateCodeGeneratorCommand : RootCommand
             description: "The output directory (defaults to current directory)",
             getDefaultValue: () => Directory.GetCurrentDirectory());
 
+        var frameworkOption = new Option<string>(
+            aliases: ["-f", "--framework"],
+            description: "The target framework (e.g. net8.0, net9.0)",
+            getDefaultValue: () => "net9.0");
+
         AddOption(nameOption);
         AddOption(outputOption);
+        AddOption(frameworkOption);
 
         AddCommand(new InstallCommand(serviceProvider));
 
-        this.SetHandler(HandleAsync, nameOption, outputOption);
+        this.SetHandler(HandleAsync, nameOption, outputOption, frameworkOption);
     }
 
-    private async Task HandleAsync(string name, string outputDirectory)
+    private async Task HandleAsync(string name, string outputDirectory, string framework)
     {
         var logger = _serviceProvider.GetRequiredService<ILogger<CreateCodeGeneratorCommand>>();
         var artifactGenerator = _serviceProvider.GetRequiredService<IArtifactGenerator>();
@@ -92,7 +98,7 @@ public class CreateCodeGeneratorCommand : RootCommand
 
         // Generate custom .csproj (not using dotnet new since we need tool-specific settings)
         await artifactGenerator.GenerateAsync(new ContentFileModel(
-            GenerateCliProjectContent(name),
+            GenerateCliProjectContent(name, framework),
             $"{name}.Cli",
             project.Directory,
             ".csproj"));
@@ -124,11 +130,11 @@ public class CreateCodeGeneratorCommand : RootCommand
         logger.LogInformation("  eng\\scripts\\install-cli.bat");
     }
 
-    private static string GenerateCliProjectContent(string name) => $@"<?xml version=""1.0"" encoding=""utf-8""?>
+    private static string GenerateCliProjectContent(string name, string framework) => $@"<?xml version=""1.0"" encoding=""utf-8""?>
 <Project Sdk=""Microsoft.NET.Sdk"">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>{framework}</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>

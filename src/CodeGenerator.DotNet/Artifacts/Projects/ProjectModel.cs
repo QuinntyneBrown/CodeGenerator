@@ -67,6 +67,8 @@ public class ProjectModel : ArtifactModel
 
     public string Extension { get; set; } = ".csproj";
 
+    public string TargetFramework { get; set; } = "net9.0";
+
     public DotNetProjectType DotNetProjectType { get; set; }
 
     public List<FileModel> Files { get; init; } = new List<FileModel>();

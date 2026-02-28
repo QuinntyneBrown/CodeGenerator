@@ -30,11 +30,11 @@ public class InstallCommand : Command
     {
         var logger = _serviceProvider.GetRequiredService<ILogger<InstallCommand>>();
 
-        var skillsDirectory = Path.Combine(outputDirectory, ".claude", "skills");
+        var skillDirectory = Path.Combine(outputDirectory, ".claude", "skills", "code-generator");
 
-        Directory.CreateDirectory(skillsDirectory);
+        Directory.CreateDirectory(skillDirectory);
 
-        var skillFilePath = Path.Combine(skillsDirectory, "code-generator.md");
+        var skillFilePath = Path.Combine(skillDirectory, "SKILL.md");
 
         await File.WriteAllTextAsync(skillFilePath, SkillContent);
 
@@ -42,7 +42,9 @@ public class InstallCommand : Command
     }
 
     private const string SkillContent = @"---
+name: code-generator
 description: Generate code using CodeGenerator.DotNet and CodeGenerator.Angular
+user-invocable: true
 ---
 
 # CodeGenerator Skill
@@ -156,6 +158,7 @@ var project = new ProjectModel(DotNetProjectType.WebApi, ""MyApp.Api"", solution
 //   project.Name             -> ""MyApp.Api""
 //   project.Directory        -> ""{srcDir}/MyApp.Api""
 //   project.DotNetProjectType -> DotNetProjectType.WebApi
+//   project.TargetFramework  -> ""net9.0"" (default; set to ""net8.0"" etc. to change)
 //   project.Files            -> List<FileModel>
 //   project.Packages         -> List<PackageModel>
 //   project.References       -> List<string>
@@ -450,7 +453,10 @@ The typical workflow is:
 ```csharp
 // Example: Generate a complete solution
 var solution = new SolutionModel(""MyApp"", outputDir);
-var project = new ProjectModel(DotNetProjectType.WebApi, ""MyApp.Api"", solution.SrcDirectory);
+var project = new ProjectModel(DotNetProjectType.WebApi, ""MyApp.Api"", solution.SrcDirectory)
+{
+    TargetFramework = ""net8.0""  // defaults to ""net9.0"" if omitted
+};
 project.Files.Add(new ContentFileModel(content, ""Program"", project.Directory, "".cs""));
 solution.Projects.Add(project);
 

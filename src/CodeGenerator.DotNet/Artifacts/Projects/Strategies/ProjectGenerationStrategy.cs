@@ -66,7 +66,7 @@ public class ProjectGenerationStrategy : IArtifactGenerationStrategy<ProjectMode
 
         _fileSystem.Directory.CreateDirectory(model.Directory);
 
-        _commandService.Start($"dotnet new {templateType} --framework net9.0", model.Directory);
+        _commandService.Start($"dotnet new {templateType} --framework {model.TargetFramework}", model.Directory);
 
         foreach (var path in _fileSystem.Directory.GetFiles(model.Directory, "*1.cs", SearchOption.AllDirectories))
         {
