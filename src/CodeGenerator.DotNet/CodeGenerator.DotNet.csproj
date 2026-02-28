@@ -8,9 +8,9 @@
     <PackageTags>clean-architecture;source-generator;application-code;scaffolding</PackageTags>
     <RepositoryUrl>https://github.com/QuinntyneBrown/CodeGenerator</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <AssemblyVersion>1.1.0</AssemblyVersion>
-    <FileVersion>1.1.0</FileVersion>
-    <Version>1.1.0</Version>
+    <AssemblyVersion>1.2.0</AssemblyVersion>
+    <FileVersion>1.2.0</FileVersion>
+    <Version>1.2.0</Version>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageId>QuinntyneBrown.CodeGenerator.DotNet</PackageId>

@@ -21,9 +21,9 @@
     <PackageTags>cli;code-generation;scaffolding;dotnet-tool</PackageTags>
     <RepositoryUrl>https://github.com/QuinntyneBrown/CodeGenerator</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <AssemblyVersion>1.0.3</AssemblyVersion>
-    <FileVersion>1.0.3</FileVersion>
-    <Version>1.0.3</Version>
+    <AssemblyVersion>1.1.0</AssemblyVersion>
+    <FileVersion>1.1.0</FileVersion>
+    <Version>1.1.0</Version>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <NoWarn>$(NoWarn);1998;4014;SA1101;SA1600;SA1200;SA1633;1591</NoWarn>
   </PropertyGroup>
