@@ -1742,4 +1742,316 @@ public class SyntaxGeneratorTests
         Assert.Contains("reg-first-name", result);
         Assert.Contains("reg-submit", result);
     }
+
+    // ========================================
+    // ITERATION 8: Flask app factory, complex React, Python module with funcs, PW GetByLabel, RN TS type
+    // ========================================
+
+    [Fact]
+    public async Task FlaskAppFactory_ManyExtensions_GeneratesExpectedSyntax()
+    {
+        var flaskAppFactory = new CodeGenerator.Flask.Syntax.AppFactoryModel
+        {
+            Name = "SafeNetQ",
+            Blueprints = [
+                new CodeGenerator.Flask.Syntax.AppFactoryBlueprintReference("users", "app.controllers.users"),
+            ],
+            Extensions = ["db", "migrate", "ma", "limiter", "cors", "jwt", "celery", "cache"],
+            ConfigClass = "ProductionConfig",
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(flaskAppFactory);
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("create_app", result);
+        Assert.Contains("Flask", result);
+        Assert.Contains("register_blueprint", result);
+        Assert.Contains("users", result);
+    }
+
+    [Fact]
+    public async Task ReactComponent_ClientWithHooks_GeneratesExpectedSyntax()
+    {
+        var reactComponent = new CodeGenerator.React.Syntax.ComponentModel("DataTable")
+        {
+            Props = [
+                new CodeGenerator.React.Syntax.PropertyModel { Name = "columns", Type = new TypeModel("Column[]") },
+                new CodeGenerator.React.Syntax.PropertyModel { Name = "data", Type = new TypeModel("Row[]") },
+                new CodeGenerator.React.Syntax.PropertyModel { Name = "onSort", Type = new TypeModel("(column: string) => void") },
+                new CodeGenerator.React.Syntax.PropertyModel { Name = "onFilter", Type = new TypeModel("(filters: Filter[]) => void") },
+                new CodeGenerator.React.Syntax.PropertyModel { Name = "pageSize", Type = new TypeModel("number") },
+            ],
+            IsClient = true,
+            Children = ["<table>{renderRows()}</table>"],
+            Hooks = [
+                "const [sortColumn, setSortColumn] = useState<string>('');",
+                "const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');",
+                "const [currentPage, setCurrentPage] = useState(0);",
+            ],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(reactComponent);
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("use client", result);
+        Assert.Contains("DataTable", result);
+        Assert.Contains("columns", result);
+        Assert.Contains("onSort", result);
+        Assert.Contains("pageSize", result);
+        Assert.Contains("forwardRef", result);
+    }
+
+    [Fact]
+    public async Task PythonModule_MultipleFunctions_GeneratesExpectedSyntax()
+    {
+        var pythonModule = new CodeGenerator.Python.Syntax.ModuleModel
+        {
+            Imports = [
+                new CodeGenerator.Python.Syntax.ImportModel("typing", "List", "Optional", "Dict"),
+                new CodeGenerator.Python.Syntax.ImportModel("datetime"),
+            ],
+            Classes = [],
+            Functions = [
+                new CodeGenerator.Python.Syntax.FunctionModel
+                {
+                    Name = "format_date",
+                    Params = [
+                        new CodeGenerator.Python.Syntax.ParamModel { Name = "dt", TypeHint = new CodeGenerator.Python.Syntax.TypeHintModel("datetime") },
+                    ],
+                    Body = "return dt.strftime('%Y-%m-%d')",
+                    ReturnType = new CodeGenerator.Python.Syntax.TypeHintModel("str"),
+                    Decorators = [],
+                    IsAsync = false,
+                },
+                new CodeGenerator.Python.Syntax.FunctionModel
+                {
+                    Name = "parse_date",
+                    Params = [
+                        new CodeGenerator.Python.Syntax.ParamModel { Name = "date_str", TypeHint = new CodeGenerator.Python.Syntax.TypeHintModel("str") },
+                    ],
+                    Body = "return datetime.strptime(date_str, '%Y-%m-%d')",
+                    ReturnType = new CodeGenerator.Python.Syntax.TypeHintModel("datetime"),
+                    Decorators = [],
+                    IsAsync = false,
+                },
+                new CodeGenerator.Python.Syntax.FunctionModel
+                {
+                    Name = "days_between",
+                    Params = [
+                        new CodeGenerator.Python.Syntax.ParamModel { Name = "start", TypeHint = new CodeGenerator.Python.Syntax.TypeHintModel("datetime") },
+                        new CodeGenerator.Python.Syntax.ParamModel { Name = "end", TypeHint = new CodeGenerator.Python.Syntax.TypeHintModel("datetime") },
+                    ],
+                    Body = "return (end - start).days",
+                    ReturnType = new CodeGenerator.Python.Syntax.TypeHintModel("int"),
+                    Decorators = [],
+                    IsAsync = false,
+                },
+            ],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(pythonModule);
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("from typing import", result);
+        Assert.Contains("import datetime", result);
+        Assert.Contains("def format_date", result);
+        Assert.Contains("def parse_date", result);
+        Assert.Contains("def days_between", result);
+    }
+
+    [Fact]
+    public async Task PlaywrightPageObject_GetByLabel_GeneratesExpectedSyntax()
+    {
+        var playwrightPom = new CodeGenerator.Playwright.Syntax.PageObjectModel("ProfilePage", "/profile")
+        {
+            Locators = [
+                new CodeGenerator.Playwright.Syntax.LocatorModel("nameInput", CodeGenerator.Playwright.Syntax.LocatorStrategy.GetByLabel, "Full Name"),
+                new CodeGenerator.Playwright.Syntax.LocatorModel("bioTextarea", CodeGenerator.Playwright.Syntax.LocatorStrategy.GetByLabel, "Bio"),
+                new CodeGenerator.Playwright.Syntax.LocatorModel("saveButton", CodeGenerator.Playwright.Syntax.LocatorStrategy.GetByRole, "button, { name: \"Save\" }"),
+            ],
+            Actions = [
+                new CodeGenerator.Playwright.Syntax.PageActionModel("updateName", "name: string", "await this.nameInput.fill(name);"),
+                new CodeGenerator.Playwright.Syntax.PageActionModel("save", "", "await this.saveButton.click();"),
+            ],
+            Queries = [
+                new CodeGenerator.Playwright.Syntax.PageQueryModel("getName", "Promise<string>", "return await this.nameInput.inputValue();"),
+            ],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(playwrightPom);
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("class ProfilePage", result);
+        Assert.Contains("getByLabel", result);
+        Assert.Contains("Full Name", result);
+        Assert.Contains("Bio", result);
+        Assert.Contains("updateName", result);
+        Assert.Contains("getName", result);
+    }
+
+    [Fact]
+    public async Task ReactNativeTypeScriptType_GeneratesExpectedSyntax()
+    {
+        var rnType = new CodeGenerator.ReactNative.Syntax.TypeScriptTypeModel("NotificationPayload")
+        {
+            Properties = [
+                new CodeGenerator.ReactNative.Syntax.PropertyModel { Name = "title", Type = new TypeModel("string") },
+                new CodeGenerator.ReactNative.Syntax.PropertyModel { Name = "body", Type = new TypeModel("string") },
+                new CodeGenerator.ReactNative.Syntax.PropertyModel { Name = "data", Type = new TypeModel("Record<string, unknown>") },
+                new CodeGenerator.ReactNative.Syntax.PropertyModel { Name = "badge", Type = new TypeModel("number") },
+            ],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(rnType);
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("NotificationPayload", result);
+        Assert.Contains("title", result);
+        Assert.Contains("body", result);
+        Assert.Contains("badge", result);
+    }
+
+    // ========================================
+    // ITERATION 9: Flask config many settings, Python empty methods, React TS type, Detox many tests, PW config
+    // ========================================
+
+    [Fact]
+    public async Task FlaskConfig_ManySettings_GeneratesExpectedSyntax()
+    {
+        var flaskConfig = new CodeGenerator.Flask.Syntax.ConfigModel
+        {
+            Settings = new Dictionary<string, string>
+            {
+                ["SECRET_KEY"] = "\"super-secret-key\"",
+                ["SQLALCHEMY_DATABASE_URI"] = "\"postgresql://localhost/mydb\"",
+                ["SQLALCHEMY_TRACK_MODIFICATIONS"] = "False",
+                ["JWT_SECRET_KEY"] = "\"jwt-secret\"",
+                ["JWT_ACCESS_TOKEN_EXPIRES"] = "3600",
+                ["MAIL_SERVER"] = "\"smtp.gmail.com\"",
+                ["MAIL_PORT"] = "587",
+                ["REDIS_URL"] = "\"redis://localhost:6379\"",
+            },
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(flaskConfig);
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("SECRET_KEY", result);
+        Assert.Contains("JWT_SECRET_KEY", result);
+        Assert.Contains("MAIL_SERVER", result);
+        Assert.Contains("REDIS_URL", result);
+        Assert.Contains("DevelopmentConfig", result);
+        Assert.Contains("ProductionConfig", result);
+    }
+
+    [Fact]
+    public async Task PythonClass_EmptyMethodBody_GeneratesExpectedSyntax()
+    {
+        var pythonClass = new CodeGenerator.Python.Syntax.ClassModel
+        {
+            Name = "AbstractHandler",
+            Bases = ["ABC"],
+            Decorators = [],
+            Properties = [],
+            Methods = [
+                new CodeGenerator.Python.Syntax.MethodModel
+                {
+                    Name = "handle",
+                    Params = [
+                        new CodeGenerator.Python.Syntax.ParamModel { Name = "request", TypeHint = new CodeGenerator.Python.Syntax.TypeHintModel("Request") },
+                    ],
+                    ReturnType = new CodeGenerator.Python.Syntax.TypeHintModel("Response"),
+                    Body = "",
+                },
+            ],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(pythonClass);
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("class AbstractHandler", result);
+        Assert.Contains("def handle", result);
+        Assert.Contains("pass", result);
+    }
+
+    [Fact]
+    public async Task ReactTypeScriptType_GeneratesExpectedSyntax()
+    {
+        var tsType = new CodeGenerator.React.Syntax.TypeScriptTypeModel("PaginationOptions")
+        {
+            Properties = [
+                new CodeGenerator.React.Syntax.PropertyModel { Name = "page", Type = new TypeModel("number") },
+                new CodeGenerator.React.Syntax.PropertyModel { Name = "pageSize", Type = new TypeModel("number") },
+                new CodeGenerator.React.Syntax.PropertyModel { Name = "sortBy", Type = new TypeModel("string") },
+                new CodeGenerator.React.Syntax.PropertyModel { Name = "sortOrder", Type = new TypeModel("'asc' | 'desc'") },
+            ],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(tsType);
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("PaginationOptions", result);
+        Assert.Contains("page", result);
+        Assert.Contains("pageSize", result);
+        Assert.Contains("sortBy", result);
+        Assert.Contains("sortOrder", result);
+    }
+
+    [Fact]
+    public async Task DetoxTestSpec_ManyTests_GeneratesExpectedSyntax()
+    {
+        var detoxSpec = new CodeGenerator.Detox.Syntax.TestSpecModel("Registration", "RegistrationPage")
+        {
+            Tests = [
+                new CodeGenerator.Detox.Syntax.TestModel("should display registration form", ["await expect(element(by.id('registration-screen'))).toBeVisible();"]),
+                new CodeGenerator.Detox.Syntax.TestModel("should validate required fields", ["await registrationPage.tapSubmit();", "await expect(element(by.id('error-first-name'))).toBeVisible();"]),
+                new CodeGenerator.Detox.Syntax.TestModel("should validate email format", ["await registrationPage.enterEmail('invalid');", "await registrationPage.tapSubmit();", "await expect(element(by.id('error-email'))).toBeVisible();"]),
+                new CodeGenerator.Detox.Syntax.TestModel("should validate password match", ["await registrationPage.enterPassword('password1');", "await registrationPage.enterConfirmPassword('password2');", "await registrationPage.tapSubmit();", "await expect(element(by.id('error-confirm-password'))).toBeVisible();"]),
+                new CodeGenerator.Detox.Syntax.TestModel("should register successfully", ["await registrationPage.registerUser('John', 'Doe', 'john@example.com', 'Password123!');", "await expect(element(by.id('dashboard-screen'))).toBeVisible();"]),
+            ],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(detoxSpec);
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("describe", result);
+        Assert.Contains("Registration", result);
+        Assert.Contains("should display registration form", result);
+        Assert.Contains("should validate required fields", result);
+        Assert.Contains("should validate email format", result);
+        Assert.Contains("should validate password match", result);
+        Assert.Contains("should register successfully", result);
+    }
+
+    [Fact]
+    public async Task PlaywrightConfig_MinimalBrowsers_GeneratesExpectedSyntax()
+    {
+        var playwrightConfig = new CodeGenerator.Playwright.Syntax.ConfigModel(
+            baseUrl: "http://localhost:5000",
+            browsers: ["chromium"],
+            timeout: 60000,
+            retries: 0,
+            reporter: "list"
+        );
+
+        var result = await _syntaxGenerator.GenerateAsync(playwrightConfig);
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("defineConfig", result);
+        Assert.Contains("localhost:5000", result);
+        Assert.Contains("chromium", result);
+        Assert.Contains("60000", result);
+        Assert.DoesNotContain("firefox", result);
+        Assert.DoesNotContain("webkit", result);
+    }
 }
