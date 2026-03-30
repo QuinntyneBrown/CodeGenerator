@@ -885,4 +885,170 @@ public class SyntaxGeneratorTests
         Assert.Contains("Component", result);
         Assert.Contains("@angular/core", result);
     }
+
+    // ========================================
+    // ITERATION 2: Python async + decorators, React edge cases
+    // ========================================
+
+    [Fact]
+    public async Task PythonFunction_AsyncFetch_GeneratesExpectedSyntax()
+    {
+        var pythonFunc = new CodeGenerator.Python.Syntax.FunctionModel
+        {
+            Name = "fetch_data",
+            Params = [
+                new CodeGenerator.Python.Syntax.ParamModel { Name = "url", TypeHint = new CodeGenerator.Python.Syntax.TypeHintModel("str") },
+                new CodeGenerator.Python.Syntax.ParamModel { Name = "timeout", TypeHint = new CodeGenerator.Python.Syntax.TypeHintModel("int"), DefaultValue = "30" },
+            ],
+            ReturnType = new CodeGenerator.Python.Syntax.TypeHintModel("dict"),
+            Body = "async with aiohttp.ClientSession() as session:\n        async with session.get(url, timeout=timeout) as response:\n            return await response.json()",
+            Decorators = [],
+            IsAsync = true,
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(pythonFunc);
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("async def fetch_data", result);
+        Assert.Contains("url: str", result);
+        Assert.Contains("timeout: int = 30", result);
+        Assert.Contains("-> dict", result);
+        Assert.Contains("await response.json()", result);
+    }
+
+    [Fact]
+    public async Task PythonClass_WithDecoratorsAndMultipleInheritance_GeneratesExpectedSyntax()
+    {
+        var pythonClass = new CodeGenerator.Python.Syntax.ClassModel
+        {
+            Name = "AuditLog",
+            Bases = ["db.Model", "TimestampMixin", "UuidMixin"],
+            Decorators = [
+                new CodeGenerator.Python.Syntax.DecoratorModel("dataclass"),
+            ],
+            Properties = [
+                new CodeGenerator.Python.Syntax.PropertyModel { Name = "action", TypeHint = new CodeGenerator.Python.Syntax.TypeHintModel("str") },
+                new CodeGenerator.Python.Syntax.PropertyModel { Name = "entity_type", TypeHint = new CodeGenerator.Python.Syntax.TypeHintModel("str") },
+            ],
+            Methods = [
+                new CodeGenerator.Python.Syntax.MethodModel
+                {
+                    Name = "format_entry",
+                    Params = [],
+                    ReturnType = new CodeGenerator.Python.Syntax.TypeHintModel("str"),
+                    Body = "return f\"{self.action} on {self.entity_type}\"",
+                    IsStatic = false,
+                    IsClassMethod = false,
+                },
+            ],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(pythonClass);
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("@dataclass", result);
+        Assert.Contains("class AuditLog", result);
+        Assert.Contains("db.Model", result);
+        Assert.Contains("TimestampMixin", result);
+        Assert.Contains("UuidMixin", result);
+        Assert.Contains("def format_entry", result);
+    }
+
+    [Fact]
+    public async Task PythonClass_WithStaticAndClassMethods_GeneratesExpectedSyntax()
+    {
+        var pythonClass = new CodeGenerator.Python.Syntax.ClassModel
+        {
+            Name = "MathUtils",
+            Bases = [],
+            Decorators = [],
+            Properties = [],
+            Methods = [
+                new CodeGenerator.Python.Syntax.MethodModel
+                {
+                    Name = "add",
+                    Params = [
+                        new CodeGenerator.Python.Syntax.ParamModel { Name = "a", TypeHint = new CodeGenerator.Python.Syntax.TypeHintModel("int") },
+                        new CodeGenerator.Python.Syntax.ParamModel { Name = "b", TypeHint = new CodeGenerator.Python.Syntax.TypeHintModel("int") },
+                    ],
+                    ReturnType = new CodeGenerator.Python.Syntax.TypeHintModel("int"),
+                    Body = "return a + b",
+                    IsStatic = true,
+                },
+                new CodeGenerator.Python.Syntax.MethodModel
+                {
+                    Name = "from_string",
+                    Params = [
+                        new CodeGenerator.Python.Syntax.ParamModel { Name = "value", TypeHint = new CodeGenerator.Python.Syntax.TypeHintModel("str") },
+                    ],
+                    ReturnType = new CodeGenerator.Python.Syntax.TypeHintModel("MathUtils"),
+                    Body = "return cls(int(value))",
+                    IsClassMethod = true,
+                },
+            ],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(pythonClass);
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("class MathUtils", result);
+        Assert.Contains("@staticmethod", result);
+        Assert.Contains("@classmethod", result);
+        Assert.Contains("def add", result);
+        Assert.Contains("def from_string", result);
+        Assert.Contains("cls", result);
+    }
+
+    [Fact]
+    public async Task ReactComponent_NoProps_GeneratesExpectedSyntax()
+    {
+        var reactComponent = new CodeGenerator.React.Syntax.ComponentModel("EmptyHeader")
+        {
+            Props = [],
+            IsClient = false,
+            Children = ["<header>Welcome</header>"],
+            Hooks = [],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(reactComponent);
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("EmptyHeader", result);
+        Assert.Contains("forwardRef", result);
+        Assert.Contains("displayName", result);
+        Assert.DoesNotContain("use client", result);
+    }
+
+    [Fact]
+    public async Task ReactStore_ManyActions_GeneratesExpectedSyntax()
+    {
+        var reactStore = new CodeGenerator.React.Syntax.StoreModel("CartStore")
+        {
+            StateProperties = [
+                new CodeGenerator.React.Syntax.PropertyModel { Name = "items", Type = new TypeModel("CartItem[]") },
+                new CodeGenerator.React.Syntax.PropertyModel { Name = "total", Type = new TypeModel("number") },
+                new CodeGenerator.React.Syntax.PropertyModel { Name = "discount", Type = new TypeModel("number") },
+                new CodeGenerator.React.Syntax.PropertyModel { Name = "isLoading", Type = new TypeModel("boolean") },
+            ],
+            Actions = ["addItem", "removeItem", "updateQuantity", "clearCart", "applyDiscount", "calculateTotal"],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(reactStore);
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("zustand", result);
+        Assert.Contains("CartStore", result);
+        Assert.Contains("items", result);
+        Assert.Contains("total", result);
+        Assert.Contains("addItem", result);
+        Assert.Contains("removeItem", result);
+        Assert.Contains("clearCart", result);
+        Assert.Contains("applyDiscount", result);
+        Assert.Contains("calculateTotal", result);
+    }
 }
