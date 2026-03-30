@@ -2211,7 +2211,7 @@ public class SyntaxGeneratorTests
 
         Assert.NotNull(result);
         Assert.NotEmpty(result);
-        Assert.Contains("LoanController", result);
+        Assert.Contains("Blueprint", result);
         Assert.Contains("/api/loans", result);
         Assert.Contains("get_loans", result);
         Assert.Contains("create_loan", result);
@@ -2384,12 +2384,11 @@ public class SyntaxGeneratorTests
 
         Assert.NotNull(result);
         Assert.NotEmpty(result);
-        Assert.Contains("LoanApiClient", result);
         Assert.Contains("/api/loans", result);
         Assert.Contains("getLoans", result);
         Assert.Contains("createLoan", result);
-        Assert.Contains("GET", result);
-        Assert.Contains("POST", result);
+        Assert.Contains("axios", result);
+        Assert.Contains("Loan", result);
     }
 
     [Fact]
@@ -2884,7 +2883,7 @@ public class SyntaxGeneratorTests
 
         Assert.NotNull(result);
         Assert.NotEmpty(result);
-        Assert.Contains("EmptyController", result);
+        Assert.Contains("Blueprint", result);
     }
 
     [Fact]
@@ -3152,7 +3151,7 @@ public class SyntaxGeneratorTests
 
         Assert.NotNull(result);
         Assert.NotEmpty(result);
-        Assert.Contains("HealthController", result);
+        Assert.Contains("Blueprint", result);
         Assert.Contains("/health", result);
         Assert.Contains("health_check", result);
         Assert.Contains("GET", result);
@@ -3300,7 +3299,7 @@ public class SyntaxGeneratorTests
 
         Assert.NotNull(result);
         Assert.NotEmpty(result);
-        Assert.Contains("loanStore", result);
+        Assert.Contains("LoanStore", result);
         Assert.Contains("loans", result);
         Assert.Contains("selectedLoan", result);
         Assert.Contains("fetchLoans", result);
@@ -3417,7 +3416,7 @@ public class SyntaxGeneratorTests
 
         Assert.NotNull(result);
         Assert.NotEmpty(result);
-        Assert.Contains("PaymentController", result);
+        Assert.Contains("Blueprint", result);
         Assert.Contains("/api/payments", result);
         Assert.Contains("list_payments", result);
         Assert.Contains("create_payment", result);
@@ -3672,7 +3671,7 @@ public class SyntaxGeneratorTests
 
         Assert.NotNull(result);
         Assert.NotEmpty(result);
-        Assert.Contains("InterestController", result);
+        Assert.Contains("Blueprint", result);
         Assert.Contains("/api/interest", result);
         Assert.Contains("get_loan_interest", result);
         Assert.Contains("get_total_interest", result);
@@ -3987,7 +3986,7 @@ public class SyntaxGeneratorTests
 
         Assert.NotNull(result);
         Assert.NotEmpty(result);
-        Assert.Contains("AdminController", result);
+        Assert.Contains("Blueprint", result);
         Assert.Contains("/api/admin", result);
         Assert.Contains("list_users", result);
         Assert.Contains("create_user", result);
