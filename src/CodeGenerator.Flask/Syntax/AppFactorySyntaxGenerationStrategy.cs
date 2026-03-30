@@ -33,7 +33,7 @@ public class AppFactorySyntaxGenerationStrategy : ISyntaxGenerationStrategy<AppF
 
         foreach (var blueprint in model.Blueprints)
         {
-            builder.AppendLine($"from {blueprint.ImportPath} import bp as {namingConventionConverter.Convert(NamingConvention.SnakeCase, blueprint.Name)}_bp");
+            builder.AppendLine($"from {blueprint.ImportPath} import bp as {namingConventionConverter.Convert(NamingConvention.KebobCase, blueprint.Name)}_bp");
         }
 
         foreach (var import in model.Imports)
@@ -74,7 +74,7 @@ public class AppFactorySyntaxGenerationStrategy : ISyntaxGenerationStrategy<AppF
 
             foreach (var blueprint in model.Blueprints)
             {
-                var bpVar = $"{namingConventionConverter.Convert(NamingConvention.SnakeCase, blueprint.Name)}_bp";
+                var bpVar = $"{namingConventionConverter.Convert(NamingConvention.KebobCase, blueprint.Name)}_bp";
                 builder.AppendLine($"    app.register_blueprint({bpVar})");
             }
         }

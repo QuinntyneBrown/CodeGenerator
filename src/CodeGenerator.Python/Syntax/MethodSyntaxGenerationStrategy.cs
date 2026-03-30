@@ -44,7 +44,7 @@ public class MethodSyntaxGenerationStrategy : ISyntaxGenerationStrategy<MethodMo
             builder.AppendLine("@classmethod");
         }
 
-        var methodName = namingConventionConverter.Convert(NamingConvention.SnakeCase, model.Name);
+        var methodName = namingConventionConverter.Convert(NamingConvention.KebobCase, model.Name);
 
         var allParams = new List<string>();
 

@@ -64,7 +64,7 @@ public class SchemaSyntaxGenerationStrategy : ISyntaxGenerationStrategy<SchemaMo
 
             foreach (var field in model.Fields)
             {
-                var fieldName = namingConventionConverter.Convert(NamingConvention.SnakeCase, field.Name);
+                var fieldName = namingConventionConverter.Convert(NamingConvention.KebobCase, field.Name);
                 var fieldArgs = new List<string>();
 
                 if (field.Required)

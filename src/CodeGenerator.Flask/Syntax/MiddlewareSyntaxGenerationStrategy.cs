@@ -45,7 +45,7 @@ public class MiddlewareSyntaxGenerationStrategy : ISyntaxGenerationStrategy<Midd
         builder.AppendLine();
         builder.AppendLine();
 
-        var funcName = namingConventionConverter.Convert(NamingConvention.SnakeCase, model.Name);
+        var funcName = namingConventionConverter.Convert(NamingConvention.KebobCase, model.Name);
 
         builder.AppendLine($"def {funcName}(f):");
         builder.AppendLine("    @wraps(f)");

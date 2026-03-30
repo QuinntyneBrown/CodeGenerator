@@ -79,7 +79,7 @@ public class ModelSyntaxGenerationStrategy : ISyntaxGenerationStrategy<ModelMode
 
         builder.AppendLine($"class {className}({string.Join(", ", bases)}):");
 
-        var tableName = model.TableName ?? namingConventionConverter.Convert(NamingConvention.SnakeCase, model.Name) + "s";
+        var tableName = model.TableName ?? namingConventionConverter.Convert(NamingConvention.KebobCase, model.Name) + "s";
         builder.AppendLine($"    __tablename__ = '{tableName}'".Indent(0));
 
         if (model.Columns.Count == 0 && model.Relationships.Count == 0)
@@ -92,7 +92,7 @@ public class ModelSyntaxGenerationStrategy : ISyntaxGenerationStrategy<ModelMode
 
             foreach (var column in model.Columns)
             {
-                var colName = namingConventionConverter.Convert(NamingConvention.SnakeCase, column.Name);
+                var colName = namingConventionConverter.Convert(NamingConvention.KebobCase, column.Name);
                 var colDef = $"db.Column(db.{column.ColumnType}";
 
                 if (column.Constraints.Count > 0)
@@ -124,7 +124,7 @@ public class ModelSyntaxGenerationStrategy : ISyntaxGenerationStrategy<ModelMode
 
                 foreach (var relationship in model.Relationships)
                 {
-                    var relName = namingConventionConverter.Convert(NamingConvention.SnakeCase, relationship.Name);
+                    var relName = namingConventionConverter.Convert(NamingConvention.KebobCase, relationship.Name);
                     var relDef = $"db.relationship('{relationship.Target}'";
 
                     if (!string.IsNullOrEmpty(relationship.BackRef))

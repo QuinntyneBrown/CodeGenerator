@@ -29,7 +29,7 @@ public class RepositorySyntaxGenerationStrategy : ISyntaxGenerationStrategy<Repo
 
         var className = namingConventionConverter.Convert(NamingConvention.PascalCase, model.Name);
         var entityName = namingConventionConverter.Convert(NamingConvention.PascalCase, model.Entity);
-        var snakeEntity = namingConventionConverter.Convert(NamingConvention.SnakeCase, model.Entity);
+        var snakeEntity = namingConventionConverter.Convert(NamingConvention.KebobCase, model.Entity);
 
         builder.AppendLine("from app.repositories.base_repository import BaseRepository");
         builder.AppendLine($"from app.models.{snakeEntity} import {entityName}");

@@ -31,7 +31,7 @@ public class BlueprintGenerationStrategy : IArtifactGenerationStrategy<Blueprint
     {
         logger.LogInformation("Create Flask Blueprint. {name}", model.Name);
 
-        var snakeName = namingConventionConverter.Convert(NamingConvention.SnakeCase, model.Name);
+        var snakeName = namingConventionConverter.Convert(NamingConvention.KebobCase, model.Name);
 
         var builder = new System.Text.StringBuilder();
 

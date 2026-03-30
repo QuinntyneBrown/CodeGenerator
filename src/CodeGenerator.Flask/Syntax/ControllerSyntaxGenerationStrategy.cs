@@ -27,7 +27,7 @@ public class ControllerSyntaxGenerationStrategy : ISyntaxGenerationStrategy<Cont
 
         var builder = StringBuilderCache.Acquire();
 
-        var snakeName = namingConventionConverter.Convert(NamingConvention.SnakeCase, model.Name);
+        var snakeName = namingConventionConverter.Convert(NamingConvention.KebobCase, model.Name);
         var urlPrefix = model.UrlPrefix ?? $"/api/{snakeName}";
 
         builder.AppendLine("from flask import Blueprint, request, jsonify");

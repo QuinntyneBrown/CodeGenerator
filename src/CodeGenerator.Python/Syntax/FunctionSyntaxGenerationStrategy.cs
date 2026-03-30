@@ -45,7 +45,7 @@ public class FunctionSyntaxGenerationStrategy : ISyntaxGenerationStrategy<Functi
             builder.AppendLine(await syntaxGenerator.GenerateAsync(decorator));
         }
 
-        var functionName = namingConventionConverter.Convert(NamingConvention.SnakeCase, model.Name);
+        var functionName = namingConventionConverter.Convert(NamingConvention.KebobCase, model.Name);
 
         var paramStrings = model.Params.Select(p =>
         {
