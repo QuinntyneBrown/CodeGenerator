@@ -51,7 +51,7 @@ public class ProjectService : IProjectService
 
     public async Task AddToSolution(ProjectModel model)
     {
-        var solution = fileProvider.Get("*.sln", model.Directory);
+        var solution = FindSolutionFile(model.Directory);
         var solutionName = Path.GetFileName(solution);
         var solutionDirectory = fileSystem.Path.GetDirectoryName(solution);
         
@@ -70,8 +70,15 @@ public class ProjectService : IProjectService
             }
         }
 
+        var isSlnx = solution.EndsWith(".slnx", StringComparison.OrdinalIgnoreCase);
+
         if (model.Extension == ".csproj")
         {
+            commandService.Start($"dotnet sln {solutionName} add {model.Path}", solutionDirectory);
+        }
+        else if (isSlnx)
+        {
+            // For .slnx (XML-based format), use dotnet sln add which handles both formats
             commandService.Start($"dotnet sln {solutionName} add {model.Path}", solutionDirectory);
         }
         else if (model.Extension == ".esproj")
@@ -308,6 +315,11 @@ public class ProjectService : IProjectService
         
         // Convert to backslashes for .sln/.slnx file (Visual Studio always uses backslashes)
         return relativePath.Replace('/', '\\');
+    }
+
+    private string FindSolutionFile(string directory)
+    {
+        return fileProvider.Get("*.sln", directory);
     }
 
     public async Task AddCodeGeneratorPostBuildTargetElement(string csprojFilePath)

@@ -39,16 +39,22 @@ public class CreateCodeGeneratorCommand : RootCommand
             description: "The target framework (e.g. net8.0, net9.0)",
             getDefaultValue: () => "net9.0");
 
+        var slnxOption = new Option<bool>(
+            aliases: ["--slnx"],
+            description: "Use .slnx (XML-based) solution format instead of .sln",
+            getDefaultValue: () => false);
+
         AddOption(nameOption);
         AddOption(outputOption);
         AddOption(frameworkOption);
+        AddOption(slnxOption);
 
         AddCommand(new InstallCommand(serviceProvider));
 
-        this.SetHandler(HandleAsync, nameOption, outputOption, frameworkOption);
+        this.SetHandler(HandleAsync, nameOption, outputOption, frameworkOption, slnxOption);
     }
 
-    private async Task HandleAsync(string name, string outputDirectory, string framework)
+    private async Task HandleAsync(string name, string outputDirectory, string framework, bool slnx)
     {
         var logger = _serviceProvider.GetRequiredService<ILogger<CreateCodeGeneratorCommand>>();
         var artifactGenerator = _serviceProvider.GetRequiredService<IArtifactGenerator>();
@@ -59,6 +65,11 @@ public class CreateCodeGeneratorCommand : RootCommand
 
         // Create Solution Model
         var solution = new SolutionModel(name, outputDirectory);
+
+        if (slnx)
+        {
+            solution.SolutionExtension = ".slnx";
+        }
 
         // Create Project Model
         var project = new ProjectModel(DotNetProjectType.Console, $"{name}.Cli", solution.SrcDirectory)
@@ -94,7 +105,14 @@ public class CreateCodeGeneratorCommand : RootCommand
         Directory.CreateDirectory(Path.Combine(solution.SolutionDirectory, "eng", "scripts"));
 
         // Create solution file
-        commandService.Start($"dotnet new sln -n {name}", solution.SolutionDirectory);
+        if (slnx)
+        {
+            commandService.Start($"dotnet new slnx -n {name}", solution.SolutionDirectory);
+        }
+        else
+        {
+            commandService.Start($"dotnet new sln -n {name}", solution.SolutionDirectory);
+        }
 
         // Generate custom .csproj (not using dotnet new since we need tool-specific settings)
         await artifactGenerator.GenerateAsync(new ContentFileModel(

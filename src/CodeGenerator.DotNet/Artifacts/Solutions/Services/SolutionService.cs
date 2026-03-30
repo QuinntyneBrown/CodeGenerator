@@ -96,7 +96,7 @@ public class SolutionService : ISolutionService
 
     public async Task MessagingBuildingBlockAdd(string directory)
     {
-        var solutionPath = fileProvider.Get("*.sln", directory);
+        var solutionPath = FindSolutionFile(directory);
 
         var solutionName = _fileSystem.Path.GetFileName(solutionPath);
 
@@ -131,7 +131,7 @@ public class SolutionService : ISolutionService
 
     public async Task IOCompressionBuildingBlockAdd(string directory)
     {
-        var solutionPath = fileProvider.Get("*.sln", directory);
+        var solutionPath = FindSolutionFile(directory);
 
         var solutionName = _fileSystem.Path.GetFileName(solutionPath);
 
@@ -227,5 +227,12 @@ public class SolutionService : ISolutionService
     private dynamic AppsCreate(string directory)
     {
         throw new NotImplementedException();
+    }
+
+    private string FindSolutionFile(string directory)
+    {
+        var solutionPath = fileProvider.Get("*.sln", directory);
+
+        return solutionPath;
     }
 }

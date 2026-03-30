@@ -46,7 +46,14 @@ public class SolutionGenerationStrategy : IArtifactGenerationStrategy<SolutionMo
 
         _fileSystem.Directory.CreateDirectory(model.SrcDirectory);
 
-        _commandService.Start($"dotnet new sln -n {model.Name}", model.SolutionDirectory);
+        if (model.SolutionExtension == ".slnx")
+        {
+            _commandService.Start($"dotnet new slnx -n {model.Name}", model.SolutionDirectory);
+        }
+        else
+        {
+            _commandService.Start($"dotnet new sln -n {model.Name}", model.SolutionDirectory);
+        }
 
         var solutionDocsDirectory = _fileSystem.Path.Combine(model.SolutionDirectory, "docs");
 

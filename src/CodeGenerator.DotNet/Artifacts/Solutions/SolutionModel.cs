@@ -18,7 +18,6 @@ public class SolutionModel : ArtifactModel
         Projects = [];
         Files = [];
         Folders = [];
-        SolutionExtension = ".sln"; // Default to .sln
     }
 
     public SolutionModel(string name, string directory)
@@ -30,7 +29,6 @@ public class SolutionModel : ArtifactModel
         DependOns = [];
         Files = [];
         Folders = [];
-        SolutionExtension = ".sln"; // Default to .sln for new solutions
     }
 
     public SolutionModel(string name, string directory, string solutionDirectory)
@@ -38,7 +36,6 @@ public class SolutionModel : ArtifactModel
         Name = name;
         Directory = directory;
         SolutionDirectory = solutionDirectory;
-        SolutionExtension = ".sln"; // Default to .sln
     }
 
     public string Name { get; init; }

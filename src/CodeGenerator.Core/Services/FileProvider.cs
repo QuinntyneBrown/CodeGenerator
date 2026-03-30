@@ -27,10 +27,14 @@ public class FileProvider : IFileProvider
         var searchDirectory = string.Join(_fileSystem.Path.DirectorySeparatorChar, parts.Take(parts.Length - depth));
         var file = _fileSystem.Directory.GetFiles(searchDirectory, searchPattern).FirstOrDefault();
 
-        // If searching for *.sln and not found, also try *.slnx
+        // If searching for solution files and not found, also try the other extension
         if (file == null && searchPattern == "*.sln")
         {
             file = _fileSystem.Directory.GetFiles(searchDirectory, "*.slnx").FirstOrDefault();
+        }
+        else if (file == null && searchPattern == "*.slnx")
+        {
+            file = _fileSystem.Directory.GetFiles(searchDirectory, "*.sln").FirstOrDefault();
         }
 
         return file ?? Get(searchPattern, directory, depth + 1);
