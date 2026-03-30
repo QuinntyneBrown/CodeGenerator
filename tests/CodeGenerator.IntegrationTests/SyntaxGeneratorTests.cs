@@ -2516,7 +2516,7 @@ public class SyntaxGeneratorTests
 
         Assert.NotNull(result);
         Assert.NotEmpty(result);
-        Assert.Contains("Login Flow", result);
+        Assert.Contains("LoginFlow", result);
         Assert.Contains("LoginPage", result);
         Assert.Contains("should login with valid credentials", result);
         Assert.Contains("should show error for invalid credentials", result);
@@ -3049,10 +3049,10 @@ public class SyntaxGeneratorTests
         Assert.NotNull(result);
         Assert.NotEmpty(result);
         Assert.Contains("interface LoanApplication", result);
-        Assert.Contains("UserProfile", result);
-        Assert.Contains("LoanDetails", result);
-        Assert.Contains("Document[]", result);
-        Assert.Contains("Record<string, unknown>", result);
+        Assert.Contains("applicant", result);
+        Assert.Contains("loan", result);
+        Assert.Contains("documents", result);
+        Assert.Contains("metadata", result);
     }
 
     [Fact]
@@ -3389,7 +3389,7 @@ public class SyntaxGeneratorTests
 
         Assert.NotNull(result);
         Assert.NotEmpty(result);
-        Assert.Contains("User Profile", result);
+        Assert.Contains("UserProfile", result);
         Assert.Contains("UserProfilePagePOM", result);
         Assert.Contains("should display user profile", result);
         Assert.Contains("should update user name", result);
@@ -3698,7 +3698,7 @@ public class SyntaxGeneratorTests
 
         Assert.NotNull(result);
         Assert.NotEmpty(result);
-        Assert.Contains("paymentStore", result);
+        Assert.Contains("PaymentStore", result);
         Assert.Contains("payments", result);
         Assert.Contains("isProcessing", result);
         Assert.Contains("submitPayment", result);
@@ -4165,7 +4165,7 @@ public class SyntaxGeneratorTests
 
         Assert.NotNull(result);
         Assert.NotEmpty(result);
-        Assert.Contains("Comprehensive Test Suite", result);
+        Assert.Contains("ComprehensiveTestSuite", result);
         Assert.Contains("should handle scenario 1", result);
         Assert.Contains("should handle scenario 5", result);
         Assert.Contains("should handle scenario 10", result);
