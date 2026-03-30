@@ -79,7 +79,9 @@ public class ComponentSyntaxGenerationStrategy : ISyntaxGenerationStrategy<Compo
 
         builder.AppendLine("return (".Indent(1, 2));
 
-        builder.AppendLine($"<div ref={{ref}} className=\"{namingConventionConverter.Convert(NamingConvention.KebobCase, model.Name)}\">".Indent(2, 2));
+        // Use kebab-case with hyphens for CSS class names
+        var cssClassName = namingConventionConverter.Convert(NamingConvention.KebobCase, model.Name).Replace('_', '-');
+        builder.AppendLine($"<div ref={{ref}} className=\"{cssClassName}\">".Indent(2, 2));
 
         foreach (var child in model.Children)
         {
