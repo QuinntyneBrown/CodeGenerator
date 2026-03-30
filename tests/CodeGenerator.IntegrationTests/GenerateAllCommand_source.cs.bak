@@ -1,0 +1,750 @@
+using System.CommandLine;
+using CodeGenerator.Core.Artifacts.Abstractions;
+using CodeGenerator.Core.Syntax;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+
+namespace TestGen001.Cli.Commands;
+
+public class GenerateAllCommand : Command
+{
+    private readonly IServiceProvider _serviceProvider;
+
+    public GenerateAllCommand(IServiceProvider serviceProvider)
+        : base("generate-all", "Generates complex projects using ALL code generators and validates output")
+    {
+        _serviceProvider = serviceProvider;
+
+        var outputOption = new Option<string>(
+            aliases: ["-o", "--output"],
+            description: "The output directory",
+            getDefaultValue: () => Path.Combine(Directory.GetCurrentDirectory(), "generated"));
+
+        AddOption(outputOption);
+        this.SetHandler(HandleAsync, outputOption);
+    }
+
+    private async Task HandleAsync(string outputDirectory)
+    {
+        var logger = _serviceProvider.GetRequiredService<ILogger<GenerateAllCommand>>();
+        var syntaxGenerator = _serviceProvider.GetRequiredService<ISyntaxGenerator>();
+        var artifactGenerator = _serviceProvider.GetRequiredService<IArtifactGenerator>();
+
+        Directory.CreateDirectory(outputDirectory);
+
+        var issues = new List<string>();
+        var passed = 0;
+        var failed = 0;
+
+        // ========================================
+        // 1. PYTHON SYNTAX GENERATION
+        // ========================================
+        logger.LogInformation("=== Testing Python Generators ===");
+
+        // Python Class
+        try
+        {
+            var pythonClass = new CodeGenerator.Python.Syntax.ClassModel
+            {
+                Name = "UserRepository",
+                Bases = ["BaseRepository"],
+                Decorators = [],
+                Properties =
+                [
+                    new CodeGenerator.Python.Syntax.PropertyModel { Name = "model", TypeHint = new CodeGenerator.Python.Syntax.TypeHintModel("User"), DefaultValue = "None" },
+                    new CodeGenerator.Python.Syntax.PropertyModel { Name = "db_session", TypeHint = new CodeGenerator.Python.Syntax.TypeHintModel("Session") },
+                ],
+                Methods =
+                [
+                    new CodeGenerator.Python.Syntax.MethodModel
+                    {
+                        Name = "get_by_email",
+                        Params = [
+                            new CodeGenerator.Python.Syntax.ParamModel { Name = "email", TypeHint = new CodeGenerator.Python.Syntax.TypeHintModel("str") }
+                        ],
+                        ReturnType = new CodeGenerator.Python.Syntax.TypeHintModel("Optional[User]"),
+                        Body = "return self.model.query.filter_by(email=email).first()",
+                    },
+                    new CodeGenerator.Python.Syntax.MethodModel
+                    {
+                        Name = "get_active_users",
+                        Params = [],
+                        ReturnType = new CodeGenerator.Python.Syntax.TypeHintModel("List[User]"),
+                        Body = "return self.model.query.filter_by(is_active=True).all()",
+                    },
+                ],
+            };
+
+            var result = await syntaxGenerator.GenerateAsync(pythonClass);
+            ValidateSyntax("Python Class - UserRepository", result, ["class UserRepository", "BaseRepository", "def get_by_email", "self", "email: str"], issues, ref passed, ref failed);
+        }
+        catch (Exception ex) { RecordFailure("Python Class", ex, issues, ref failed); }
+
+        // Python Function
+        try
+        {
+            var pythonFunc = new CodeGenerator.Python.Syntax.FunctionModel
+            {
+                Name = "calculate_interest",
+                Params = [
+                    new CodeGenerator.Python.Syntax.ParamModel { Name = "principal", TypeHint = new CodeGenerator.Python.Syntax.TypeHintModel("float") },
+                    new CodeGenerator.Python.Syntax.ParamModel { Name = "rate", TypeHint = new CodeGenerator.Python.Syntax.TypeHintModel("float") },
+                    new CodeGenerator.Python.Syntax.ParamModel { Name = "years", TypeHint = new CodeGenerator.Python.Syntax.TypeHintModel("int"), DefaultValue = "1" },
+                ],
+                ReturnType = new CodeGenerator.Python.Syntax.TypeHintModel("float"),
+                Body = "return principal * rate * years",
+                Decorators = [],
+                IsAsync = false,
+            };
+
+            var result = await syntaxGenerator.GenerateAsync(pythonFunc);
+            ValidateSyntax("Python Function - calculate_interest", result, ["def calculate_interest", "principal: float", "rate: float", "years: int = 1", "-> float", "return principal"], issues, ref passed, ref failed);
+        }
+        catch (Exception ex) { RecordFailure("Python Function", ex, issues, ref failed); }
+
+        // Python Module
+        try
+        {
+            var pythonModule = new CodeGenerator.Python.Syntax.ModuleModel
+            {
+                Imports = [
+                    new CodeGenerator.Python.Syntax.ImportModel("flask", "Flask", "jsonify"),
+                    new CodeGenerator.Python.Syntax.ImportModel("os"),
+                ],
+                Classes = [
+                    new CodeGenerator.Python.Syntax.ClassModel
+                    {
+                        Name = "Config",
+                        Bases = [],
+                        Properties = [
+                            new CodeGenerator.Python.Syntax.PropertyModel { Name = "DEBUG", DefaultValue = "True" },
+                            new CodeGenerator.Python.Syntax.PropertyModel { Name = "SECRET_KEY", DefaultValue = "\"changeme\"" },
+                        ],
+                        Methods = [],
+                        Decorators = [],
+                    }
+                ],
+                Functions = [
+                    new CodeGenerator.Python.Syntax.FunctionModel
+                    {
+                        Name = "create_app",
+                        Params = [],
+                        Body = "app = Flask(__name__)\n    return app",
+                        ReturnType = new CodeGenerator.Python.Syntax.TypeHintModel("Flask"),
+                        Decorators = [],
+                        IsAsync = false,
+                    }
+                ],
+            };
+
+            var result = await syntaxGenerator.GenerateAsync(pythonModule);
+            ValidateSyntax("Python Module", result, ["from flask import", "import os", "class Config", "def create_app"], issues, ref passed, ref failed);
+        }
+        catch (Exception ex) { RecordFailure("Python Module", ex, issues, ref failed); }
+
+        // Python Import
+        try
+        {
+            var pythonImport = new CodeGenerator.Python.Syntax.ImportModel("sqlalchemy", "Column", "String", "Integer", "ForeignKey");
+
+            var result = await syntaxGenerator.GenerateAsync(pythonImport);
+            ValidateSyntax("Python Import", result, ["from sqlalchemy import", "Column", "String", "Integer", "ForeignKey"], issues, ref passed, ref failed);
+        }
+        catch (Exception ex) { RecordFailure("Python Import", ex, issues, ref failed); }
+
+        // Python Decorator
+        try
+        {
+            var pythonDecorator = new CodeGenerator.Python.Syntax.DecoratorModel
+            {
+                Name = "app.route",
+                Arguments = ["\"/api/users\"", "methods=[\"GET\", \"POST\"]"],
+            };
+
+            var result = await syntaxGenerator.GenerateAsync(pythonDecorator);
+            ValidateSyntax("Python Decorator", result, ["@app.route", "/api/users", "methods="], issues, ref passed, ref failed);
+        }
+        catch (Exception ex) { RecordFailure("Python Decorator", ex, issues, ref failed); }
+
+        // ========================================
+        // 2. REACT SYNTAX GENERATION
+        // ========================================
+        logger.LogInformation("=== Testing React Generators ===");
+
+        // React Component
+        try
+        {
+            var reactComponent = new CodeGenerator.React.Syntax.ComponentModel("DashboardCard")
+            {
+                Props = [
+                    new CodeGenerator.React.Syntax.PropertyModel { Name = "title", Type = new TypeModel("string") },
+                    new CodeGenerator.React.Syntax.PropertyModel { Name = "value", Type = new TypeModel("number") },
+                    new CodeGenerator.React.Syntax.PropertyModel { Name = "icon", Type = new TypeModel("React.ReactNode") },
+                ],
+                IsClient = true,
+                Children = ["<h2>{title}</h2>", "<span>{value}</span>"],
+                Hooks = ["const [isHovered, setIsHovered] = useState(false);"],
+            };
+
+            var result = await syntaxGenerator.GenerateAsync(reactComponent);
+            ValidateSyntax("React Component - DashboardCard", result, ["use client", "DashboardCard", "Props", "title", "forwardRef", "displayName"], issues, ref passed, ref failed);
+        }
+        catch (Exception ex) { RecordFailure("React Component", ex, issues, ref failed); }
+
+        // React Hook
+        try
+        {
+            var reactHook = new CodeGenerator.React.Syntax.HookModel("useDashboardSummary")
+            {
+                Body = "return useQuery({\n    queryKey: [\"dashboard\", \"summary\"],\n    queryFn: () => apiGet<DashboardSummary>(\"/dashboard/summary\"),\n  });",
+                ReturnType = "UseQueryResult<DashboardSummary>",
+                Imports = [
+                    new CodeGenerator.React.Syntax.ImportModel("useQuery", "@tanstack/react-query"),
+                ],
+            };
+
+            var result = await syntaxGenerator.GenerateAsync(reactHook);
+            ValidateSyntax("React Hook - useDashboardSummary", result, ["useDashboardSummary", "useQuery", "@tanstack/react-query", "export"], issues, ref passed, ref failed);
+        }
+        catch (Exception ex) { RecordFailure("React Hook", ex, issues, ref failed); }
+
+        // React Store (Zustand)
+        try
+        {
+            var reactStore = new CodeGenerator.React.Syntax.StoreModel("AuthStore")
+            {
+                StateProperties = [
+                    new CodeGenerator.React.Syntax.PropertyModel { Name = "user", Type = new TypeModel("User | null") },
+                    new CodeGenerator.React.Syntax.PropertyModel { Name = "isAuthenticated", Type = new TypeModel("boolean") },
+                    new CodeGenerator.React.Syntax.PropertyModel { Name = "token", Type = new TypeModel("string | null") },
+                ],
+                Actions = ["login", "logout", "setUser"],
+            };
+
+            var result = await syntaxGenerator.GenerateAsync(reactStore);
+            ValidateSyntax("React Store - AuthStore", result, ["zustand", "create", "AuthStore", "user", "isAuthenticated", "login", "logout"], issues, ref passed, ref failed);
+        }
+        catch (Exception ex) { RecordFailure("React Store", ex, issues, ref failed); }
+
+        // React TypeScript Interface
+        try
+        {
+            var tsInterface = new CodeGenerator.React.Syntax.TypeScriptInterfaceModel("DashboardSummary")
+            {
+                Properties = [
+                    new CodeGenerator.React.Syntax.PropertyModel { Name = "totalLoans", Type = new TypeModel("number") },
+                    new CodeGenerator.React.Syntax.PropertyModel { Name = "activeLoans", Type = new TypeModel("number") },
+                    new CodeGenerator.React.Syntax.PropertyModel { Name = "totalPaidOut", Type = new TypeModel("number") },
+                ],
+            };
+
+            var result = await syntaxGenerator.GenerateAsync(tsInterface);
+            ValidateSyntax("React TypeScript Interface", result, ["export interface DashboardSummary", "totalLoans", "number"], issues, ref passed, ref failed);
+        }
+        catch (Exception ex) { RecordFailure("React TypeScript Interface", ex, issues, ref failed); }
+
+        // React API Client
+        try
+        {
+            var apiClient = new CodeGenerator.React.Syntax.ApiClientModel("LoanApi")
+            {
+                BaseUrl = "/api/loans",
+                Methods = [
+                    new CodeGenerator.React.Syntax.ApiClientMethodModel { Name = "getAll", HttpMethod = "GET", Route = "/", ResponseType = "any" },
+                    new CodeGenerator.React.Syntax.ApiClientMethodModel { Name = "getById", HttpMethod = "GET", Route = "/:id", ResponseType = "any" },
+                    new CodeGenerator.React.Syntax.ApiClientMethodModel { Name = "create", HttpMethod = "POST", Route = "/", ResponseType = "any" },
+                    new CodeGenerator.React.Syntax.ApiClientMethodModel { Name = "update", HttpMethod = "PUT", Route = "/:id", ResponseType = "any" },
+                    new CodeGenerator.React.Syntax.ApiClientMethodModel { Name = "delete", HttpMethod = "DELETE", Route = "/:id", ResponseType = "any" },
+                ],
+            };
+
+            var result = await syntaxGenerator.GenerateAsync(apiClient);
+            ValidateSyntax("React API Client", result, ["axios", "/api/loans", "getAll", "getById", "create", "update", "delete", "export"], issues, ref passed, ref failed);
+        }
+        catch (Exception ex) { RecordFailure("React API Client", ex, issues, ref failed); }
+
+        // ========================================
+        // 3. REACT NATIVE SYNTAX GENERATION
+        // ========================================
+        logger.LogInformation("=== Testing React Native Generators ===");
+
+        // React Native Screen
+        try
+        {
+            var rnScreen = new CodeGenerator.ReactNative.Syntax.ScreenModel("LoginScreen")
+            {
+                Props = [
+                    new CodeGenerator.ReactNative.Syntax.PropertyModel { Name = "navigation", Type = new TypeModel("NavigationProp") },
+                ],
+                Hooks = ["const { login } = useAuth();", "const [email, setEmail] = useState('');"],
+                NavigationParams = [
+                    new CodeGenerator.ReactNative.Syntax.PropertyModel { Name = "redirectTo", Type = new TypeModel("string") },
+                ],
+            };
+
+            var result = await syntaxGenerator.GenerateAsync(rnScreen);
+            ValidateSyntax("React Native Screen - LoginScreen", result, ["LoginScreen", "SafeAreaView", "StyleSheet", "testID"], issues, ref passed, ref failed);
+        }
+        catch (Exception ex) { RecordFailure("React Native Screen", ex, issues, ref failed); }
+
+        // React Native Component
+        try
+        {
+            var rnComponent = new CodeGenerator.ReactNative.Syntax.ComponentModel("TransactionCard")
+            {
+                Props = [
+                    new CodeGenerator.ReactNative.Syntax.PropertyModel { Name = "amount", Type = new TypeModel("number") },
+                    new CodeGenerator.ReactNative.Syntax.PropertyModel { Name = "date", Type = new TypeModel("string") },
+                    new CodeGenerator.ReactNative.Syntax.PropertyModel { Name = "status", Type = new TypeModel("'pending' | 'completed'") },
+                ],
+                Styles = [
+                    new CodeGenerator.ReactNative.Syntax.StyleModel("container") { Properties = new Dictionary<string, string> { ["padding"] = "16", ["borderRadius"] = "8" } },
+                    new CodeGenerator.ReactNative.Syntax.StyleModel("amount") { Properties = new Dictionary<string, string> { ["fontSize"] = "18", ["fontWeight"] = "'bold'" } },
+                ],
+            };
+
+            var result = await syntaxGenerator.GenerateAsync(rnComponent);
+            ValidateSyntax("React Native Component - TransactionCard", result, ["TransactionCard", "StyleSheet.create", "testID", "Props"], issues, ref passed, ref failed);
+        }
+        catch (Exception ex) { RecordFailure("React Native Component", ex, issues, ref failed); }
+
+        // React Native Navigation
+        try
+        {
+            var rnNav = new CodeGenerator.ReactNative.Syntax.NavigationModel("AppNavigation", "stack")
+            {
+                Screens = ["HomeScreen", "LoginScreen", "DashboardScreen", "ProfileScreen", "SettingsScreen"],
+            };
+
+            var result = await syntaxGenerator.GenerateAsync(rnNav);
+            ValidateSyntax("React Native Navigation", result, ["createStackNavigator", "HomeScreen", "LoginScreen", "DashboardScreen", "Stack.Navigator", "Stack.Screen"], issues, ref passed, ref failed);
+        }
+        catch (Exception ex) { RecordFailure("React Native Navigation", ex, issues, ref failed); }
+
+        // ========================================
+        // 4. FLASK SYNTAX GENERATION
+        // ========================================
+        logger.LogInformation("=== Testing Flask Generators ===");
+
+        // Flask Controller
+        try
+        {
+            var flaskController = new CodeGenerator.Flask.Syntax.ControllerModel
+            {
+                Name = "loan",
+                Routes = [
+                    new CodeGenerator.Flask.Syntax.ControllerRouteModel { Path = "", Methods = ["GET"], HandlerName = "get_loans", Body = "loans = loan_service.get_all()\n    return jsonify(loan_schema.dump(loans, many=True)), 200" },
+                    new CodeGenerator.Flask.Syntax.ControllerRouteModel { Path = "/<loan_id>", Methods = ["GET"], HandlerName = "get_loan", Body = "loan = loan_service.get_by_id(loan_id)\n    return jsonify(loan_schema.dump(loan)), 200" },
+                    new CodeGenerator.Flask.Syntax.ControllerRouteModel { Path = "", Methods = ["POST"], HandlerName = "create_loan", Body = "data = request.get_json()\n    loan = loan_service.create(**data)\n    return jsonify(loan_schema.dump(loan)), 201", RequiresAuth = true },
+                ],
+                UrlPrefix = "/api/loans",
+            };
+
+            var result = await syntaxGenerator.GenerateAsync(flaskController);
+            ValidateSyntax("Flask Controller - loan", result, ["Blueprint", "@bp.route", "GET", "POST", "jsonify", "get_loans", "create_loan", "/api/loans"], issues, ref passed, ref failed);
+        }
+        catch (Exception ex) { RecordFailure("Flask Controller", ex, issues, ref failed); }
+
+        // Flask Model
+        try
+        {
+            var flaskModel = new CodeGenerator.Flask.Syntax.ModelModel
+            {
+                Name = "Loan",
+                TableName = "loans",
+                Columns = [
+                    new CodeGenerator.Flask.Syntax.ColumnModel { Name = "creditor_id", ColumnType = "String(36)", Nullable = false, Constraints = ["ForeignKey('users.id')"] },
+                    new CodeGenerator.Flask.Syntax.ColumnModel { Name = "borrower_id", ColumnType = "String(36)", Nullable = false, Constraints = ["ForeignKey('users.id')"] },
+                    new CodeGenerator.Flask.Syntax.ColumnModel { Name = "principal", ColumnType = "Numeric", Nullable = false },
+                    new CodeGenerator.Flask.Syntax.ColumnModel { Name = "interest_rate", ColumnType = "Numeric", DefaultValue = "0" },
+                    new CodeGenerator.Flask.Syntax.ColumnModel { Name = "status", ColumnType = "String(50)", DefaultValue = "\"ACTIVE\"" },
+                ],
+                Relationships = [
+                    new CodeGenerator.Flask.Syntax.RelationshipModel { Name = "creditor", Target = "User", BackRef = "loans_given" },
+                    new CodeGenerator.Flask.Syntax.RelationshipModel { Name = "payments", Target = "Payment", BackRef = "loan" },
+                ],
+            };
+
+            var result = await syntaxGenerator.GenerateAsync(flaskModel);
+            ValidateSyntax("Flask Model - Loan", result, ["class Loan", "db.Model", "__tablename__", "loans", "creditor_id", "db.Column", "db.ForeignKey", "db.relationship"], issues, ref passed, ref failed);
+        }
+        catch (Exception ex) { RecordFailure("Flask Model", ex, issues, ref failed); }
+
+        // Flask Repository
+        try
+        {
+            var flaskRepo = new CodeGenerator.Flask.Syntax.RepositoryModel
+            {
+                Name = "LoanRepository",
+                Entity = "Loan",
+                CustomMethods = [
+                    new CodeGenerator.Flask.Syntax.RepositoryMethodModel { Name = "get_by_creditor", Params = ["creditor_id"], Body = "return self.model.query.filter_by(creditor_id=creditor_id).all()" },
+                    new CodeGenerator.Flask.Syntax.RepositoryMethodModel { Name = "get_active", Params = [], Body = "return self.model.query.filter_by(status='ACTIVE').all()" },
+                ],
+            };
+
+            var result = await syntaxGenerator.GenerateAsync(flaskRepo);
+            ValidateSyntax("Flask Repository - LoanRepository", result, ["class LoanRepository", "BaseRepository", "Loan", "get_by_creditor", "get_active"], issues, ref passed, ref failed);
+        }
+        catch (Exception ex) { RecordFailure("Flask Repository", ex, issues, ref failed); }
+
+        // Flask Service
+        try
+        {
+            var flaskService = new CodeGenerator.Flask.Syntax.ServiceModel
+            {
+                Name = "LoanService",
+                RepositoryReferences = ["LoanRepository", "PaymentRepository"],
+                Methods = [
+                    new CodeGenerator.Flask.Syntax.ServiceMethodModel { Name = "create_loan", Params = ["creditor_id", "borrower_id", "principal"], Body = "loan = Loan(creditor_id=creditor_id, borrower_id=borrower_id, principal=principal)\n        return self.loan_repo.create(loan)" },
+                ],
+            };
+
+            var result = await syntaxGenerator.GenerateAsync(flaskService);
+            ValidateSyntax("Flask Service - LoanService", result, ["class LoanService", "__init__", "loan_repo", "payment_repo", "create_loan"], issues, ref passed, ref failed);
+        }
+        catch (Exception ex) { RecordFailure("Flask Service", ex, issues, ref failed); }
+
+        // Flask Schema
+        try
+        {
+            var flaskSchema = new CodeGenerator.Flask.Syntax.SchemaModel
+            {
+                Name = "LoanSchema",
+                Fields = [
+                    new CodeGenerator.Flask.Syntax.SchemaFieldModel { Name = "id", FieldType = "String", DumpOnly = true },
+                    new CodeGenerator.Flask.Syntax.SchemaFieldModel { Name = "principal", FieldType = "Float", Required = true },
+                    new CodeGenerator.Flask.Syntax.SchemaFieldModel { Name = "interest_rate", FieldType = "Float" },
+                    new CodeGenerator.Flask.Syntax.SchemaFieldModel { Name = "status", FieldType = "String" },
+                    new CodeGenerator.Flask.Syntax.SchemaFieldModel { Name = "created_at", FieldType = "DateTime", DumpOnly = true },
+                ],
+            };
+
+            var result = await syntaxGenerator.GenerateAsync(flaskSchema);
+            ValidateSyntax("Flask Schema - LoanSchema", result, ["class LoanSchema", "Schema", "fields.String", "fields.Float", "dump_only", "required"], issues, ref passed, ref failed);
+        }
+        catch (Exception ex) { RecordFailure("Flask Schema", ex, issues, ref failed); }
+
+        // Flask App Factory
+        try
+        {
+            var flaskAppFactory = new CodeGenerator.Flask.Syntax.AppFactoryModel
+            {
+                Name = "LendQ",
+                Blueprints = [
+                    new CodeGenerator.Flask.Syntax.AppFactoryBlueprintReference("auth", "app.controllers.auth"),
+                    new CodeGenerator.Flask.Syntax.AppFactoryBlueprintReference("loans", "app.controllers.loans"),
+                    new CodeGenerator.Flask.Syntax.AppFactoryBlueprintReference("payments", "app.controllers.payments"),
+                    new CodeGenerator.Flask.Syntax.AppFactoryBlueprintReference("dashboard", "app.controllers.dashboard"),
+                ],
+                Extensions = ["db", "migrate", "ma", "limiter"],
+                ConfigClass = "DevelopmentConfig",
+            };
+
+            var result = await syntaxGenerator.GenerateAsync(flaskAppFactory);
+            ValidateSyntax("Flask App Factory", result, ["create_app", "Flask", "register_blueprint", "auth", "loans", "payments"], issues, ref passed, ref failed);
+        }
+        catch (Exception ex) { RecordFailure("Flask App Factory", ex, issues, ref failed); }
+
+        // Flask Config
+        try
+        {
+            var flaskConfig = new CodeGenerator.Flask.Syntax.ConfigModel
+            {
+                Settings = new Dictionary<string, string>
+                {
+                    ["SECRET_KEY"] = "\"changeme\"",
+                    ["SQLALCHEMY_DATABASE_URI"] = "\"sqlite:///app.db\"",
+                    ["SQLALCHEMY_TRACK_MODIFICATIONS"] = "False",
+                },
+            };
+
+            var result = await syntaxGenerator.GenerateAsync(flaskConfig);
+            ValidateSyntax("Flask Config", result, ["class", "Config", "SECRET_KEY", "SQLALCHEMY_DATABASE_URI", "DevelopmentConfig", "ProductionConfig"], issues, ref passed, ref failed);
+        }
+        catch (Exception ex) { RecordFailure("Flask Config", ex, issues, ref failed); }
+
+        // Flask Middleware
+        try
+        {
+            var flaskMiddleware = new CodeGenerator.Flask.Syntax.MiddlewareModel
+            {
+                Name = "require_admin",
+                Body = "if not current_user or not current_user.is_admin:\n        return jsonify({\"error\": \"Forbidden\"}), 403",
+            };
+
+            var result = await syntaxGenerator.GenerateAsync(flaskMiddleware);
+            ValidateSyntax("Flask Middleware - require_admin", result, ["require_admin", "functools.wraps", "wrapper", "def"], issues, ref passed, ref failed);
+        }
+        catch (Exception ex) { RecordFailure("Flask Middleware", ex, issues, ref failed); }
+
+        // ========================================
+        // 5. PLAYWRIGHT SYNTAX GENERATION
+        // ========================================
+        logger.LogInformation("=== Testing Playwright Generators ===");
+
+        // Playwright Page Object
+        try
+        {
+            var playwrightPom = new CodeGenerator.Playwright.Syntax.PageObjectModel("LoginPage", "/login")
+            {
+                Locators = [
+                    new CodeGenerator.Playwright.Syntax.LocatorModel("emailInput", CodeGenerator.Playwright.Syntax.LocatorStrategy.GetByTestId, "login-email-input"),
+                    new CodeGenerator.Playwright.Syntax.LocatorModel("passwordInput", CodeGenerator.Playwright.Syntax.LocatorStrategy.GetByTestId, "login-password-input"),
+                    new CodeGenerator.Playwright.Syntax.LocatorModel("loginButton", CodeGenerator.Playwright.Syntax.LocatorStrategy.GetByRole, "button, { name: \"Log in\" }"),
+                    new CodeGenerator.Playwright.Syntax.LocatorModel("errorMessage", CodeGenerator.Playwright.Syntax.LocatorStrategy.GetByTestId, "login-error"),
+                ],
+                Actions = [
+                    new CodeGenerator.Playwright.Syntax.PageActionModel("fillEmail", "email: string", "await this.emailInput.fill(email);"),
+                    new CodeGenerator.Playwright.Syntax.PageActionModel("fillPassword", "password: string", "await this.passwordInput.fill(password);"),
+                    new CodeGenerator.Playwright.Syntax.PageActionModel("clickLogin", "", "await this.loginButton.click();"),
+                    new CodeGenerator.Playwright.Syntax.PageActionModel("login", "email: string, password: string", "await this.fillEmail(email);\n    await this.fillPassword(password);\n    await this.clickLogin();"),
+                ],
+                Queries = [
+                    new CodeGenerator.Playwright.Syntax.PageQueryModel("getErrorMessage", "Promise<string>", "return await this.errorMessage.textContent() ?? '';"),
+                ],
+            };
+
+            var result = await syntaxGenerator.GenerateAsync(playwrightPom);
+            ValidateSyntax("Playwright POM - LoginPage", result, ["class LoginPage", "BasePage", "emailInput", "getByTestId", "fillEmail", "getErrorMessage", "Locator"], issues, ref passed, ref failed);
+        }
+        catch (Exception ex) { RecordFailure("Playwright POM", ex, issues, ref failed); }
+
+        // Playwright Test Spec
+        try
+        {
+            var playwrightSpec = new CodeGenerator.Playwright.Syntax.TestSpecModel("Authentication", "LoginPage")
+            {
+                Tests = [
+                    new CodeGenerator.Playwright.Syntax.TestCaseModel("should login with valid credentials", ["await loginPage.login('test@example.com', 'Password123');"], ["await loginPage.login('test@example.com', 'Password123');"], ["expect(await loginPage.isLoggedIn()).toBe(true);"]),
+                    new CodeGenerator.Playwright.Syntax.TestCaseModel("should show error for invalid credentials", ["await loginPage.login('bad@example.com', 'wrong');"], ["await loginPage.login('bad@example.com', 'wrong');"], ["expect(await loginPage.getErrorMessage()).toContain('Invalid');"]),
+                    new CodeGenerator.Playwright.Syntax.TestCaseModel("should redirect to dashboard after login", ["await loginPage.login('test@example.com', 'Password123');"], ["await loginPage.login('test@example.com', 'Password123');"], ["await expect(page).toHaveURL(/dashboard/);"]),
+                ],
+            };
+
+            var result = await syntaxGenerator.GenerateAsync(playwrightSpec);
+            ValidateSyntax("Playwright Test Spec", result, ["test.describe", "Authentication", "LoginPage", "should login", "should show error", "beforeEach", "expect"], issues, ref passed, ref failed);
+        }
+        catch (Exception ex) { RecordFailure("Playwright Test Spec", ex, issues, ref failed); }
+
+        // Playwright Config
+        try
+        {
+            var playwrightConfig = new CodeGenerator.Playwright.Syntax.ConfigModel(
+                baseUrl: "http://localhost:3000",
+                browsers: ["chromium", "firefox", "webkit"],
+                timeout: 30000,
+                retries: 2,
+                reporter: "html"
+            );
+
+            var result = await syntaxGenerator.GenerateAsync(playwrightConfig);
+            ValidateSyntax("Playwright Config", result, ["defineConfig", "baseURL", "localhost:3000", "chromium", "firefox", "webkit", "retries"], issues, ref passed, ref failed);
+        }
+        catch (Exception ex) { RecordFailure("Playwright Config", ex, issues, ref failed); }
+
+        // Playwright Base Page
+        try
+        {
+            var basePage = new CodeGenerator.Playwright.Syntax.BasePageModel
+            {
+                BaseUrl = "http://localhost:3000",
+            };
+
+            var result = await syntaxGenerator.GenerateAsync(basePage);
+            ValidateSyntax("Playwright Base Page", result, ["BasePage", "Page", "navigate", "abstract", "path"], issues, ref passed, ref failed);
+        }
+        catch (Exception ex) { RecordFailure("Playwright Base Page", ex, issues, ref failed); }
+
+        // Playwright Fixture
+        try
+        {
+            var playwrightFixture = new CodeGenerator.Playwright.Syntax.FixtureModel("AuthFixture")
+            {
+                Fixtures = [
+                    new CodeGenerator.Playwright.Syntax.FixtureDefinitionModel("adminPage", "Page", "// setup admin auth state"),
+                    new CodeGenerator.Playwright.Syntax.FixtureDefinitionModel("creditorPage", "Page", "// setup creditor auth state"),
+                ],
+            };
+
+            var result = await syntaxGenerator.GenerateAsync(playwrightFixture);
+            ValidateSyntax("Playwright Fixture", result, ["AuthFixture", "adminPage", "creditorPage", "extend"], issues, ref passed, ref failed);
+        }
+        catch (Exception ex) { RecordFailure("Playwright Fixture", ex, issues, ref failed); }
+
+        // ========================================
+        // 6. DETOX SYNTAX GENERATION
+        // ========================================
+        logger.LogInformation("=== Testing Detox Generators ===");
+
+        // Detox Page Object
+        try
+        {
+            var detoxPom = new CodeGenerator.Detox.Syntax.PageObjectModel("LoginPage")
+            {
+                TestIds = [
+                    new CodeGenerator.Detox.Syntax.PropertyModel("screenId", "login-screen"),
+                    new CodeGenerator.Detox.Syntax.PropertyModel("emailInputId", "login-email-input"),
+                    new CodeGenerator.Detox.Syntax.PropertyModel("passwordInputId", "login-password-input"),
+                    new CodeGenerator.Detox.Syntax.PropertyModel("loginButtonId", "login-button"),
+                    new CodeGenerator.Detox.Syntax.PropertyModel("errorMessageId", "login-error"),
+                ],
+                VisibilityChecks = ["isLoginScreenVisible"],
+                Interactions = [
+                    new CodeGenerator.Detox.Syntax.InteractionModel("enterEmail", "email: string", "await element(by.id(this.emailInputId)).clearText();\n    await element(by.id(this.emailInputId)).typeText(email);"),
+                    new CodeGenerator.Detox.Syntax.InteractionModel("enterPassword", "password: string", "await element(by.id(this.passwordInputId)).clearText();\n    await element(by.id(this.passwordInputId)).typeText(password);"),
+                    new CodeGenerator.Detox.Syntax.InteractionModel("tapLogin", "", "await element(by.id(this.loginButtonId)).tap();"),
+                ],
+                CombinedActions = [
+                    new CodeGenerator.Detox.Syntax.CombinedActionModel("loginWithCredentials", "email: string, password: string", ["await this.enterEmail(email);", "await this.enterPassword(password);", "await this.tapLogin();"]),
+                ],
+                QueryHelpers = [
+                    new CodeGenerator.Detox.Syntax.QueryHelperModel("getErrorMessage", "Promise<string>", "const attrs = await element(by.id(this.errorMessageId)).getAttributes();\n    return (attrs as any).text ?? '';"),
+                ],
+            };
+
+            var result = await syntaxGenerator.GenerateAsync(detoxPom);
+            ValidateSyntax("Detox POM - LoginPage", result, ["class LoginPage", "BasePage", "screenId", "login-screen", "enterEmail", "loginWithCredentials", "by.id"], issues, ref passed, ref failed);
+        }
+        catch (Exception ex) { RecordFailure("Detox POM", ex, issues, ref failed); }
+
+        // Detox Test Spec
+        try
+        {
+            var detoxSpec = new CodeGenerator.Detox.Syntax.TestSpecModel("Authentication", "LoginPage")
+            {
+                Tests = [
+                    new CodeGenerator.Detox.Syntax.TestModel("should login successfully", ["await loginPage.loginWithCredentials('test@example.com', 'Password123');", "await expect(element(by.id('dashboard-screen'))).toBeVisible();"]),
+                    new CodeGenerator.Detox.Syntax.TestModel("should show error for bad credentials", ["await loginPage.loginWithCredentials('bad@example.com', 'wrong');", "await expect(element(by.id('login-error'))).toBeVisible();"]),
+                ],
+            };
+
+            var result = await syntaxGenerator.GenerateAsync(detoxSpec);
+            ValidateSyntax("Detox Test Spec", result, ["describe", "Authentication", "LoginPage", "beforeAll", "beforeEach", "device.reloadReactNative", "should login"], issues, ref passed, ref failed);
+        }
+        catch (Exception ex) { RecordFailure("Detox Test Spec", ex, issues, ref failed); }
+
+        // Detox Config
+        try
+        {
+            var detoxConfig = new CodeGenerator.Detox.Syntax.DetoxConfigModel("SafeNetQ")
+            {
+                IosBuild = "xcodebuild -workspace ios/SafeNetQ.xcworkspace -scheme SafeNetQ -configuration Debug -sdk iphonesimulator -derivedDataPath ios/build",
+                AndroidBuild = "cd android && ./gradlew assembleDebug assembleAndroidTest -DtestBuildType=debug",
+            };
+
+            var result = await syntaxGenerator.GenerateAsync(detoxConfig);
+            ValidateSyntax("Detox Config", result, ["module.exports", "SafeNetQ", "ios", "android", "simulator", "emulator"], issues, ref passed, ref failed);
+        }
+        catch (Exception ex) { RecordFailure("Detox Config", ex, issues, ref failed); }
+
+        // Detox Jest Config
+        try
+        {
+            var jestConfig = new CodeGenerator.Detox.Syntax.JestConfigModel
+            {
+                TestMatch = "**/*.e2e.ts",
+            };
+
+            var result = await syntaxGenerator.GenerateAsync(jestConfig);
+            ValidateSyntax("Detox Jest Config", result, ["module.exports", "e2e.ts"], issues, ref passed, ref failed);
+        }
+        catch (Exception ex) { RecordFailure("Detox Jest Config", ex, issues, ref failed); }
+
+        // ========================================
+        // 7. ANGULAR SYNTAX GENERATION
+        // ========================================
+        logger.LogInformation("=== Testing Angular Generators ===");
+
+        try
+        {
+            var tsType = new CodeGenerator.Angular.Syntax.TypeScriptTypeModel("UserProfile")
+            {
+                Properties = [
+                    new CodeGenerator.Angular.Syntax.PropertyModel { Name = "id", Type = new TypeModel("string") },
+                    new CodeGenerator.Angular.Syntax.PropertyModel { Name = "email", Type = new TypeModel("string") },
+                    new CodeGenerator.Angular.Syntax.PropertyModel { Name = "displayName", Type = new TypeModel("string") },
+                ],
+            };
+
+            var result = await syntaxGenerator.GenerateAsync(tsType);
+            ValidateSyntax("Angular TypeScript Type", result, ["export type UserProfile", "id?", "email?", "displayName?"], issues, ref passed, ref failed);
+        }
+        catch (Exception ex) { RecordFailure("Angular TypeScript Type", ex, issues, ref failed); }
+
+        try
+        {
+            var importModel = new CodeGenerator.Angular.Syntax.ImportModel("Component", "@angular/core");
+
+            var result = await syntaxGenerator.GenerateAsync(importModel);
+            ValidateSyntax("Angular Import", result, ["import {", "Component", "@angular/core"], issues, ref passed, ref failed);
+        }
+        catch (Exception ex) { RecordFailure("Angular Import", ex, issues, ref failed); }
+
+        // ========================================
+        // SUMMARY
+        // ========================================
+        logger.LogInformation("");
+        logger.LogInformation("========================================");
+        logger.LogInformation("TEST RESULTS: {Passed} passed, {Failed} failed, {Total} total", passed, failed, passed + failed);
+        logger.LogInformation("========================================");
+
+        if (issues.Count > 0)
+        {
+            logger.LogError("ISSUES FOUND:");
+            foreach (var issue in issues)
+            {
+                logger.LogError("  - {Issue}", issue);
+            }
+        }
+
+        // Write results to file
+        var resultsPath = Path.Combine(outputDirectory, "test-results.txt");
+        var lines = new List<string>
+        {
+            $"Test Results - {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC",
+            $"Passed: {passed}",
+            $"Failed: {failed}",
+            $"Total: {passed + failed}",
+            "",
+            "Issues:",
+        };
+        lines.AddRange(issues.Count > 0 ? issues.Select(i => $"  - {i}") : ["  None"]);
+
+        await File.WriteAllLinesAsync(resultsPath, lines);
+        logger.LogInformation("Results written to: {Path}", resultsPath);
+
+        if (failed > 0)
+        {
+            Environment.ExitCode = 1;
+        }
+    }
+
+    private static void ValidateSyntax(string testName, string result, string[] expectedTokens, List<string> issues, ref int passed, ref int failed)
+    {
+        if (string.IsNullOrWhiteSpace(result))
+        {
+            issues.Add($"[{testName}] Generated empty output");
+            failed++;
+            return;
+        }
+
+        var missing = expectedTokens.Where(t => !result.Contains(t, StringComparison.OrdinalIgnoreCase)).ToList();
+
+        if (missing.Count > 0)
+        {
+            issues.Add($"[{testName}] Missing expected tokens: {string.Join(", ", missing.Select(m => $"'{m}'"))}. Output: {result[..Math.Min(200, result.Length)]}...");
+            failed++;
+        }
+        else
+        {
+            passed++;
+        }
+    }
+
+    private static void RecordFailure(string testName, Exception ex, List<string> issues, ref int failed)
+    {
+        issues.Add($"[{testName}] Exception: {ex.GetType().Name}: {ex.Message}");
+        failed++;
+    }
+}
