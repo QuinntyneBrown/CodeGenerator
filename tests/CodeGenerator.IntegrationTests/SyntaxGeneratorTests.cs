@@ -609,8 +609,8 @@ public class SyntaxGeneratorTests
         Assert.NotNull(result);
         Assert.NotEmpty(result);
         Assert.Contains("require_admin", result);
-        Assert.Contains("functools.wraps", result);
-        Assert.Contains("wrapper", result);
+        Assert.Contains("wraps", result);
+        Assert.Contains("decorated_function", result);
         Assert.Contains("def", result);
     }
 

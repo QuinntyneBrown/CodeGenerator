@@ -32,7 +32,7 @@ public class ServiceSyntaxGenerationStrategy : ISyntaxGenerationStrategy<Service
         foreach (var repoRef in model.RepositoryReferences)
         {
             var repoClass = namingConventionConverter.Convert(NamingConvention.PascalCase, repoRef);
-            var repoSnake = namingConventionConverter.Convert(NamingConvention.SnakeCase, repoRef);
+            var repoSnake = namingConventionConverter.Convert(NamingConvention.KebobCase, repoRef);
             builder.AppendLine($"from app.repositories.{repoSnake} import {repoClass}");
         }
 
@@ -57,7 +57,7 @@ public class ServiceSyntaxGenerationStrategy : ISyntaxGenerationStrategy<Service
 
         foreach (var repoRef in model.RepositoryReferences)
         {
-            var repoSnake = namingConventionConverter.Convert(NamingConvention.SnakeCase, repoRef);
+            var repoSnake = namingConventionConverter.Convert(NamingConvention.KebobCase, repoRef);
             initParams.Add(repoSnake);
         }
 
@@ -67,7 +67,7 @@ public class ServiceSyntaxGenerationStrategy : ISyntaxGenerationStrategy<Service
         {
             foreach (var repoRef in model.RepositoryReferences)
             {
-                var repoSnake = namingConventionConverter.Convert(NamingConvention.SnakeCase, repoRef);
+                var repoSnake = namingConventionConverter.Convert(NamingConvention.KebobCase, repoRef);
                 builder.AppendLine($"        self.{repoSnake} = {repoSnake}");
             }
         }
