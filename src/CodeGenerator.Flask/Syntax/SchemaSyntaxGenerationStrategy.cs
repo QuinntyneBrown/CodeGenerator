@@ -104,7 +104,9 @@ public class SchemaSyntaxGenerationStrategy : ISyntaxGenerationStrategy<SchemaMo
 
                 foreach (var validation in field.Validations)
                 {
-                    fieldArgs.Add($"validate={validation}");
+                    // Ensure validations use the validate. prefix
+                    var validationExpr = validation.StartsWith("validate.") ? validation : $"validate.{validation}";
+                    fieldArgs.Add($"validate={validationExpr}");
                 }
 
                 var args = fieldArgs.Count > 0 ? string.Join(", ", fieldArgs) : string.Empty;

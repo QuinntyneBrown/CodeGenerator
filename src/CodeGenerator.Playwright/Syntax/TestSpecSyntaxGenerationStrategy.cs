@@ -44,10 +44,11 @@ public class TestSpecSyntaxGenerationStrategy : ISyntaxGenerationStrategy<TestSp
         }
 
         // Track built-in imports to avoid duplicates
-        var renderedModules = new HashSet<string> { "@playwright/test" };
+        var pageImportPath = $"../pages/{pageClassName}";
+        var renderedModules = new HashSet<string> { "@playwright/test", pageImportPath };
 
         builder.AppendLine("import { test, expect } from \"@playwright/test\";");
-        builder.AppendLine($"import {{ {pageClassName} }} from \"../pages/{pageClassName}\";");
+        builder.AppendLine($"import {{ {pageClassName} }} from \"{pageImportPath}\";");
 
         foreach (var import in model.Imports)
         {
@@ -68,6 +69,12 @@ public class TestSpecSyntaxGenerationStrategy : ISyntaxGenerationStrategy<TestSp
 
         foreach (var setupAction in model.SetupActions)
         {
+            // Skip navigate actions since the strategy already generates one
+            if (setupAction.Contains(".navigate("))
+            {
+                continue;
+            }
+
             builder.AppendLine($"{setupAction}".Indent(2, 2));
         }
 
