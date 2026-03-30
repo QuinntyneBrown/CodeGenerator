@@ -1478,4 +1478,268 @@ public class SyntaxGeneratorTests
         Assert.Contains("pagination?", result);
         Assert.Contains("timestamp?", result);
     }
+
+    // ========================================
+    // ITERATION 6: Complex Python, RN store/hook, Playwright fixture, Detox config
+    // ========================================
+
+    [Fact]
+    public async Task PythonFunction_WithDecorators_GeneratesExpectedSyntax()
+    {
+        var pythonFunc = new CodeGenerator.Python.Syntax.FunctionModel
+        {
+            Name = "protected_route",
+            Params = [],
+            ReturnType = new CodeGenerator.Python.Syntax.TypeHintModel("Response"),
+            Body = "return jsonify({\"message\": \"success\"})",
+            Decorators = [
+                new CodeGenerator.Python.Syntax.DecoratorModel("app.route", ["\"/protected\"", "methods=[\"GET\"]"]),
+                new CodeGenerator.Python.Syntax.DecoratorModel("login_required"),
+            ],
+            IsAsync = false,
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(pythonFunc);
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("@app.route", result);
+        Assert.Contains("@login_required", result);
+        Assert.Contains("def protected_route", result);
+        Assert.Contains("-> Response", result);
+    }
+
+    [Fact]
+    public async Task PythonClass_AsyncMethods_GeneratesExpectedSyntax()
+    {
+        var pythonClass = new CodeGenerator.Python.Syntax.ClassModel
+        {
+            Name = "AsyncUserService",
+            Bases = ["BaseService"],
+            Decorators = [],
+            Properties = [],
+            Methods = [
+                new CodeGenerator.Python.Syntax.MethodModel
+                {
+                    Name = "get_user",
+                    Params = [
+                        new CodeGenerator.Python.Syntax.ParamModel { Name = "user_id", TypeHint = new CodeGenerator.Python.Syntax.TypeHintModel("str") },
+                    ],
+                    ReturnType = new CodeGenerator.Python.Syntax.TypeHintModel("Optional[User]"),
+                    Body = "return await self.db.fetch_one(user_id)",
+                    IsAsync = true,
+                },
+                new CodeGenerator.Python.Syntax.MethodModel
+                {
+                    Name = "list_users",
+                    Params = [],
+                    ReturnType = new CodeGenerator.Python.Syntax.TypeHintModel("List[User]"),
+                    Body = "return await self.db.fetch_all()",
+                    IsAsync = true,
+                },
+            ],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(pythonClass);
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("class AsyncUserService", result);
+        Assert.Contains("async def get_user", result);
+        Assert.Contains("async def list_users", result);
+        Assert.Contains("await", result);
+    }
+
+    [Fact]
+    public async Task ReactNativeStore_GeneratesExpectedSyntax()
+    {
+        var rnStore = new CodeGenerator.ReactNative.Syntax.StoreModel("ThemeStore")
+        {
+            StateProperties = [
+                new CodeGenerator.ReactNative.Syntax.PropertyModel { Name = "isDarkMode", Type = new TypeModel("boolean") },
+                new CodeGenerator.ReactNative.Syntax.PropertyModel { Name = "primaryColor", Type = new TypeModel("string") },
+            ],
+            Actions = ["toggleTheme", "setPrimaryColor"],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(rnStore);
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("ThemeStore", result);
+        Assert.Contains("isDarkMode", result);
+        Assert.Contains("toggleTheme", result);
+        Assert.Contains("setPrimaryColor", result);
+    }
+
+    [Fact]
+    public async Task ReactNativeHook_GeneratesExpectedSyntax()
+    {
+        var rnHook = new CodeGenerator.ReactNative.Syntax.HookModel("useDeviceInfo")
+        {
+            Body = "const dimensions = Dimensions.get('window');\n  return { width: dimensions.width, height: dimensions.height };",
+            ReturnType = "{ width: number; height: number }",
+            Imports = [
+                new CodeGenerator.ReactNative.Syntax.ImportModel("Dimensions", "react-native"),
+            ],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(rnHook);
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("useDeviceInfo", result);
+        Assert.Contains("export", result);
+    }
+
+    [Fact]
+    public async Task PlaywrightFixture_WorkerScope_GeneratesExpectedSyntax()
+    {
+        var playwrightFixture = new CodeGenerator.Playwright.Syntax.FixtureModel("DatabaseFixture")
+        {
+            Fixtures = [
+                new CodeGenerator.Playwright.Syntax.FixtureDefinitionModel("dbConnection", "DatabaseConnection", "// setup database connection"),
+                new CodeGenerator.Playwright.Syntax.FixtureDefinitionModel("seedData", "SeedResult", "// run database seeding"),
+                new CodeGenerator.Playwright.Syntax.FixtureDefinitionModel("cleanupFn", "() => Promise<void>", "// cleanup function after tests"),
+            ],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(playwrightFixture);
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("DatabaseFixture", result);
+        Assert.Contains("dbConnection", result);
+        Assert.Contains("seedData", result);
+        Assert.Contains("cleanupFn", result);
+        Assert.Contains("extend", result);
+    }
+
+    // ========================================
+    // ITERATION 7: React children-only, Flask middleware, Playwright test setup, Python import, Detox complex POM
+    // ========================================
+
+    [Fact]
+    public async Task ReactComponent_WithChildrenOnly_GeneratesExpectedSyntax()
+    {
+        var reactComponent = new CodeGenerator.React.Syntax.ComponentModel("PageLayout")
+        {
+            Props = [
+                new CodeGenerator.React.Syntax.PropertyModel { Name = "children", Type = new TypeModel("React.ReactNode") },
+            ],
+            IsClient = false,
+            Children = ["<main>{children}</main>"],
+            Hooks = [],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(reactComponent);
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("PageLayout", result);
+        Assert.Contains("children", result);
+        Assert.Contains("forwardRef", result);
+    }
+
+    [Fact]
+    public async Task FlaskMiddleware_RateLimiter_GeneratesExpectedSyntax()
+    {
+        var flaskMiddleware = new CodeGenerator.Flask.Syntax.MiddlewareModel
+        {
+            Name = "rate_limit",
+            Body = "client_ip = request.remote_addr\n        if is_rate_limited(client_ip):\n            return jsonify({\"error\": \"Too many requests\"}), 429",
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(flaskMiddleware);
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("rate_limit", result);
+        Assert.Contains("wraps", result);
+        Assert.Contains("decorated_function", result);
+        Assert.Contains("429", result);
+    }
+
+    [Fact]
+    public async Task PlaywrightTestSpec_WithSetupActions_GeneratesExpectedSyntax()
+    {
+        var playwrightSpec = new CodeGenerator.Playwright.Syntax.TestSpecModel("Dashboard", "DashboardPage")
+        {
+            Tests = [
+                new CodeGenerator.Playwright.Syntax.TestCaseModel("should display summary widgets", ["await dashboardPage.navigate();"], ["await dashboardPage.navigate();"], ["await expect(dashboardPage.page.getByTestId('summary-widget')).toBeVisible();"]),
+                new CodeGenerator.Playwright.Syntax.TestCaseModel("should load chart data", ["await dashboardPage.navigate();", "await dashboardPage.waitForCharts();"], ["await dashboardPage.navigate();", "await dashboardPage.waitForCharts();"], ["await expect(dashboardPage.page.getByTestId('chart-container')).toBeVisible();"]),
+            ],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(playwrightSpec);
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("test.describe", result);
+        Assert.Contains("Dashboard", result);
+        Assert.Contains("DashboardPage", result);
+        Assert.Contains("should display summary widgets", result);
+        Assert.Contains("should load chart data", result);
+        Assert.Contains("beforeEach", result);
+    }
+
+    [Fact]
+    public async Task PythonImport_SimpleModule_GeneratesExpectedSyntax()
+    {
+        var pythonImport = new CodeGenerator.Python.Syntax.ImportModel("json");
+
+        var result = await _syntaxGenerator.GenerateAsync(pythonImport);
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("import json", result);
+    }
+
+    [Fact]
+    public async Task DetoxPageObject_ComplexWithManyInteractions_GeneratesExpectedSyntax()
+    {
+        var detoxPom = new CodeGenerator.Detox.Syntax.PageObjectModel("RegistrationPage")
+        {
+            TestIds = [
+                new CodeGenerator.Detox.Syntax.PropertyModel("screenId", "registration-screen"),
+                new CodeGenerator.Detox.Syntax.PropertyModel("firstNameInputId", "reg-first-name"),
+                new CodeGenerator.Detox.Syntax.PropertyModel("lastNameInputId", "reg-last-name"),
+                new CodeGenerator.Detox.Syntax.PropertyModel("emailInputId", "reg-email"),
+                new CodeGenerator.Detox.Syntax.PropertyModel("passwordInputId", "reg-password"),
+                new CodeGenerator.Detox.Syntax.PropertyModel("confirmPasswordInputId", "reg-confirm-password"),
+                new CodeGenerator.Detox.Syntax.PropertyModel("submitButtonId", "reg-submit"),
+            ],
+            VisibilityChecks = ["isRegistrationScreenVisible"],
+            Interactions = [
+                new CodeGenerator.Detox.Syntax.InteractionModel("enterFirstName", "name: string", "await element(by.id(this.firstNameInputId)).typeText(name);"),
+                new CodeGenerator.Detox.Syntax.InteractionModel("enterLastName", "name: string", "await element(by.id(this.lastNameInputId)).typeText(name);"),
+                new CodeGenerator.Detox.Syntax.InteractionModel("enterEmail", "email: string", "await element(by.id(this.emailInputId)).typeText(email);"),
+                new CodeGenerator.Detox.Syntax.InteractionModel("enterPassword", "password: string", "await element(by.id(this.passwordInputId)).typeText(password);"),
+                new CodeGenerator.Detox.Syntax.InteractionModel("enterConfirmPassword", "password: string", "await element(by.id(this.confirmPasswordInputId)).typeText(password);"),
+                new CodeGenerator.Detox.Syntax.InteractionModel("tapSubmit", "", "await element(by.id(this.submitButtonId)).tap();"),
+            ],
+            CombinedActions = [
+                new CodeGenerator.Detox.Syntax.CombinedActionModel("registerUser", "firstName: string, lastName: string, email: string, password: string", [
+                    "await this.enterFirstName(firstName);",
+                    "await this.enterLastName(lastName);",
+                    "await this.enterEmail(email);",
+                    "await this.enterPassword(password);",
+                    "await this.enterConfirmPassword(password);",
+                    "await this.tapSubmit();",
+                ]),
+            ],
+            QueryHelpers = [],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(detoxPom);
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("class RegistrationPage", result);
+        Assert.Contains("enterFirstName", result);
+        Assert.Contains("enterLastName", result);
+        Assert.Contains("registerUser", result);
+        Assert.Contains("reg-first-name", result);
+        Assert.Contains("reg-submit", result);
+    }
 }
