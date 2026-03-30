@@ -31,7 +31,7 @@ public class ComponentSyntaxGenerationStrategy : ISyntaxGenerationStrategy<Compo
         var builder = StringBuilderCache.Acquire();
 
         var componentName = namingConventionConverter.Convert(NamingConvention.PascalCase, model.Name);
-        var kebabName = namingConventionConverter.Convert(NamingConvention.KebabCase, model.Name);
+        var kebabName = namingConventionConverter.Convert(NamingConvention.KebobCase, model.Name);
 
         builder.AppendLine("import React from \"react\";");
         builder.AppendLine("import { View, Text, StyleSheet } from \"react-native\";");

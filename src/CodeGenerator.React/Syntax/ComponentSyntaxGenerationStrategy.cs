@@ -77,7 +77,7 @@ public class ComponentSyntaxGenerationStrategy : ISyntaxGenerationStrategy<Compo
 
         builder.AppendLine("return (".Indent(1, 2));
 
-        builder.AppendLine($"<div ref={{ref}} className=\"{namingConventionConverter.Convert(NamingConvention.KebabCase, model.Name)}\">".Indent(2, 2));
+        builder.AppendLine($"<div ref={{ref}} className=\"{namingConventionConverter.Convert(NamingConvention.KebobCase, model.Name)}\">".Indent(2, 2));
 
         foreach (var child in model.Children)
         {
