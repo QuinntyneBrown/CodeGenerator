@@ -2054,4 +2054,136 @@ public class SyntaxGeneratorTests
         Assert.DoesNotContain("firefox", result);
         Assert.DoesNotContain("webkit", result);
     }
+
+    // ========================================
+    // ITERATION 10: Flask model mixins, Python function no body, React function, RN screen many hooks, Angular imports
+    // ========================================
+
+    [Fact]
+    public async Task FlaskModel_WithMixinFlags_GeneratesExpectedSyntax()
+    {
+        var flaskModel = new CodeGenerator.Flask.Syntax.ModelModel
+        {
+            Name = "AuditEntry",
+            TableName = "audit_entries",
+            HasUuidMixin = true,
+            HasTimestampMixin = true,
+            Columns = [
+                new CodeGenerator.Flask.Syntax.ColumnModel { Name = "action", ColumnType = "String(50)", Nullable = false },
+                new CodeGenerator.Flask.Syntax.ColumnModel { Name = "details", ColumnType = "Text", Nullable = true, DefaultValue = "''" },
+            ],
+            Relationships = [],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(flaskModel);
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("class AuditEntry", result);
+        Assert.Contains("db.Model", result);
+        Assert.Contains("audit_entries", result);
+        Assert.Contains("action", result);
+        Assert.Contains("details", result);
+    }
+
+    [Fact]
+    public async Task PythonFunction_NoBody_GeneratesPassStatement()
+    {
+        var pythonFunc = new CodeGenerator.Python.Syntax.FunctionModel
+        {
+            Name = "noop",
+            Params = [],
+            ReturnType = new CodeGenerator.Python.Syntax.TypeHintModel("None"),
+            Body = "",
+            Decorators = [],
+            IsAsync = false,
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(pythonFunc);
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("def noop", result);
+        Assert.Contains("-> None", result);
+        Assert.Contains("pass", result);
+    }
+
+    [Fact]
+    public async Task ReactFunction_GeneratesExpectedSyntax()
+    {
+        var reactFunc = new CodeGenerator.React.Syntax.FunctionModel
+        {
+            Name = "formatCurrency",
+            Body = "return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);",
+            Imports = [
+                new CodeGenerator.React.Syntax.ImportModel("Intl", "intl"),
+            ],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(reactFunc);
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("formatCurrency", result);
+        Assert.Contains("export", result);
+    }
+
+    [Fact]
+    public async Task ReactNativeScreen_ManyHooks_GeneratesExpectedSyntax()
+    {
+        var rnScreen = new CodeGenerator.ReactNative.Syntax.ScreenModel("DashboardScreen")
+        {
+            Props = [
+                new CodeGenerator.ReactNative.Syntax.PropertyModel { Name = "navigation", Type = new TypeModel("NavigationProp") },
+            ],
+            Hooks = [
+                "const { user } = useAuth();",
+                "const { data: loans, isLoading } = useLoans();",
+                "const { data: payments } = usePayments();",
+                "const [refreshing, setRefreshing] = useState(false);",
+                "const theme = useTheme();",
+            ],
+            NavigationParams = [
+                new CodeGenerator.ReactNative.Syntax.PropertyModel { Name = "userId", Type = new TypeModel("string") },
+                new CodeGenerator.ReactNative.Syntax.PropertyModel { Name = "tab", Type = new TypeModel("string") },
+            ],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(rnScreen);
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("DashboardScreen", result);
+        Assert.Contains("SafeAreaView", result);
+        Assert.Contains("StyleSheet", result);
+        Assert.Contains("testID", result);
+    }
+
+    [Fact]
+    public async Task FlaskSchema_WithValidations_GeneratesExpectedSyntax()
+    {
+        var flaskSchema = new CodeGenerator.Flask.Syntax.SchemaModel
+        {
+            Name = "RegistrationSchema",
+            Fields = [
+                new CodeGenerator.Flask.Syntax.SchemaFieldModel { Name = "email", FieldType = "Email", Required = true },
+                new CodeGenerator.Flask.Syntax.SchemaFieldModel { Name = "password", FieldType = "String", Required = true, LoadOnly = true },
+                new CodeGenerator.Flask.Syntax.SchemaFieldModel { Name = "first_name", FieldType = "String", Required = true },
+                new CodeGenerator.Flask.Syntax.SchemaFieldModel { Name = "last_name", FieldType = "String", Required = true },
+                new CodeGenerator.Flask.Syntax.SchemaFieldModel { Name = "phone", FieldType = "String" },
+            ],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(flaskSchema);
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("class RegistrationSchema", result);
+        Assert.Contains("fields.Email", result);
+        Assert.Contains("fields.String", result);
+        Assert.Contains("required", result);
+        Assert.Contains("load_only", result);
+        Assert.Contains("email", result);
+        Assert.Contains("first_name", result);
+    }
 }
