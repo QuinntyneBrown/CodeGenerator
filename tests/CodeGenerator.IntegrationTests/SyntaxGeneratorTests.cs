@@ -511,7 +511,7 @@ public class SyntaxGeneratorTests
         Assert.Contains("class LoanService", result);
         Assert.Contains("__init__", result);
         Assert.Contains("loan_repo", result);
-        Assert.Contains("payment_repo", result);
+        Assert.Contains("payment_repository", result);
         Assert.Contains("create_loan", result);
     }
 
