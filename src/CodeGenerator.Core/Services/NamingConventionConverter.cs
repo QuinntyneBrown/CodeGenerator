@@ -87,8 +87,10 @@ public class NamingConventionConverter : INamingConventionConverter
             case NamingConvention.PascalCase:
                 value = FirstCharacterUpperAfterADash(value);
                 value = FirstCharacterUpperAfterASpace(value);
+                value = FirstCharacterUpperAfterUnderscore(value);
                 value = value.Replace("-", string.Empty);
                 value = value.Replace(" ", string.Empty);
+                value = value.Replace("_", string.Empty);
                 return value.First().ToString().ToUpper() + value.Substring(1);
 
             case NamingConvention.SnakeCase:
