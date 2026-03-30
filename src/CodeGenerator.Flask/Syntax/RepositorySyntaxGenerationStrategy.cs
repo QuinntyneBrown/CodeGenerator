@@ -31,11 +31,23 @@ public class RepositorySyntaxGenerationStrategy : ISyntaxGenerationStrategy<Repo
         var entityName = namingConventionConverter.Convert(NamingConvention.PascalCase, model.Entity);
         var snakeEntity = namingConventionConverter.Convert(NamingConvention.KebobCase, model.Entity);
 
+        // Track rendered modules to avoid duplicate imports
+        var renderedModules = new HashSet<string>();
+
         builder.AppendLine("from app.repositories.base_repository import BaseRepository");
-        builder.AppendLine($"from app.models.{snakeEntity} import {entityName}");
+        renderedModules.Add("app.repositories.base_repository");
+
+        var entityModule = $"app.models.{snakeEntity}";
+        builder.AppendLine($"from {entityModule} import {entityName}");
+        renderedModules.Add(entityModule);
 
         foreach (var import in model.Imports)
         {
+            if (renderedModules.Contains(import.Module))
+            {
+                continue;
+            }
+
             if (import.Names.Count > 0)
             {
                 builder.AppendLine($"from {import.Module} import {string.Join(", ", import.Names)}");
@@ -44,6 +56,8 @@ public class RepositorySyntaxGenerationStrategy : ISyntaxGenerationStrategy<Repo
             {
                 builder.AppendLine($"import {import.Module}");
             }
+
+            renderedModules.Add(import.Module);
         }
 
         builder.AppendLine();

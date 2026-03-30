@@ -29,15 +29,25 @@ public class ServiceSyntaxGenerationStrategy : ISyntaxGenerationStrategy<Service
 
         var className = namingConventionConverter.Convert(NamingConvention.PascalCase, model.Name);
 
+        // Track rendered modules to avoid duplicate imports
+        var renderedModules = new HashSet<string>();
+
         foreach (var repoRef in model.RepositoryReferences)
         {
             var repoClass = namingConventionConverter.Convert(NamingConvention.PascalCase, repoRef);
             var repoSnake = namingConventionConverter.Convert(NamingConvention.KebobCase, repoRef);
-            builder.AppendLine($"from app.repositories.{repoSnake} import {repoClass}");
+            var module = $"app.repositories.{repoSnake}";
+            builder.AppendLine($"from {module} import {repoClass}");
+            renderedModules.Add(module);
         }
 
         foreach (var import in model.Imports)
         {
+            if (renderedModules.Contains(import.Module))
+            {
+                continue;
+            }
+
             if (import.Names.Count > 0)
             {
                 builder.AppendLine($"from {import.Module} import {string.Join(", ", import.Names)}");
@@ -46,6 +56,8 @@ public class ServiceSyntaxGenerationStrategy : ISyntaxGenerationStrategy<Service
             {
                 builder.AppendLine($"import {import.Module}");
             }
+
+            renderedModules.Add(import.Module);
         }
 
         builder.AppendLine();

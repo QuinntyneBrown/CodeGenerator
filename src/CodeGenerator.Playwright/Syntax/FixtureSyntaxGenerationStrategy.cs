@@ -52,7 +52,7 @@ public class FixtureSyntaxGenerationStrategy : ISyntaxGenerationStrategy<Fixture
             var fixtureFieldName = namingConventionConverter.Convert(NamingConvention.CamelCase, fixture.Name);
 
             builder.AppendLine($"{fixtureFieldName}: async ({{ page }}, use) => {{".Indent(1, 2));
-            builder.AppendLine($"{fixture.Setup}".Indent(2, 2));
+            builder.AppendLine($"const {fixtureFieldName} = {fixture.Setup};".Indent(2, 2));
             builder.AppendLine($"await use({fixtureFieldName});".Indent(2, 2));
             builder.AppendLine("},".Indent(1, 2));
         }
