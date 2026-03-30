@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <PackageId>QuinntyneBrown.CodeGenerator.ReactNative</PackageId>
+    <Title>CodeGenerator ReactNative</Title>
+    <Description>React Native project and component generation for the CodeGenerator framework</Description>
+    <Authors>Quinntyne Brown</Authors>
+    <Company>Quinntyne Brown</Company>
+    <PackageTags>react-native;mobile;code-generation;scaffolding;typescript</PackageTags>
+    <RepositoryUrl>https://github.com/QuinntyneBrown/CodeGenerator</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <AssemblyVersion>1.2.0</AssemblyVersion>
+    <FileVersion>1.2.0</FileVersion>
+    <Version>1.2.0</Version>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <NoWarn>$(NoWarn);1998;4014;SA1101;SA1600;SA1200;SA1633;1591</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\CodeGenerator.Core\CodeGenerator.Core.csproj" />
+  </ItemGroup>
+</Project>

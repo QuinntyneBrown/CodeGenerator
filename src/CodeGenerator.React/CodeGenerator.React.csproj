@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <PackageId>QuinntyneBrown.CodeGenerator.React</PackageId>
+    <Title>CodeGenerator React</Title>
+    <Description>React workspace and project generation with TypeScript for the CodeGenerator framework</Description>
+    <Authors>Quinntyne Brown</Authors>
+    <Company>Quinntyne Brown</Company>
+    <PackageTags>react;typescript;code-generation;scaffolding;vite</PackageTags>
+    <RepositoryUrl>https://github.com/QuinntyneBrown/CodeGenerator</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <AssemblyVersion>1.2.0</AssemblyVersion>
+    <FileVersion>1.2.0</FileVersion>
+    <Version>1.2.0</Version>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <NoWarn>$(NoWarn);1998;4014;SA1101;SA1600;SA1200;SA1633;1591</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\CodeGenerator.Core\CodeGenerator.Core.csproj" />
+  </ItemGroup>
+</Project>
