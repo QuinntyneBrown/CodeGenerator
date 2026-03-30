@@ -28,27 +28,32 @@ public class StoreSyntaxGenerationStrategy : ISyntaxGenerationStrategy<StoreMode
         var builder = StringBuilderCache.Acquire();
 
         var storeName = namingConventionConverter.Convert(NamingConvention.PascalCase, model.Name);
-        var hookName = $"use{storeName}Store";
+        var hookName = storeName.EndsWith("Store", StringComparison.OrdinalIgnoreCase)
+            ? $"use{storeName}"
+            : $"use{storeName}Store";
+        var interfaceName = storeName.EndsWith("State", StringComparison.OrdinalIgnoreCase)
+            ? storeName
+            : $"{storeName}State";
 
         builder.AppendLine("import { create } from \"zustand\";");
         builder.AppendLine();
 
-        builder.AppendLine($"export interface {storeName}State" + " {");
+        builder.AppendLine($"export interface {interfaceName}" + " {");
 
         foreach (var property in model.StateProperties)
         {
-            builder.AppendLine($"{namingConventionConverter.Convert(NamingConvention.CamelCase, property.Name)}: {namingConventionConverter.Convert(NamingConvention.CamelCase, property.Type.Name)};".Indent(1, 2));
+            builder.AppendLine($"{namingConventionConverter.Convert(NamingConvention.CamelCase, property.Name)}: {property.Type.Name};".Indent(1, 2));
         }
 
         foreach (var action in model.Actions)
         {
-            builder.AppendLine($"{action};".Indent(1, 2));
+            builder.AppendLine($"{namingConventionConverter.Convert(NamingConvention.CamelCase, action)}: () => void;".Indent(1, 2));
         }
 
         builder.AppendLine("}");
         builder.AppendLine();
 
-        builder.AppendLine($"export const {hookName} = create<{storeName}State>((set) => ({{");
+        builder.AppendLine($"export const {hookName} = create<{interfaceName}>((set) => ({{");
 
         foreach (var property in model.StateProperties)
         {

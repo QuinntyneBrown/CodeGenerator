@@ -54,20 +54,22 @@ public class ComponentSyntaxGenerationStrategy : ISyntaxGenerationStrategy<Compo
 
             foreach (var prop in model.Props)
             {
-                builder.AppendLine($"{namingConventionConverter.Convert(NamingConvention.CamelCase, prop.Name)}?: {namingConventionConverter.Convert(NamingConvention.CamelCase, prop.Type.Name)};".Indent(1, 2));
+                builder.AppendLine($"{namingConventionConverter.Convert(NamingConvention.CamelCase, prop.Name)}?: {prop.Type.Name};".Indent(1, 2));
             }
 
             builder.AppendLine("}");
             builder.AppendLine();
         }
 
-        var propsParam = model.Props.Count > 0 ? $"props: {componentName}Props" : string.Empty;
+        var propsType = model.Props.Count > 0 ? $"{componentName}Props" : "object";
+        var propsParam = model.Props.Count > 0 ? $"props: {componentName}Props" : "_props";
 
-        builder.AppendLine($"export const {componentName} = React.forwardRef<HTMLDivElement, {(model.Props.Count > 0 ? $"{componentName}Props" : "object")}>(({propsParam}, ref) => " + "{");
+        builder.AppendLine($"export const {componentName} = React.forwardRef<HTMLDivElement, {propsType}>(({propsParam}, ref) => " + "{");
 
         foreach (var hook in model.Hooks)
         {
-            builder.AppendLine($"{hook};".Indent(1, 2));
+            var hookCall = hook.StartsWith("use") ? $"const {hook.Substring(3, 1).ToLowerInvariant()}{hook.Substring(4)}Result = {hook}()" : hook;
+            builder.AppendLine($"{hookCall};".Indent(1, 2));
         }
 
         if (model.Hooks.Count > 0)
@@ -81,7 +83,7 @@ public class ComponentSyntaxGenerationStrategy : ISyntaxGenerationStrategy<Compo
 
         foreach (var child in model.Children)
         {
-            builder.AppendLine($"{child}".Indent(3, 2));
+            builder.AppendLine($"<{child} />".Indent(3, 2));
         }
 
         builder.AppendLine("</div>".Indent(2, 2));
