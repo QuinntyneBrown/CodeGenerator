@@ -178,9 +178,15 @@ public class CreateCodeGeneratorCommand : RootCommand
     <PackageReference Include=""Microsoft.Extensions.Logging"" Version=""9.0.0"" />
     <PackageReference Include=""Microsoft.Extensions.Logging.Console"" Version=""9.0.0"" />
     <PackageReference Include=""System.CommandLine"" Version=""2.0.0-beta4.22272.1"" />
-    <PackageReference Include=""QuinntyneBrown.CodeGenerator.Core"" Version=""1.0.0"" />
-    <PackageReference Include=""QuinntyneBrown.CodeGenerator.DotNet"" Version=""1.0.0"" />
-    <PackageReference Include=""QuinntyneBrown.CodeGenerator.Angular"" Version=""1.0.0"" />
+    <PackageReference Include=""QuinntyneBrown.CodeGenerator.Core"" Version=""1.2.0"" />
+    <PackageReference Include=""QuinntyneBrown.CodeGenerator.DotNet"" Version=""1.2.0"" />
+    <PackageReference Include=""QuinntyneBrown.CodeGenerator.Angular"" Version=""1.2.0"" />
+    <PackageReference Include=""QuinntyneBrown.CodeGenerator.React"" Version=""1.2.2"" />
+    <PackageReference Include=""QuinntyneBrown.CodeGenerator.Python"" Version=""1.2.1"" />
+    <PackageReference Include=""QuinntyneBrown.CodeGenerator.Flask"" Version=""1.2.2"" />
+    <PackageReference Include=""QuinntyneBrown.CodeGenerator.Playwright"" Version=""1.2.2"" />
+    <PackageReference Include=""QuinntyneBrown.CodeGenerator.Detox"" Version=""1.2.1"" />
+    <PackageReference Include=""QuinntyneBrown.CodeGenerator.ReactNative"" Version=""1.2.1"" />
   </ItemGroup>
 </Project>
 ";
