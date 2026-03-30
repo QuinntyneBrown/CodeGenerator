@@ -1051,4 +1051,431 @@ public class SyntaxGeneratorTests
         Assert.Contains("applyDiscount", result);
         Assert.Contains("calculateTotal", result);
     }
+
+    // ========================================
+    // ITERATION 3: ReactNative, Flask, Playwright edge cases
+    // ========================================
+
+    [Fact]
+    public async Task ReactNativeScreen_NoNavigationParams_GeneratesExpectedSyntax()
+    {
+        var rnScreen = new CodeGenerator.ReactNative.Syntax.ScreenModel("SplashScreen")
+        {
+            Props = [],
+            Hooks = [],
+            NavigationParams = [],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(rnScreen);
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("SplashScreen", result);
+        Assert.Contains("SafeAreaView", result);
+        Assert.Contains("StyleSheet", result);
+    }
+
+    [Fact]
+    public async Task ReactNativeComponent_EmptyStyles_GeneratesExpectedSyntax()
+    {
+        var rnComponent = new CodeGenerator.ReactNative.Syntax.ComponentModel("Divider")
+        {
+            Props = [
+                new CodeGenerator.ReactNative.Syntax.PropertyModel { Name = "color", Type = new TypeModel("string") },
+            ],
+            Styles = [],
+            Children = [],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(rnComponent);
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("Divider", result);
+        Assert.Contains("Props", result);
+        Assert.Contains("color", result);
+    }
+
+    [Fact]
+    public async Task ReactNativeNavigation_TabNavigator_GeneratesExpectedSyntax()
+    {
+        var rnNav = new CodeGenerator.ReactNative.Syntax.NavigationModel("MainTabs", "tab")
+        {
+            Screens = ["HomeScreen", "SearchScreen", "ProfileScreen"],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(rnNav);
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("createBottomTabNavigator", result);
+        Assert.Contains("Tab.Navigator", result);
+        Assert.Contains("Tab.Screen", result);
+        Assert.Contains("HomeScreen", result);
+        Assert.Contains("SearchScreen", result);
+        Assert.Contains("ProfileScreen", result);
+    }
+
+    [Fact]
+    public async Task ReactNativeNavigation_DrawerNavigator_GeneratesExpectedSyntax()
+    {
+        var rnNav = new CodeGenerator.ReactNative.Syntax.NavigationModel("AppDrawer", "drawer")
+        {
+            Screens = ["DashboardScreen", "SettingsScreen", "HelpScreen"],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(rnNav);
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("createDrawerNavigator", result);
+        Assert.Contains("Drawer.Navigator", result);
+        Assert.Contains("Drawer.Screen", result);
+        Assert.Contains("DashboardScreen", result);
+        Assert.Contains("SettingsScreen", result);
+    }
+
+    [Fact]
+    public async Task FlaskController_MultipleHttpMethodsPerRoute_GeneratesExpectedSyntax()
+    {
+        var flaskController = new CodeGenerator.Flask.Syntax.ControllerModel
+        {
+            Name = "user",
+            Routes = [
+                new CodeGenerator.Flask.Syntax.ControllerRouteModel { Path = "", Methods = ["GET", "POST"], HandlerName = "users", Body = "if request.method == 'GET':\n        return jsonify(user_service.get_all()), 200\n    data = request.get_json()\n    return jsonify(user_service.create(**data)), 201" },
+                new CodeGenerator.Flask.Syntax.ControllerRouteModel { Path = "/<user_id>", Methods = ["GET", "PUT", "DELETE"], HandlerName = "user_detail", Body = "if request.method == 'GET':\n        return jsonify(user_service.get_by_id(user_id)), 200\n    elif request.method == 'PUT':\n        data = request.get_json()\n        return jsonify(user_service.update(user_id, **data)), 200\n    user_service.delete(user_id)\n    return '', 204" },
+            ],
+            UrlPrefix = "/api/users",
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(flaskController);
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("Blueprint", result);
+        Assert.Contains("@bp.route", result);
+        Assert.Contains("GET", result);
+        Assert.Contains("POST", result);
+        Assert.Contains("PUT", result);
+        Assert.Contains("DELETE", result);
+        Assert.Contains("users", result);
+        Assert.Contains("user_detail", result);
+    }
+
+    [Fact]
+    public async Task FlaskModel_NoRelationships_GeneratesExpectedSyntax()
+    {
+        var flaskModel = new CodeGenerator.Flask.Syntax.ModelModel
+        {
+            Name = "Setting",
+            TableName = "settings",
+            Columns = [
+                new CodeGenerator.Flask.Syntax.ColumnModel { Name = "key", ColumnType = "String(100)", Nullable = false },
+                new CodeGenerator.Flask.Syntax.ColumnModel { Name = "value", ColumnType = "Text", Nullable = true },
+            ],
+            Relationships = [],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(flaskModel);
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("class Setting", result);
+        Assert.Contains("db.Model", result);
+        Assert.Contains("settings", result);
+        Assert.Contains("key", result);
+        Assert.Contains("value", result);
+        Assert.DoesNotContain("db.relationship", result);
+    }
+
+    [Fact]
+    public async Task PlaywrightPageObject_CssLocatorStrategy_GeneratesExpectedSyntax()
+    {
+        var playwrightPom = new CodeGenerator.Playwright.Syntax.PageObjectModel("DashboardPage", "/dashboard")
+        {
+            Locators = [
+                new CodeGenerator.Playwright.Syntax.LocatorModel("sidebar", CodeGenerator.Playwright.Syntax.LocatorStrategy.Locator, ".sidebar-nav"),
+                new CodeGenerator.Playwright.Syntax.LocatorModel("mainContent", CodeGenerator.Playwright.Syntax.LocatorStrategy.Locator, "#main-content"),
+                new CodeGenerator.Playwright.Syntax.LocatorModel("searchBox", CodeGenerator.Playwright.Syntax.LocatorStrategy.GetByLabel, "Search"),
+            ],
+            Actions = [
+                new CodeGenerator.Playwright.Syntax.PageActionModel("search", "query: string", "await this.searchBox.fill(query);\n    await this.searchBox.press('Enter');"),
+            ],
+            Queries = [],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(playwrightPom);
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("class DashboardPage", result);
+        Assert.Contains("locator", result);
+        Assert.Contains(".sidebar-nav", result);
+        Assert.Contains("#main-content", result);
+        Assert.Contains("getByLabel", result);
+        Assert.Contains("search", result);
+    }
+
+    // ========================================
+    // ITERATION 4: Flask service/repo/schema edge cases, Detox, Angular
+    // ========================================
+
+    [Fact]
+    public async Task FlaskRepository_NoCustomMethods_GeneratesExpectedSyntax()
+    {
+        var flaskRepo = new CodeGenerator.Flask.Syntax.RepositoryModel
+        {
+            Name = "SettingRepository",
+            Entity = "Setting",
+            CustomMethods = [],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(flaskRepo);
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("class SettingRepository", result);
+        Assert.Contains("BaseRepository", result);
+        Assert.Contains("Setting", result);
+    }
+
+    [Fact]
+    public async Task FlaskService_NoRepositories_GeneratesExpectedSyntax()
+    {
+        var flaskService = new CodeGenerator.Flask.Syntax.ServiceModel
+        {
+            Name = "NotificationService",
+            RepositoryReferences = [],
+            Methods = [
+                new CodeGenerator.Flask.Syntax.ServiceMethodModel { Name = "send_email", Params = ["to", "subject", "body"], Body = "# send email logic here\n        pass" },
+            ],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(flaskService);
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("class NotificationService", result);
+        Assert.Contains("send_email", result);
+    }
+
+    [Fact]
+    public async Task FlaskSchema_WithLoadOnlyFields_GeneratesExpectedSyntax()
+    {
+        var flaskSchema = new CodeGenerator.Flask.Syntax.SchemaModel
+        {
+            Name = "UserSchema",
+            Fields = [
+                new CodeGenerator.Flask.Syntax.SchemaFieldModel { Name = "id", FieldType = "String", DumpOnly = true },
+                new CodeGenerator.Flask.Syntax.SchemaFieldModel { Name = "email", FieldType = "Email", Required = true },
+                new CodeGenerator.Flask.Syntax.SchemaFieldModel { Name = "password", FieldType = "String", LoadOnly = true, Required = true },
+                new CodeGenerator.Flask.Syntax.SchemaFieldModel { Name = "name", FieldType = "String", Required = true },
+            ],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(flaskSchema);
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("class UserSchema", result);
+        Assert.Contains("fields.Email", result);
+        Assert.Contains("load_only", result);
+        Assert.Contains("password", result);
+        Assert.Contains("dump_only", result);
+    }
+
+    [Fact]
+    public async Task DetoxPageObject_NoInteractions_GeneratesExpectedSyntax()
+    {
+        var detoxPom = new CodeGenerator.Detox.Syntax.PageObjectModel("SplashPage")
+        {
+            TestIds = [
+                new CodeGenerator.Detox.Syntax.PropertyModel("screenId", "splash-screen"),
+                new CodeGenerator.Detox.Syntax.PropertyModel("logoId", "splash-logo"),
+            ],
+            VisibilityChecks = ["isSplashScreenVisible"],
+            Interactions = [],
+            CombinedActions = [],
+            QueryHelpers = [],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(detoxPom);
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("class SplashPage", result);
+        Assert.Contains("BasePage", result);
+        Assert.Contains("screenId", result);
+        Assert.Contains("splash-screen", result);
+        Assert.Contains("splash-logo", result);
+    }
+
+    [Fact]
+    public async Task DetoxTestSpec_SingleTest_GeneratesExpectedSyntax()
+    {
+        var detoxSpec = new CodeGenerator.Detox.Syntax.TestSpecModel("Splash", "SplashPage")
+        {
+            Tests = [
+                new CodeGenerator.Detox.Syntax.TestModel("should display splash screen", ["await expect(element(by.id('splash-screen'))).toBeVisible();"]),
+            ],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(detoxSpec);
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("describe", result);
+        Assert.Contains("Splash", result);
+        Assert.Contains("SplashPage", result);
+        Assert.Contains("should display splash screen", result);
+    }
+
+    [Fact]
+    public async Task AngularFunction_WithImports_GeneratesExpectedSyntax()
+    {
+        var angularFunc = new CodeGenerator.Angular.Syntax.FunctionModel
+        {
+            Name = "transformResponse",
+            Body = "return data.map((item: any) => ({ ...item, timestamp: new Date(item.timestamp) }));",
+            Imports = [
+                new CodeGenerator.Angular.Syntax.ImportModel("HttpResponse", "@angular/common/http"),
+            ],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(angularFunc);
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("transformResponse", result);
+        Assert.Contains("HttpResponse", result);
+        Assert.Contains("@angular/common/http", result);
+    }
+
+    // ========================================
+    // ITERATION 5: React TS types, hooks, API client; Python module
+    // ========================================
+
+    [Fact]
+    public async Task ReactHook_NoImports_GeneratesExpectedSyntax()
+    {
+        var reactHook = new CodeGenerator.React.Syntax.HookModel("useLocalStorage")
+        {
+            Body = "const [value, setValue] = useState<T>(initialValue);\n  return [value, setValue] as const;",
+            ReturnType = "readonly [T, (value: T) => void]",
+            Imports = [],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(reactHook);
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("useLocalStorage", result);
+        Assert.Contains("export", result);
+    }
+
+    [Fact]
+    public async Task ReactTypeScriptInterface_ManyProperties_GeneratesExpectedSyntax()
+    {
+        var tsInterface = new CodeGenerator.React.Syntax.TypeScriptInterfaceModel("TransactionDetails")
+        {
+            Properties = [
+                new CodeGenerator.React.Syntax.PropertyModel { Name = "id", Type = new TypeModel("string") },
+                new CodeGenerator.React.Syntax.PropertyModel { Name = "amount", Type = new TypeModel("number") },
+                new CodeGenerator.React.Syntax.PropertyModel { Name = "currency", Type = new TypeModel("string") },
+                new CodeGenerator.React.Syntax.PropertyModel { Name = "status", Type = new TypeModel("'pending' | 'completed' | 'failed'") },
+                new CodeGenerator.React.Syntax.PropertyModel { Name = "createdAt", Type = new TypeModel("Date") },
+                new CodeGenerator.React.Syntax.PropertyModel { Name = "updatedAt", Type = new TypeModel("Date") },
+                new CodeGenerator.React.Syntax.PropertyModel { Name = "metadata", Type = new TypeModel("Record<string, unknown>") },
+            ],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(tsInterface);
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("export interface TransactionDetails", result);
+        Assert.Contains("id", result);
+        Assert.Contains("amount", result);
+        Assert.Contains("currency", result);
+        Assert.Contains("status", result);
+        Assert.Contains("metadata", result);
+    }
+
+    [Fact]
+    public async Task ReactApiClient_MinimalMethods_GeneratesExpectedSyntax()
+    {
+        var apiClient = new CodeGenerator.React.Syntax.ApiClientModel("HealthApi")
+        {
+            BaseUrl = "/api/health",
+            Methods = [
+                new CodeGenerator.React.Syntax.ApiClientMethodModel { Name = "check", HttpMethod = "GET", Route = "/", ResponseType = "any" },
+            ],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(apiClient);
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("axios", result);
+        Assert.Contains("/api/health", result);
+        Assert.Contains("check", result);
+        Assert.Contains("export", result);
+    }
+
+    [Fact]
+    public async Task PythonModule_EmptyClasses_GeneratesExpectedSyntax()
+    {
+        var pythonModule = new CodeGenerator.Python.Syntax.ModuleModel
+        {
+            Imports = [
+                new CodeGenerator.Python.Syntax.ImportModel("abc", "ABC", "abstractmethod"),
+            ],
+            Classes = [
+                new CodeGenerator.Python.Syntax.ClassModel
+                {
+                    Name = "BaseHandler",
+                    Bases = ["ABC"],
+                    Properties = [],
+                    Methods = [],
+                    Decorators = [],
+                },
+            ],
+            Functions = [],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(pythonModule);
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("from abc import", result);
+        Assert.Contains("ABC", result);
+        Assert.Contains("class BaseHandler", result);
+    }
+
+    [Fact]
+    public async Task AngularTypeScriptType_ManyProperties_GeneratesExpectedSyntax()
+    {
+        var tsType = new CodeGenerator.Angular.Syntax.TypeScriptTypeModel("ApiResponse")
+        {
+            Properties = [
+                new CodeGenerator.Angular.Syntax.PropertyModel { Name = "data", Type = new TypeModel("T") },
+                new CodeGenerator.Angular.Syntax.PropertyModel { Name = "status", Type = new TypeModel("number") },
+                new CodeGenerator.Angular.Syntax.PropertyModel { Name = "message", Type = new TypeModel("string") },
+                new CodeGenerator.Angular.Syntax.PropertyModel { Name = "errors", Type = new TypeModel("string[]") },
+                new CodeGenerator.Angular.Syntax.PropertyModel { Name = "pagination", Type = new TypeModel("{ page: number; total: number }") },
+                new CodeGenerator.Angular.Syntax.PropertyModel { Name = "timestamp", Type = new TypeModel("Date") },
+            ],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(tsType);
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("export type ApiResponse", result);
+        Assert.Contains("data?", result);
+        Assert.Contains("status?", result);
+        Assert.Contains("errors?", result);
+        Assert.Contains("pagination?", result);
+        Assert.Contains("timestamp?", result);
+    }
 }
