@@ -30,16 +30,28 @@ public class PageObjectSyntaxGenerationStrategy : ISyntaxGenerationStrategy<Page
 
         var className = namingConventionConverter.Convert(NamingConvention.PascalCase, model.Name);
 
+        // Avoid doubling Page suffix
+        var pageClassName = className.EndsWith("Page", StringComparison.OrdinalIgnoreCase)
+            ? className
+            : $"{className}Page";
+
+        // Track built-in imports to avoid duplicates from user imports
+        var renderedModules = new HashSet<string> { "@playwright/test", "./BasePage" };
+
         builder.AppendLine("import { type Locator, type Page } from \"@playwright/test\";");
         builder.AppendLine("import { BasePage } from \"./BasePage\";");
 
         foreach (var import in model.Imports)
         {
-            builder.AppendLine(await syntaxGenerator.GenerateAsync(import));
+            if (!renderedModules.Contains(import.Module))
+            {
+                builder.AppendLine(await syntaxGenerator.GenerateAsync(import));
+                renderedModules.Add(import.Module);
+            }
         }
 
         builder.AppendLine();
-        builder.AppendLine($"export class {className}Page extends BasePage " + "{");
+        builder.AppendLine($"export class {pageClassName} extends BasePage " + "{");
         builder.AppendLine($"protected readonly path = \"{model.Path}\";".Indent(1, 2));
         builder.AppendLine();
 
