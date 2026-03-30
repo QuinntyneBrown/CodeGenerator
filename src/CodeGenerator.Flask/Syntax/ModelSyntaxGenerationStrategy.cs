@@ -27,11 +27,13 @@ public class ModelSyntaxGenerationStrategy : ISyntaxGenerationStrategy<ModelMode
 
         var builder = StringBuilderCache.Acquire();
 
-        builder.AppendLine("from app.extensions import db");
+        // Collect all imports and deduplicate by module
+        var importsByModule = new Dictionary<string, HashSet<string>>();
+        importsByModule["app.extensions"] = new HashSet<string> { "db" };
 
         if (model.HasUuidMixin || model.HasTimestampMixin)
         {
-            var mixinImports = new List<string>();
+            var mixinImports = new HashSet<string>();
 
             if (model.HasUuidMixin)
             {
@@ -43,19 +45,32 @@ public class ModelSyntaxGenerationStrategy : ISyntaxGenerationStrategy<ModelMode
                 mixinImports.Add("TimestampMixin");
             }
 
-            builder.AppendLine($"from app.models.mixins import {string.Join(", ", mixinImports)}");
+            importsByModule["app.models.mixins"] = mixinImports;
         }
 
         foreach (var import in model.Imports)
         {
             if (import.Names.Count > 0)
             {
-                builder.AppendLine($"from {import.Module} import {string.Join(", ", import.Names)}");
+                if (!importsByModule.ContainsKey(import.Module))
+                {
+                    importsByModule[import.Module] = new HashSet<string>();
+                }
+
+                foreach (var name in import.Names)
+                {
+                    importsByModule[import.Module].Add(name);
+                }
             }
             else
             {
                 builder.AppendLine($"import {import.Module}");
             }
+        }
+
+        foreach (var kvp in importsByModule)
+        {
+            builder.AppendLine($"from {kvp.Key} import {string.Join(", ", kvp.Value)}");
         }
 
         builder.AppendLine();

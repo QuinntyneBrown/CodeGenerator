@@ -40,10 +40,25 @@ public class ApiClientSyntaxGenerationStrategy : ISyntaxGenerationStrategy<ApiCl
             var methodName = namingConventionConverter.Convert(NamingConvention.CamelCase, method.Name);
             var httpMethod = method.HttpMethod.ToLowerInvariant();
 
+            // Extract route parameters (e.g., ${id} -> id: string)
+            var routeParams = new List<string>();
+            var route = method.Route;
+            var paramMatches = System.Text.RegularExpressions.Regex.Matches(route, @"\$\{(\w+)\}");
+            foreach (System.Text.RegularExpressions.Match match in paramMatches)
+            {
+                routeParams.Add(match.Groups[1].Value);
+            }
+
+            var allParams = new List<string>();
+            foreach (var param in routeParams)
+            {
+                allParams.Add($"{param}: string");
+            }
+
             switch (httpMethod)
             {
                 case "get":
-                    builder.AppendLine($"export async function {methodName}(): Promise<{method.ResponseType}>" + " {");
+                    builder.AppendLine($"export async function {methodName}({string.Join(", ", allParams)}): Promise<{method.ResponseType}>" + " {");
                     builder.AppendLine($"const {{ data }} = await axios.get<{method.ResponseType}>(`${{baseUrl}}{method.Route}`);".Indent(1, 2));
                     builder.AppendLine("return data;".Indent(1, 2));
                     builder.AppendLine("}");
@@ -51,7 +66,8 @@ public class ApiClientSyntaxGenerationStrategy : ISyntaxGenerationStrategy<ApiCl
 
                 case "post":
                     var bodyType = method.RequestBodyType ?? "unknown";
-                    builder.AppendLine($"export async function {methodName}(body: {bodyType}): Promise<{method.ResponseType}>" + " {");
+                    var postParams = new List<string>(allParams) { $"body: {bodyType}" };
+                    builder.AppendLine($"export async function {methodName}({string.Join(", ", postParams)}): Promise<{method.ResponseType}>" + " {");
                     builder.AppendLine($"const {{ data }} = await axios.post<{method.ResponseType}>(`${{baseUrl}}{method.Route}`, body);".Indent(1, 2));
                     builder.AppendLine("return data;".Indent(1, 2));
                     builder.AppendLine("}");
@@ -59,14 +75,15 @@ public class ApiClientSyntaxGenerationStrategy : ISyntaxGenerationStrategy<ApiCl
 
                 case "put":
                     var putBodyType = method.RequestBodyType ?? "unknown";
-                    builder.AppendLine($"export async function {methodName}(body: {putBodyType}): Promise<{method.ResponseType}>" + " {");
+                    var putParams = new List<string>(allParams) { $"body: {putBodyType}" };
+                    builder.AppendLine($"export async function {methodName}({string.Join(", ", putParams)}): Promise<{method.ResponseType}>" + " {");
                     builder.AppendLine($"const {{ data }} = await axios.put<{method.ResponseType}>(`${{baseUrl}}{method.Route}`, body);".Indent(1, 2));
                     builder.AppendLine("return data;".Indent(1, 2));
                     builder.AppendLine("}");
                     break;
 
                 case "delete":
-                    builder.AppendLine($"export async function {methodName}(): Promise<{method.ResponseType}>" + " {");
+                    builder.AppendLine($"export async function {methodName}({string.Join(", ", allParams)}): Promise<{method.ResponseType}>" + " {");
                     builder.AppendLine($"const {{ data }} = await axios.delete<{method.ResponseType}>(`${{baseUrl}}{method.Route}`);".Indent(1, 2));
                     builder.AppendLine("return data;".Indent(1, 2));
                     builder.AppendLine("}");

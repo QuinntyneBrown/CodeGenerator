@@ -30,30 +30,48 @@ public class ControllerSyntaxGenerationStrategy : ISyntaxGenerationStrategy<Cont
         var snakeName = namingConventionConverter.Convert(NamingConvention.KebobCase, model.Name);
         var urlPrefix = model.UrlPrefix ?? $"/api/{snakeName}";
 
-        builder.AppendLine("from flask import Blueprint, request, jsonify");
+        // Collect all imports and deduplicate by module
+        var importsByModule = new Dictionary<string, HashSet<string>>();
+
+        // Built-in flask imports
+        importsByModule["flask"] = new HashSet<string> { "Blueprint", "request", "jsonify" };
 
         if (model.Routes.Any(r => r.RequiresAuth))
         {
-            builder.AppendLine("from app.middleware.auth import require_auth");
+            importsByModule["app.middleware.auth"] = new HashSet<string> { "require_auth" };
         }
 
+        // User-provided imports
         foreach (var import in model.Imports)
         {
             if (import.Names.Count > 0)
             {
-                builder.AppendLine($"from {import.Module} import {string.Join(", ", import.Names)}");
+                if (!importsByModule.ContainsKey(import.Module))
+                {
+                    importsByModule[import.Module] = new HashSet<string>();
+                }
+
+                foreach (var name in import.Names)
+                {
+                    importsByModule[import.Module].Add(name);
+                }
             }
             else
             {
-                builder.Append($"import {import.Module}");
+                var importLine = $"import {import.Module}";
 
                 if (!string.IsNullOrEmpty(import.Alias))
                 {
-                    builder.Append($" as {import.Alias}");
+                    importLine += $" as {import.Alias}";
                 }
 
-                builder.AppendLine();
+                builder.AppendLine(importLine);
             }
+        }
+
+        foreach (var kvp in importsByModule)
+        {
+            builder.AppendLine($"from {kvp.Key} import {string.Join(", ", kvp.Value)}");
         }
 
         builder.AppendLine();
@@ -74,7 +92,16 @@ public class ControllerSyntaxGenerationStrategy : ISyntaxGenerationStrategy<Cont
                 builder.AppendLine("@require_auth");
             }
 
-            builder.AppendLine($"def {route.HandlerName}():");
+            // Extract path parameters from route (e.g., <string:todo_id> -> todo_id)
+            var pathParams = new List<string>();
+            var pathParamMatches = System.Text.RegularExpressions.Regex.Matches(route.Path, @"<\w+:(\w+)>");
+            foreach (System.Text.RegularExpressions.Match match in pathParamMatches)
+            {
+                pathParams.Add(match.Groups[1].Value);
+            }
+
+            var paramStr = pathParams.Count > 0 ? string.Join(", ", pathParams) : string.Empty;
+            builder.AppendLine($"def {route.HandlerName}({paramStr}):");
 
             if (!string.IsNullOrEmpty(route.Body))
             {

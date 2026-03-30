@@ -27,13 +27,23 @@ public class SchemaSyntaxGenerationStrategy : ISyntaxGenerationStrategy<SchemaMo
 
         var builder = StringBuilderCache.Acquire();
 
-        builder.AppendLine("from marshmallow import Schema, fields, validate");
+        // Collect all imports and deduplicate by module
+        var importsByModule = new Dictionary<string, HashSet<string>>();
+        importsByModule["marshmallow"] = new HashSet<string> { "Schema", "fields", "validate" };
 
         foreach (var import in model.Imports)
         {
             if (import.Names.Count > 0)
             {
-                builder.AppendLine($"from {import.Module} import {string.Join(", ", import.Names)}");
+                if (!importsByModule.ContainsKey(import.Module))
+                {
+                    importsByModule[import.Module] = new HashSet<string>();
+                }
+
+                foreach (var name in import.Names)
+                {
+                    importsByModule[import.Module].Add(name);
+                }
             }
             else
             {
@@ -41,12 +51,22 @@ public class SchemaSyntaxGenerationStrategy : ISyntaxGenerationStrategy<SchemaMo
             }
         }
 
+        foreach (var kvp in importsByModule)
+        {
+            builder.AppendLine($"from {kvp.Key} import {string.Join(", ", kvp.Value)}");
+        }
+
         builder.AppendLine();
         builder.AppendLine();
 
         var className = namingConventionConverter.Convert(NamingConvention.PascalCase, model.Name);
 
-        builder.AppendLine($"class {className}Schema(Schema):");
+        // Avoid doubling Schema suffix
+        var schemaClassName = className.EndsWith("Schema", StringComparison.OrdinalIgnoreCase)
+            ? className
+            : $"{className}Schema";
+
+        builder.AppendLine($"class {schemaClassName}(Schema):");
 
         if (model.Fields.Count == 0)
         {

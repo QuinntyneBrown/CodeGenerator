@@ -27,17 +27,33 @@ public class AppFactorySyntaxGenerationStrategy : ISyntaxGenerationStrategy<AppF
 
         var builder = StringBuilderCache.Acquire();
 
+        // Track rendered import modules to avoid duplicates
+        var renderedModules = new HashSet<string>();
+
         builder.AppendLine("from flask import Flask");
+        renderedModules.Add("flask");
         builder.AppendLine("from app.extensions import db, migrate");
+        renderedModules.Add("app.extensions");
         builder.AppendLine($"from app.config import {model.ConfigClass}");
+        renderedModules.Add("app.config");
 
         foreach (var blueprint in model.Blueprints)
         {
-            builder.AppendLine($"from {blueprint.ImportPath} import bp as {namingConventionConverter.Convert(NamingConvention.KebobCase, blueprint.Name)}_bp");
+            var bpAlias = blueprint.Name.EndsWith("_bp", StringComparison.OrdinalIgnoreCase)
+                ? blueprint.Name
+                : $"{namingConventionConverter.Convert(NamingConvention.KebobCase, blueprint.Name)}_bp";
+            builder.AppendLine($"from {blueprint.ImportPath} import bp as {bpAlias}");
+            renderedModules.Add(blueprint.ImportPath);
         }
 
         foreach (var import in model.Imports)
         {
+            // Skip imports already rendered by the strategy
+            if (renderedModules.Contains(import.Module))
+            {
+                continue;
+            }
+
             if (import.Names.Count > 0)
             {
                 builder.AppendLine($"from {import.Module} import {string.Join(", ", import.Names)}");
@@ -74,7 +90,9 @@ public class AppFactorySyntaxGenerationStrategy : ISyntaxGenerationStrategy<AppF
 
             foreach (var blueprint in model.Blueprints)
             {
-                var bpVar = $"{namingConventionConverter.Convert(NamingConvention.KebobCase, blueprint.Name)}_bp";
+                var bpVar = blueprint.Name.EndsWith("_bp", StringComparison.OrdinalIgnoreCase)
+                    ? blueprint.Name
+                    : $"{namingConventionConverter.Convert(NamingConvention.KebobCase, blueprint.Name)}_bp";
                 builder.AppendLine($"    app.register_blueprint({bpVar})");
             }
         }
