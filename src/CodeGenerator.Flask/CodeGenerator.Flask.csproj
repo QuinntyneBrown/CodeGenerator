@@ -13,9 +13,9 @@
     <PackageTags>flask;python;code-generation;scaffolding;sqlalchemy</PackageTags>
     <RepositoryUrl>https://github.com/QuinntyneBrown/CodeGenerator</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <AssemblyVersion>1.2.3</AssemblyVersion>
-    <FileVersion>1.2.3</FileVersion>
-    <Version>1.2.3</Version>
+    <AssemblyVersion>1.2.4</AssemblyVersion>
+    <FileVersion>1.2.4</FileVersion>
+    <Version>1.2.4</Version>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <NoWarn>$(NoWarn);1998;4014;SA1101;SA1600;SA1200;SA1633;1591</NoWarn>
   </PropertyGroup>
