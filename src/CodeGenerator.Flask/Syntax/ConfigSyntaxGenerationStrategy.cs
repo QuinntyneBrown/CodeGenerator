@@ -23,10 +23,17 @@ public class ConfigSyntaxGenerationStrategy : ISyntaxGenerationStrategy<ConfigMo
 
         var builder = StringBuilderCache.Acquire();
 
+        // Collect imports, deduplicating
+        var importModules = new HashSet<string> { "os" };
         builder.AppendLine("import os");
 
         foreach (var import in model.Imports)
         {
+            if (importModules.Contains(import.Module))
+            {
+                continue;
+            }
+
             if (import.Names.Count > 0)
             {
                 builder.AppendLine($"from {import.Module} import {string.Join(", ", import.Names)}");
@@ -35,20 +42,28 @@ public class ConfigSyntaxGenerationStrategy : ISyntaxGenerationStrategy<ConfigMo
             {
                 builder.AppendLine($"import {import.Module}");
             }
+
+            importModules.Add(import.Module);
         }
 
         builder.AppendLine();
         builder.AppendLine();
 
-        // BaseConfig
+        // BaseConfig - use user-provided settings if available, otherwise defaults
         builder.AppendLine("class Config:");
-        builder.AppendLine("    SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-secret-key')");
-        builder.AppendLine("    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'sqlite:///app.db')");
-        builder.AppendLine("    SQLALCHEMY_TRACK_MODIFICATIONS = False");
 
-        foreach (var setting in model.Settings)
+        if (model.Settings.Count > 0)
         {
-            builder.AppendLine($"    {setting.Key} = {setting.Value}");
+            foreach (var setting in model.Settings)
+            {
+                builder.AppendLine($"    {setting.Key} = {setting.Value}");
+            }
+        }
+        else
+        {
+            builder.AppendLine("    SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-secret-key')");
+            builder.AppendLine("    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'sqlite:///app.db')");
+            builder.AppendLine("    SQLALCHEMY_TRACK_MODIFICATIONS = False");
         }
 
         builder.AppendLine();
