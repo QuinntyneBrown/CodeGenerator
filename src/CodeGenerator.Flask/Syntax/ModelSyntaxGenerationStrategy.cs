@@ -97,7 +97,10 @@ public class ModelSyntaxGenerationStrategy : ISyntaxGenerationStrategy<ModelMode
 
                 if (column.Constraints.Count > 0)
                 {
-                    colDef += $", {string.Join(", ", column.Constraints)}";
+                    foreach (var constraint in column.Constraints)
+                    {
+                        colDef += $", db.{constraint}";
+                    }
                 }
 
                 if (!column.Nullable)
