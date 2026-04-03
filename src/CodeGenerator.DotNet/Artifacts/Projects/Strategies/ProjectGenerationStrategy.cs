@@ -3,6 +3,10 @@
 
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Xml.Linq;
 using CodeGenerator.Core.Artifacts.Abstractions;
 using CodeGenerator.DotNet.Artifacts.Projects.Enums;
@@ -66,7 +70,7 @@ public class ProjectGenerationStrategy : IArtifactGenerationStrategy<ProjectMode
 
         _fileSystem.Directory.CreateDirectory(model.Directory);
 
-        _commandService.Start($"dotnet new {templateType} --framework {model.TargetFramework}", model.Directory);
+        _commandService.Start($"dotnet new {templateType} --framework {model.TargetFramework} --no-restore", model.Directory);
 
         foreach (var path in _fileSystem.Directory.GetFiles(model.Directory, "*1.cs", SearchOption.AllDirectories))
         {
@@ -143,6 +147,70 @@ public class ProjectGenerationStrategy : IArtifactGenerationStrategy<ProjectMode
             element.Add(new XElement("InvariantGlobalization", false));
         }
 
-        doc.Save(model.Path);
+        SaveProjectDocument(model.Path, doc);
+
+        if (templateType == "webapi")
+        {
+            NormalizeWebApiTemplateFiles(model);
+        }
+    }
+
+    private void NormalizeWebApiTemplateFiles(ProjectModel model)
+    {
+        var (httpPort, httpsPort) = GetDeterministicPorts(model.Name);
+        var launchSettingsPath = _fileSystem.Path.Combine(model.Directory, "Properties", "launchSettings.json");
+
+        if (_fileSystem.File.Exists(launchSettingsPath))
+        {
+            var launchSettings = JsonNode.Parse(_fileSystem.File.ReadAllText(launchSettingsPath))?.AsObject();
+            var profiles = launchSettings?["profiles"]?.AsObject();
+            var httpProfile = profiles?["http"]?.AsObject();
+            var httpsProfile = profiles?["https"]?.AsObject();
+
+            if (httpProfile != null)
+            {
+                httpProfile["applicationUrl"] = $"http://localhost:{httpPort}";
+            }
+
+            if (httpsProfile != null)
+            {
+                httpsProfile["applicationUrl"] = $"https://localhost:{httpsPort};http://localhost:{httpPort}";
+            }
+
+            if (launchSettings != null)
+            {
+                _fileSystem.File.WriteAllText(
+                    launchSettingsPath,
+                    launchSettings.ToJsonString(new JsonSerializerOptions { WriteIndented = true }) + Environment.NewLine);
+            }
+        }
+
+        var httpFilePath = _fileSystem.Path.Combine(model.Directory, $"{model.Name}.http");
+
+        if (_fileSystem.File.Exists(httpFilePath))
+        {
+            var lines = _fileSystem.File.ReadAllLines(httpFilePath);
+
+            if (lines.Length > 0)
+            {
+                lines[0] = $"@{model.Name}_HostAddress = http://localhost:{httpPort}";
+                _fileSystem.File.WriteAllText(httpFilePath, string.Join(Environment.NewLine, lines) + Environment.NewLine);
+            }
+        }
+    }
+
+    private void SaveProjectDocument(string path, XDocument document)
+    {
+        var content = document.Root?.ToString() ?? document.ToString();
+        _fileSystem.File.WriteAllText(path, content);
+    }
+
+    private static (int HttpPort, int HttpsPort) GetDeterministicPorts(string projectName)
+    {
+        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(projectName));
+        var httpPort = 5000 + (BitConverter.ToUInt16(hash, 0) % 1000);
+        var httpsPort = 7000 + (BitConverter.ToUInt16(hash, 2) % 1000);
+
+        return (httpPort, httpsPort);
     }
 }

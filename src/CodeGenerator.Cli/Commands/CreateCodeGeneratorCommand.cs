@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
 using System.CommandLine;
+using System.Text;
 using CodeGenerator.Core.Artifacts.Abstractions;
 using CodeGenerator.Core.Services;
 using CodeGenerator.DotNet.Artifacts.Files;
@@ -44,17 +45,22 @@ public class CreateCodeGeneratorCommand : RootCommand
             description: "Use .slnx (XML-based) solution format instead of .sln",
             getDefaultValue: () => false);
 
+        var localSourceRootOption = new Option<string?>(
+            aliases: ["--local-source-root"],
+            description: "Optional path to the local CodeGenerator src directory for project references");
+
         AddOption(nameOption);
         AddOption(outputOption);
         AddOption(frameworkOption);
         AddOption(slnxOption);
+        AddOption(localSourceRootOption);
 
         AddCommand(new InstallCommand(serviceProvider));
 
-        this.SetHandler(HandleAsync, nameOption, outputOption, frameworkOption, slnxOption);
+        this.SetHandler(HandleAsync, nameOption, outputOption, frameworkOption, slnxOption, localSourceRootOption);
     }
 
-    private async Task HandleAsync(string name, string outputDirectory, string framework, bool slnx)
+    private async Task HandleAsync(string name, string outputDirectory, string framework, bool slnx, string? localSourceRoot)
     {
         var logger = _serviceProvider.GetRequiredService<ILogger<CreateCodeGeneratorCommand>>();
         var artifactGenerator = _serviceProvider.GetRequiredService<IArtifactGenerator>();
@@ -90,6 +96,11 @@ public class CreateCodeGeneratorCommand : RootCommand
                     GenerateHelloWorldCommandContent(name),
                     "HelloWorldCommand",
                     Path.Combine(solution.SrcDirectory, $"{name}.Cli", "Commands"),
+                    ".cs"),
+                new ContentFileModel(
+                    GenerateEnterpriseSolutionCommandContent(name),
+                    "EnterpriseSolutionCommand",
+                    Path.Combine(solution.SrcDirectory, $"{name}.Cli", "Commands"),
                     ".cs")
             }
         };
@@ -116,7 +127,7 @@ public class CreateCodeGeneratorCommand : RootCommand
 
         // Generate custom .csproj (not using dotnet new since we need tool-specific settings)
         await artifactGenerator.GenerateAsync(new ContentFileModel(
-            GenerateCliProjectContent(name, framework),
+            GenerateCliProjectContent(name, framework, localSourceRoot, project.Directory),
             $"{name}.Cli",
             project.Directory,
             ".csproj"));
@@ -143,12 +154,19 @@ public class CreateCodeGeneratorCommand : RootCommand
         logger.LogInformation("  cd {Name}", name);
         logger.LogInformation("  dotnet build");
         logger.LogInformation("  dotnet run --project src/{Name}.Cli -- hello -o ./output", name);
+        logger.LogInformation("  dotnet run --project src/{Name}.Cli -- enterprise-solution -n SampleEnterprise -o ./output", name);
         logger.LogInformation("");
         logger.LogInformation("To install as a global tool:");
         logger.LogInformation("  eng\\scripts\\install-cli.bat");
     }
 
-    private static string GenerateCliProjectContent(string name, string framework) => $@"<?xml version=""1.0"" encoding=""utf-8""?>
+    private static string GenerateCliProjectContent(string name, string framework, string? localSourceRoot, string projectDirectory)
+    {
+        var codeGeneratorReferences = string.IsNullOrWhiteSpace(localSourceRoot)
+            ? GetPackageReferences()
+            : GetProjectReferences(localSourceRoot!, projectDirectory);
+
+        return $@"<?xml version=""1.0"" encoding=""utf-8""?>
 <Project Sdk=""Microsoft.NET.Sdk"">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -178,21 +196,18 @@ public class CreateCodeGeneratorCommand : RootCommand
     <PackageReference Include=""Microsoft.Extensions.Logging"" Version=""9.0.0"" />
     <PackageReference Include=""Microsoft.Extensions.Logging.Console"" Version=""9.0.0"" />
     <PackageReference Include=""System.CommandLine"" Version=""2.0.0-beta4.22272.1"" />
-    <PackageReference Include=""QuinntyneBrown.CodeGenerator.Core"" Version=""1.2.0"" />
-    <PackageReference Include=""QuinntyneBrown.CodeGenerator.DotNet"" Version=""1.2.0"" />
-    <PackageReference Include=""QuinntyneBrown.CodeGenerator.Angular"" Version=""1.2.0"" />
-    <PackageReference Include=""QuinntyneBrown.CodeGenerator.React"" Version=""1.2.2"" />
-    <PackageReference Include=""QuinntyneBrown.CodeGenerator.Python"" Version=""1.2.1"" />
-    <PackageReference Include=""QuinntyneBrown.CodeGenerator.Flask"" Version=""1.2.2"" />
-    <PackageReference Include=""QuinntyneBrown.CodeGenerator.Playwright"" Version=""1.2.2"" />
-    <PackageReference Include=""QuinntyneBrown.CodeGenerator.Detox"" Version=""1.2.1"" />
-    <PackageReference Include=""QuinntyneBrown.CodeGenerator.ReactNative"" Version=""1.2.1"" />
   </ItemGroup>
+
+{codeGeneratorReferences}
 </Project>
 ";
+    }
 
     private static string GenerateProgramContent(string name) => $@"using {name}.Cli.Commands;
+using CodeGenerator.Angular;
 using CodeGenerator.Core;
+using CodeGenerator.Flask;
+using CodeGenerator.React;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -214,6 +229,9 @@ services.AddLogging(builder =>
 
 services.AddCoreServices(typeof(Program).Assembly);
 services.AddDotNetServices();
+services.AddAngularServices();
+services.AddReactServices();
+services.AddFlaskServices();
 
 var serviceProvider = services.BuildServiceProvider();
 
@@ -231,7 +249,64 @@ public class AppRootCommand : RootCommand
     public AppRootCommand(IServiceProvider serviceProvider)
         : base(""{name} Code Generator CLI"")
     {{
+        AddCommand(new EnterpriseSolutionCommand(serviceProvider));
         AddCommand(new HelloWorldCommand(serviceProvider));
+    }}
+}}
+";
+
+    private static string GenerateEnterpriseSolutionCommandContent(string name) => $@"using System.CommandLine;
+using CodeGenerator.Core.Artifacts.Abstractions;
+using CodeGenerator.DotNet.Artifacts.FullStack;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+
+namespace {name}.Cli.Commands;
+
+public class EnterpriseSolutionCommand : Command
+{{
+    private readonly IServiceProvider _serviceProvider;
+
+    public EnterpriseSolutionCommand(IServiceProvider serviceProvider)
+        : base(""enterprise-solution"", ""Generates an Angular + .NET enterprise solution"")
+    {{
+        _serviceProvider = serviceProvider;
+
+        var nameOption = new Option<string>(
+            aliases: [""-n"", ""--name""],
+            description: ""The solution name to generate"")
+        {{
+            IsRequired = true
+        }};
+
+        var outputOption = new Option<string>(
+            aliases: [""-o"", ""--output""],
+            description: ""The output directory"",
+            getDefaultValue: () => Directory.GetCurrentDirectory());
+
+        AddOption(nameOption);
+        AddOption(outputOption);
+
+        this.SetHandler(HandleAsync, nameOption, outputOption);
+    }}
+
+    private async Task HandleAsync(string name, string outputDirectory)
+    {{
+        var logger = _serviceProvider.GetRequiredService<ILogger<EnterpriseSolutionCommand>>();
+        var artifactGenerator = _serviceProvider.GetRequiredService<IArtifactGenerator>();
+        var fullStackFactory = _serviceProvider.GetRequiredService<IFullStackFactory>();
+
+        logger.LogInformation(""Generating enterprise solution {{Name}}..."", name);
+
+        var fullStack = await fullStackFactory.CreateAsync(new FullStackCreateOptions
+        {{
+            Name = name,
+            Directory = outputDirectory,
+        }});
+
+        await artifactGenerator.GenerateAsync(fullStack.Solution);
+
+        logger.LogInformation(""Generated: {{Path}}"", fullStack.Solution.SolutionDirectory);
     }}
 }}
 ";
@@ -350,4 +425,38 @@ echo ============================================
 
 endlocal
 ";
+
+    private static string GetPackageReferences() => @"  <ItemGroup>
+    <PackageReference Include=""QuinntyneBrown.CodeGenerator.Core"" Version=""1.2.0"" />
+    <PackageReference Include=""QuinntyneBrown.CodeGenerator.DotNet"" Version=""1.2.0"" />
+    <PackageReference Include=""QuinntyneBrown.CodeGenerator.Angular"" Version=""1.2.0"" />
+    <PackageReference Include=""QuinntyneBrown.CodeGenerator.React"" Version=""1.2.2"" />
+    <PackageReference Include=""QuinntyneBrown.CodeGenerator.Flask"" Version=""1.2.2"" />
+  </ItemGroup>";
+
+    private static string GetProjectReferences(string localSourceRoot, string projectDirectory)
+    {
+        var references = new[]
+        {
+            "CodeGenerator.Core",
+            "CodeGenerator.DotNet",
+            "CodeGenerator.Angular",
+            "CodeGenerator.React",
+            "CodeGenerator.Flask",
+        };
+
+        var builder = new StringBuilder();
+        builder.AppendLine("  <ItemGroup>");
+
+        foreach (var reference in references)
+        {
+            var projectPath = Path.Combine(localSourceRoot, reference, $"{reference}.csproj");
+            var relativeProjectPath = Path.GetRelativePath(projectDirectory, projectPath);
+            builder.AppendLine($@"    <ProjectReference Include=""{relativeProjectPath}"" />");
+        }
+
+        builder.Append("  </ItemGroup>");
+
+        return builder.ToString();
+    }
 }
