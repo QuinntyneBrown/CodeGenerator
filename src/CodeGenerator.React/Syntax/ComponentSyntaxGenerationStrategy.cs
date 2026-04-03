@@ -178,18 +178,17 @@ public class ComponentSyntaxGenerationStrategy : ISyntaxGenerationStrategy<Compo
         {
             // Default: forwardRef (existing behavior)
             var propsType = model.Props.Count > 0 ? $"{componentName}Props" : "object";
-            string propsParam;
             if (model.SpreadProps && model.Props.Count > 0)
             {
                 var propNames = string.Join(", ", model.Props.Select(p => namingConventionConverter.Convert(NamingConvention.CamelCase, p.Name)));
-                propsParam = $"{{ {propNames}, ...rest }}";
+                var propsParam = $"{propNames}, ...rest";
+                builder.AppendLine($"export const {componentName} = React.forwardRef<{model.RefElementType}, {propsType}>(({{ {propsParam} }}, ref) => " + "{");
             }
             else
             {
-                propsParam = model.Props.Count > 0 ? $"props: {componentName}Props" : "_props";
+                var propsParam = model.Props.Count > 0 ? $"props: {componentName}Props" : "_props";
+                builder.AppendLine($"export const {componentName} = React.forwardRef<{model.RefElementType}, {propsType}>(({propsParam}, ref) => " + "{");
             }
-
-            builder.AppendLine($"export const {componentName} = React.forwardRef<{model.RefElementType}, {propsType}>(({propsParam}, ref) => " + "{");
 
             foreach (var hook in model.Hooks)
             {

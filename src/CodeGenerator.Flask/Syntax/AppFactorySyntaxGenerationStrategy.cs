@@ -30,7 +30,14 @@ public class AppFactorySyntaxGenerationStrategy : ISyntaxGenerationStrategy<AppF
         // Track rendered import modules to avoid duplicates
         var renderedModules = new HashSet<string>();
 
-        builder.AppendLine("from flask import Flask");
+        if (model.ErrorHandlers.Count > 0)
+        {
+            builder.AppendLine("from flask import Flask, jsonify");
+        }
+        else
+        {
+            builder.AppendLine("from flask import Flask");
+        }
         renderedModules.Add("flask");
         builder.AppendLine("from app.extensions import db, migrate");
         renderedModules.Add("app.extensions");

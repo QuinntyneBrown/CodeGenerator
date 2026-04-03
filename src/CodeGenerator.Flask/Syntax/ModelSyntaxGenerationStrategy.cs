@@ -120,7 +120,18 @@ public class ModelSyntaxGenerationStrategy : ISyntaxGenerationStrategy<ModelMode
                 {
                     foreach (var constraint in column.Constraints)
                     {
-                        colDef += $", db.{constraint}";
+                        switch (constraint)
+                        {
+                            case "PrimaryKeyConstraint":
+                                if (!column.PrimaryKey) colDef += ", primary_key=True";
+                                break;
+                            case "UniqueConstraint":
+                                if (!column.Unique) colDef += ", unique=True";
+                                break;
+                            default:
+                                colDef += $", db.{constraint}()";
+                                break;
+                        }
                     }
                 }
 
