@@ -1,0 +1,17 @@
+@startuml c4_context
+!theme plain
+!include <C4/C4_Context>
+
+title C4 Context — Input Validation Layer
+
+Person(user, "CLI User", "Provides --name, --output, --framework options")
+
+System(cli, "CodeGenerator CLI", "Validates all CLI inputs before generation begins; returns structured validation errors")
+
+System_Ext(fs, "File System", "Checked for directory existence and writability")
+
+Rel(user, cli, "Invokes with options", "Shell")
+Rel(cli, fs, "Checks output directory")
+Rel_Back(cli, user, "Validation errors or generated output")
+
+@enduml

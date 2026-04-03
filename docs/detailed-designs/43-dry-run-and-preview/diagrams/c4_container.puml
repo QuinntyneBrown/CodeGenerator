@@ -1,0 +1,25 @@
+@startuml c4_container
+!theme plain
+!include <C4/C4_Container>
+
+title Dry-Run and Preview -- Container Diagram
+
+Person(user, "User", "Developer or CI pipeline")
+
+System_Boundary(cliSystem, "CodeGenerator CLI System") {
+    Container(cliApp, "CodeGenerator.Cli", ".NET CLI", "Root command with --dry-run/--what-if options")
+    Container(formatter, "DryRunOutputFormatter", "C#", "Renders GenerationResult as file table, command list, and summary")
+    Container(core, "CodeGenerator.Core", ".NET Library", "GenerationContextFactory, DryRunCommandService, GenerationResult")
+    Container(dotnet, "CodeGenerator.DotNet", ".NET Library", "Solution/Project/File generation strategies")
+}
+
+System_Ext(spectre, "Spectre.Console", "Rich console tables and formatting (optional)")
+
+Rel(user, cliApp, "--dry-run / --what-if")
+Rel(cliApp, core, "GenerationContextFactory.Create(dryRun: true)")
+Rel(cliApp, dotnet, "IArtifactGenerator.GenerateAsync()")
+Rel(cliApp, formatter, "Render(GenerationResult)")
+Rel(formatter, spectre, "Table, Rule widgets (when available)")
+Rel(core, cliApp, "Returns GenerationResult with captured files and commands")
+
+@enduml

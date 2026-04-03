@@ -1,0 +1,33 @@
+@startuml sequence_option_parsing
+!theme plain
+
+title Unit Test -- Option Parsing Workflow
+
+actor Test as test
+participant "CliTestHarness" as harness
+participant "CreateCodeGeneratorCommand" as cmd
+participant "System.CommandLine\nParser" as parser
+participant "DryRunCommandService" as dryRun
+participant "GenerationResult" as result
+
+test -> harness : InvokeAsync("-n", "MyProject", "-f", "net8.0", "--slnx")
+harness -> cmd : new CreateCodeGeneratorCommand(serviceProvider)
+harness -> cmd : InvokeAsync(args, testConsole)
+cmd -> parser : Parse arguments
+parser --> cmd : name="MyProject", framework="net8.0", slnx=true
+
+cmd -> dryRun : Start("dotnet new slnx -n MyProject", dir)
+dryRun -> result : AddCommand("dotnet new slnx ...", dir)
+dryRun --> cmd : 0
+
+cmd -> dryRun : Start("dotnet sln add ...", dir)
+dryRun -> result : AddCommand("dotnet sln add ...", dir)
+dryRun --> cmd : 0
+
+cmd --> harness : exitCode = 0
+harness --> test : CliTestResult(0, stdout, stderr)
+
+test -> result : Assert Commands.Count == 2
+test -> result : Assert Commands[0] contains "dotnet new slnx"
+
+@enduml

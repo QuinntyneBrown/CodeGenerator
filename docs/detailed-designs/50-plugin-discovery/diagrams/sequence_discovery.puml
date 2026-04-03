@@ -1,0 +1,75 @@
+@startuml sequence_discovery
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Plugin Discovery and Registration — Startup Workflow
+
+participant "Program.cs" as Main
+participant "CompositePluginDiscovery" as Composite
+participant "NuGetPluginDiscovery" as NuGet
+participant "DirectoryPluginDiscovery" as DirD
+participant "ExplicitPluginDiscovery" as ExplD
+participant "PluginLoader" as Loader
+participant "PluginLoadContext" as LoadCtx
+participant "ICliPlugin" as Plugin
+participant "PluginCommandRegistrar" as Registrar
+participant "RootCommand" as Root
+
+== Discovery ==
+
+Main -> Composite : DiscoverAsync()
+
+Composite -> NuGet : DiscoverAsync()
+NuGet -> NuGet : Scan ~/.nuget/packages/\ncodegenerator.cli.plugin.*
+NuGet --> Composite : [DiscoveredPlugin(nuget-plugin.dll, NuGet)]
+
+Composite -> DirD : DiscoverAsync()
+DirD -> DirD : Scan <exe>/plugins/\nand ~/.codegen/plugins/
+DirD --> Composite : [DiscoveredPlugin(dir-plugin.dll, Directory)]
+
+Composite -> ExplD : DiscoverAsync()
+ExplD -> ExplD : Resolve --plugin paths
+ExplD --> Composite : []
+
+Composite -> Composite : Deduplicate by assembly path
+Composite --> Main : [DiscoveredPlugin, DiscoveredPlugin]
+
+== Loading ==
+
+Main -> Loader : LoadPlugins(discovered)
+
+loop each DiscoveredPlugin
+    Loader -> LoadCtx ** : new PluginLoadContext(pluginDir)
+    Loader -> LoadCtx : LoadFromAssemblyPath(path)
+    LoadCtx --> Loader : Assembly
+
+    Loader -> Loader : Scan for ICliPlugin types
+    Loader -> Plugin ** : Activator.CreateInstance()
+end
+
+Loader --> Main : [ICliPlugin, ICliPlugin]
+
+== Registration ==
+
+Main -> Registrar : RegisterPlugins(root, plugins, sp)
+
+loop each ICliPlugin
+    Registrar -> Plugin : CreateCommand(serviceProvider)
+    Plugin --> Registrar : Command
+
+    Registrar -> Registrar : Check name conflicts
+    Registrar -> Root : AddCommand(command)
+end
+
+Registrar --> Main : done
+
+== Invocation ==
+
+Main -> Root : InvokeAsync(args)
+note right
+    Root command now includes
+    both built-in commands and
+    plugin-contributed commands.
+end note
+
+@enduml

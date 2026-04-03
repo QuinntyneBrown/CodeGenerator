@@ -1,0 +1,29 @@
+@startuml c4_component
+!theme plain
+!include <C4/C4_Component>
+
+title Shell Completion — Component Diagram
+
+Container_Boundary(cli, "CodeGenerator CLI Application") {
+    Component(rootcmd, "CreateCodeGeneratorCommand", "RootCommand", "Registers options with completion sources")
+    Component(provider, "CompletionProvider", "Static Class", "Framework, name, and output completions")
+    Component(detector, "ShellDetector", "Static Class", "Detects current shell type")
+    Component(install, "InstallCommand", "Command", "Installs completion scripts via --completions flag")
+}
+
+Container_Boundary(syscmdline, "System.CommandLine") {
+    Component(parser, "Parser", "System.CommandLine", "Handles [suggest] directive automatically")
+    Component(complctx, "CompletionContext", "System.CommandLine", "Provides WordToComplete and parse state")
+}
+
+System_Ext(suggest, "dotnet-suggest", "Global tool")
+System_Ext(shellprofile, "Shell Profile", "Profile files")
+
+Rel(rootcmd, provider, "AddCompletions(Provider.GetFrameworkCompletions)")
+Rel(parser, complctx, "Creates on [suggest]")
+Rel(parser, provider, "Invokes completion delegates")
+Rel(install, detector, "DetectShell()")
+Rel(install, shellprofile, "Appends completion script")
+Rel(suggest, parser, "[suggest] directive")
+
+@enduml

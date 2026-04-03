@@ -1,0 +1,25 @@
+@startuml c4_component
+!theme plain
+!include <C4/C4_Component>
+
+title C4 Component — Error Handling Components
+
+Container_Boundary(cli, "CodeGenerator.Cli") {
+    Component(handler, "CreateCodeGeneratorCommand", "RootCommand", "Top-level try/catch, maps exceptions to exit codes")
+    Component(exitCodes, "CliExitCodes", "Static class", "Exit code constants: 0, 1, 2, 3, 4, 99")
+    Component(exceptions, "CliException hierarchy", "Abstract + 4 derived", "CliValidation, CliIO, CliProcess, CliTemplate")
+}
+
+Container_Boundary(core, "CodeGenerator.Core") {
+    Component(rollback, "GenerationRollbackService", "IGenerationRollbackService", "Tracks and rolls back created artifacts")
+    Component(cmdService, "CommandService", "ICommandService", "Executes shell commands, returns exit code")
+    Component(artifactGen, "ArtifactGenerator", "IArtifactGenerator", "Generates files, validates models")
+}
+
+Rel(handler, exitCodes, "Reads exit code constants")
+Rel(handler, exceptions, "Catches categorized exceptions")
+Rel(handler, rollback, "TrackFile, TrackDirectory, Commit, Rollback")
+Rel(handler, cmdService, "Start() with exit code check")
+Rel(handler, artifactGen, "GenerateAsync()")
+
+@enduml

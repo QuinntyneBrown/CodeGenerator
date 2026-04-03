@@ -1,0 +1,41 @@
+@startuml sequence_interactive
+!theme plain
+
+title Sequence — Interactive Terminal Output
+
+actor User
+participant "HandleAsync" as Handler
+participant "GenerationProgressReporter" as Progress
+participant "SpectreConsoleRenderer" as Renderer
+participant "IArtifactGenerator" as Gen
+
+User -> Handler : codegenerator-cli -n MyApp
+activate Handler
+
+Handler -> Renderer : WriteHeader("Creating MyApp")
+
+Handler -> Progress : RunStep("Creating solution directory", ...)
+Progress -> Renderer : WriteStep(1, 6, "Creating solution directory")
+Progress -> Renderer : WriteStepComplete(1, 6, "Creating solution directory")
+
+Handler -> Progress : RunStepAsync("Creating solution file", ...)
+Progress -> Renderer : WriteStep(2, 6, "Creating solution file")
+Progress -> Renderer : WriteStepComplete(2, 6, "Creating solution file")
+
+Handler -> Progress : RunStepAsync("Generating project file", ...)
+Progress -> Renderer : WriteStep(3, 6, "Generating project file")
+Handler -> Gen : GenerateAsync(csproj)
+Gen --> Handler : success
+Progress -> Renderer : WriteStepComplete(3, 6, "Generating project file")
+
+note right of Handler : Steps 4-6 follow same pattern
+
+Handler -> Renderer : WriteTree(solutionDir, result.Files)
+Handler -> Renderer : WriteSummary(result)
+Handler -> Renderer : WriteSuccess("Solution created at: ...")
+
+Handler --> User : exit code 0
+
+deactivate Handler
+
+@enduml

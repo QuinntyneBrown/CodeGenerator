@@ -1,0 +1,23 @@
+@startuml c4_context
+!theme plain
+!include <C4/C4_Context>
+
+title C4 Context — Bulletproof Error Handling
+
+Person(user, "CLI User", "Runs codegenerator-cli to scaffold projects")
+Person(ci, "CI Pipeline", "Automates code generation in build pipelines")
+
+System(cli, "CodeGenerator CLI", "Generates .NET solution scaffolding with structured error handling and meaningful exit codes")
+
+System_Ext(dotnet, ".NET SDK", "dotnet new, dotnet sln, dotnet build")
+System_Ext(fs, "File System", "Reads/writes project files and directories")
+
+Rel(user, cli, "Invokes with arguments", "Shell")
+Rel(ci, cli, "Invokes, checks exit code", "Shell")
+Rel(cli, dotnet, "Runs dotnet commands")
+Rel(cli, fs, "Creates files and directories")
+
+Rel_Back(cli, user, "Exit code + error message")
+Rel_Back(cli, ci, "Exit code (0, 1, 2, 3, 4, 99)")
+
+@enduml

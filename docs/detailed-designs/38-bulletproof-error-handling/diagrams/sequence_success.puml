@@ -1,0 +1,38 @@
+@startuml sequence_success
+!theme plain
+
+title Sequence — Successful Generation with Rollback Tracking
+
+actor User
+participant "HandleAsync" as Handler
+participant "IGenerationRollbackService" as Rollback
+participant "ICommandService" as Cmd
+participant "IArtifactGenerator" as Gen
+
+User -> Handler : codegenerator-cli -n MyApp
+activate Handler
+
+Handler -> Rollback : TrackDirectory(solutionDir)
+Handler -> Rollback : TrackDirectory(srcDir)
+Handler -> Rollback : TrackDirectory(projectDir)
+
+Handler -> Cmd : Start("dotnet new sln")
+Cmd --> Handler : exitCode = 0
+
+Handler -> Gen : GenerateAsync(csproj)
+Gen --> Handler : success
+Handler -> Rollback : TrackFile(csproj path)
+
+Handler -> Gen : GenerateAsync(Program.cs)
+Gen --> Handler : success
+Handler -> Rollback : TrackFile(Program.cs path)
+
+Handler -> Cmd : Start("dotnet sln add")
+Cmd --> Handler : exitCode = 0
+
+Handler -> Rollback : Commit()
+Handler --> User : exit code 0
+
+deactivate Handler
+
+@enduml

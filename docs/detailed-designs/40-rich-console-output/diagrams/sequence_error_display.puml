@@ -1,0 +1,34 @@
+@startuml sequence_error_display
+!theme plain
+
+title Sequence — Error Display via IConsoleRenderer
+
+actor User
+participant "HandleAsync" as Handler
+participant "SpectreConsoleRenderer" as Renderer
+participant "IGenerationRollbackService" as Rollback
+
+User -> Handler : codegenerator-cli -n MyApp
+activate Handler
+
+Handler -> Renderer : WriteHeader("Creating MyApp")
+Handler -> Renderer : WriteStep(1, 6, "Creating solution directory")
+Handler -> Renderer : WriteStepComplete(1, 6, "Creating solution directory")
+
+Handler -> Renderer : WriteStep(2, 6, "Creating solution file")
+
+note right of Handler : dotnet new sln fails
+
+Handler -> Handler : catch CliProcessException
+
+Handler -> Renderer : WriteError("Command 'dotnet new sln'\nfailed with exit code 1")
+
+Handler -> Rollback : Rollback()
+
+Handler -> Renderer : WriteWarning("Rolled back 1 directory")
+
+Handler --> User : exit code 3
+
+deactivate Handler
+
+@enduml

@@ -1,0 +1,26 @@
+@startuml sequence_roslyn_validation
+!theme plain
+
+title Unit Test -- Roslyn Template Validation Workflow
+
+actor Test as test
+participant "CreateCodeGeneratorCommand" as cmd
+participant "RoslynValidator" as validator
+participant "CSharpSyntaxTree" as roslyn
+
+test -> cmd : GenerateProgramContent("TestApp")
+cmd --> test : sourceText (C# string)
+
+test -> validator : AssertValidCSharp(sourceText)
+validator -> roslyn : ParseText(sourceText)
+roslyn --> validator : SyntaxTree
+
+validator -> roslyn : GetDiagnostics()
+roslyn --> validator : diagnostics[]
+
+validator -> validator : Filter severity == Error
+validator --> test : Assert.Empty(errors)
+
+note over test : Repeat for each template method:\n- GenerateRootCommandContent\n- GenerateHelloWorldCommandContent\n- GenerateEnterpriseSolutionCommandContent\n- GenerateCliProjectContent (XML validation)
+
+@enduml

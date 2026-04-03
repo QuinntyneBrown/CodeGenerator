@@ -1,0 +1,45 @@
+@startuml sequence_ci
+!theme plain
+
+title Sequence — CI / Non-Interactive Output
+
+actor CI as "CI Pipeline"
+participant "Program.cs" as Program
+participant "PlainConsoleRenderer" as Renderer
+participant "HandleAsync" as Handler
+
+CI -> Program : codegenerator-cli -n MyApp
+activate Program
+
+Program -> Program : Console.IsOutputRedirected = true
+Program -> Program : Register PlainConsoleRenderer
+
+Program -> Handler : Invoke
+activate Handler
+
+Handler -> Renderer : WriteHeader("Creating MyApp")
+note right of Renderer : Output: "=== Creating MyApp ==="
+
+Handler -> Renderer : WriteStep(1, 6, "Creating solution directory")
+note right of Renderer : Output: "  [1/6] Creating solution directory ..."
+
+Handler -> Renderer : WriteStepComplete(1, 6, "Creating solution directory")
+note right of Renderer : Output: "  [1/6] Creating solution directory done"
+
+note right of Handler : Steps 2-6 follow same pattern
+
+Handler -> Renderer : WriteSummary(result)
+note right of Renderer
+  Output:
+  Files generated: 7
+  Total size: 12698 bytes
+  Commands run: 2
+end note
+
+Handler --> Program : exit code 0
+deactivate Handler
+
+Program --> CI : exit code 0
+deactivate Program
+
+@enduml

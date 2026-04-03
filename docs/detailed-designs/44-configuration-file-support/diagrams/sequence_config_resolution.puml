@@ -1,0 +1,50 @@
+@startuml sequence_config_resolution
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Configuration Resolution — Merging Workflow
+
+actor Developer as dev
+participant "CreateCodeGeneratorCommand" as cmd
+participant "IConfigurationLoader" as loader
+participant "ConfigurationMerger" as merger
+participant "IConfiguration\n(env vars)" as envConfig
+participant "IArtifactGenerator" as artgen
+
+dev -> cmd : codegen -n MyApp
+activate cmd
+
+note right of cmd
+  CLI parsed args:
+  name = "MyApp"
+  framework = (not provided)
+  output = (not provided)
+  slnx = (not provided)
+end note
+
+cmd -> loader : LoadAsync(currentDirectory)
+activate loader
+loader --> cmd : CodeGeneratorConfig\n{ framework: "net9.0",\n  solutionFormat: "slnx" }
+deactivate loader
+
+cmd -> merger : Merge(cliArgs, config, envConfig)
+activate merger
+
+merger -> merger : framework: CLI not set\n-> config "net9.0" -> use "net9.0"
+merger -> merger : slnx: CLI not set\n-> config "slnx" -> use true
+merger -> envConfig : GetValue("CODEGEN_OUTPUT")
+envConfig --> merger : null
+merger -> merger : output: CLI not set\n-> config not set\n-> env not set\n-> default "."
+
+merger --> cmd : ResolvedConfig\n{ framework: "net9.0",\n  slnx: true,\n  output: "." }
+deactivate merger
+
+cmd -> artgen : Generate with resolved config
+activate artgen
+artgen --> cmd : done
+deactivate artgen
+
+cmd --> dev : Solution created successfully
+deactivate cmd
+
+@enduml

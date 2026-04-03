@@ -1,0 +1,64 @@
+@startuml class_diagram
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 12
+
+title Shell Completion — Class Diagram
+
+class CompletionProvider <<static>> {
+    -{static} SupportedFrameworks : string[]
+    +{static} GetFrameworkCompletions(context : CompletionContext) : IEnumerable<string>
+    +{static} GetNameCompletions(context : CompletionContext) : IEnumerable<string>
+    +{static} GetOutputCompletions(context : CompletionContext) : IEnumerable<string>
+    -{static} ToPascalCase(input : string) : string
+}
+
+class ShellDetector <<static>> {
+    +{static} DetectShell() : string
+    +{static} GetProfilePath(shell : string) : string
+}
+
+class CompletionInstaller {
+    +InstallAsync(shell : string) : Task
+    -EnsureDotnetSuggest() : Task
+    -GetRegistrationScript(shell : string) : string
+    -AppendToProfile(profilePath : string, script : string) : Task
+}
+
+class CreateCodeGeneratorCommand <<RootCommand>> {
+    -_serviceProvider : IServiceProvider
+    __options with completions__
+    -nameOption : Option<string>
+    -frameworkOption : Option<string>
+    -outputOption : Option<string>
+}
+
+class InstallCommand <<Command>> {
+    -_serviceProvider : IServiceProvider
+    __new option__
+    -completionsOption : Option<string?>
+    -HandleAsync(output, completions?) : Task
+}
+
+class CompletionContext <<System.CommandLine>> {
+    +WordToComplete : string
+    +ParseResult : ParseResult
+}
+
+CreateCodeGeneratorCommand ..> CompletionProvider : registers completion delegates
+InstallCommand ..> ShellDetector : detects shell
+InstallCommand ..> CompletionInstaller : installs scripts
+CompletionProvider ..> CompletionContext : reads WordToComplete
+
+note right of CompletionProvider
+  Registered via:
+  option.AddCompletions(
+    CompletionProvider.GetFrameworkCompletions);
+end note
+
+note bottom of ShellDetector
+  Returns: "bash", "zsh",
+  "powershell", or "fish"
+end note
+
+@enduml

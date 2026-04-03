@@ -1,0 +1,19 @@
+@startuml c4_container
+!theme plain
+!include <C4/C4_Container>
+
+title C4 Container — Rich Console Output
+
+Person(user, "CLI User")
+
+System_Boundary(codegen, "CodeGenerator") {
+    Container(cli, "CodeGenerator.Cli", ".NET Console App", "IConsoleRenderer, SpectreConsoleRenderer, PlainConsoleRenderer, GenerationProgressReporter")
+    Container(core, "CodeGenerator.Core", ".NET Class Library", "GenerationResult with file entries and sizes")
+    Container(spectre, "Spectre.Console", "NuGet Package", "ANSI rendering, Tree widget, Table widget, Rule widget")
+}
+
+Rel(user, cli, "Invokes")
+Rel(cli, core, "Reads GenerationResult")
+Rel(cli, spectre, "Uses for rich rendering")
+
+@enduml

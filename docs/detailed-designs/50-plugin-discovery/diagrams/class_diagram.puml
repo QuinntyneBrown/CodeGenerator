@@ -1,0 +1,88 @@
+@startuml class_diagram
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 12
+
+title Plugin Discovery for Commands — Class Diagram
+
+interface ICliPlugin {
+    +Name : string {get}
+    +Description : string {get}
+    +CreateCommand(serviceProvider: IServiceProvider) : Command
+}
+
+interface IPluginDiscoveryService {
+    +DiscoverAsync() : Task<IReadOnlyList<DiscoveredPlugin>>
+}
+
+class NuGetPluginDiscovery {
+    -_logger : ILogger
+    -_nugetPath : string
+    +DiscoverAsync() : Task<IReadOnlyList<DiscoveredPlugin>>
+    -FindPackageDirectories() : IEnumerable<string>
+    -ResolveAssemblyPath(packageDir: string) : string?
+}
+
+class DirectoryPluginDiscovery {
+    -_logger : ILogger
+    +DiscoverAsync() : Task<IReadOnlyList<DiscoveredPlugin>>
+    -GetPluginDirectories() : IEnumerable<string>
+}
+
+class ExplicitPluginDiscovery {
+    -_pluginPaths : string[]
+    -_logger : ILogger
+    +DiscoverAsync() : Task<IReadOnlyList<DiscoveredPlugin>>
+}
+
+class CompositePluginDiscovery {
+    -_strategies : IEnumerable<IPluginDiscoveryService>
+    -_logger : ILogger
+    +DiscoverAsync() : Task<IReadOnlyList<DiscoveredPlugin>>
+    -Deduplicate(plugins: List<DiscoveredPlugin>) : List<DiscoveredPlugin>
+}
+
+class DiscoveredPlugin <<record>> {
+    +AssemblyPath : string
+    +Source : PluginSource
+    +PackageName : string?
+}
+
+enum PluginSource {
+    NuGet
+    Directory
+    Explicit
+}
+
+class PluginLoader {
+    -_logger : ILogger
+    +LoadPlugins(discovered: IReadOnlyList<DiscoveredPlugin>) : IReadOnlyList<ICliPlugin>
+    -LoadAssembly(plugin: DiscoveredPlugin) : Assembly?
+    -FindPluginTypes(assembly: Assembly) : IEnumerable<Type>
+}
+
+class PluginLoadContext {
+    -_pluginDirectory : string
+    -_sharedAssemblies : HashSet<string>
+    +{override} Load(name: AssemblyName) : Assembly?
+}
+
+class PluginCommandRegistrar {
+    -_logger : ILogger
+    +RegisterPlugins(root: RootCommand, plugins: IReadOnlyList<ICliPlugin>, sp: IServiceProvider) : void
+    -HasNameConflict(root: RootCommand, commandName: string) : bool
+}
+
+IPluginDiscoveryService <|.. NuGetPluginDiscovery
+IPluginDiscoveryService <|.. DirectoryPluginDiscovery
+IPluginDiscoveryService <|.. ExplicitPluginDiscovery
+CompositePluginDiscovery --> "1..*" IPluginDiscoveryService
+CompositePluginDiscovery ..> DiscoveredPlugin : produces
+DiscoveredPlugin --> PluginSource
+PluginLoader --> CompositePluginDiscovery : uses
+PluginLoader --> PluginLoadContext : creates
+PluginLoader ..> ICliPlugin : instantiates
+PluginLoadContext --|> "AssemblyLoadContext"
+PluginCommandRegistrar --> ICliPlugin : calls CreateCommand
+
+@enduml

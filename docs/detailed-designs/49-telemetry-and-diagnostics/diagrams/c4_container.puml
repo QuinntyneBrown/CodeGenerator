@@ -1,0 +1,32 @@
+@startuml c4_container
+!theme plain
+!include <C4/C4_Container>
+
+title Telemetry and Diagnostics — Container Diagram
+
+Person(dev, "Developer / Support", "Collects diagnostics")
+
+System_Boundary(cli, "CodeGenerator.Cli") {
+    Container(cmd, "CreateCodeGeneratorCommand", "RootCommand", "Handles --diagnostics flag, wraps steps with timer")
+    Container(renderer, "DiagnosticsRenderer", "Class", "Formats DiagnosticsReport for console display")
+}
+
+System_Boundary(core, "CodeGenerator.Core.Diagnostics") {
+    Container(collector, "DiagnosticsCollector", "Class", "Gathers CLI version, SDK version, OS, shell")
+    Container(timer, "GenerationTimer", "Class", "TimeStep(name) returns disposable timing scope")
+    Container(sw, "IStopwatchProvider", "Interface", "Abstraction over Stopwatch for testability")
+    Container(report, "DiagnosticsReport", "Record", "EnvironmentInfo + List<TimingEntry> + TotalDuration")
+}
+
+System_Ext(sdk, ".NET SDK", "dotnet --version")
+
+Rel(dev, cmd, "--diagnostics flag")
+Rel(cmd, collector, "CollectEnvironment()")
+Rel(cmd, timer, "TimeStep(name) for each step")
+Rel(collector, sdk, "dotnet --version")
+Rel(timer, sw, "StartNew()")
+Rel(cmd, report, "Constructs from collector + timer")
+Rel(cmd, renderer, "Render(report)")
+Rel(renderer, dev, "Formatted output")
+
+@enduml

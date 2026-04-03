@@ -1,0 +1,17 @@
+@startuml c4_context
+!theme plain
+!include <C4/C4_Context>
+
+title C4 Context — Rich Console Output
+
+Person(user, "CLI User", "Runs codegenerator-cli interactively")
+Person(ci, "CI Pipeline", "Runs codegenerator-cli non-interactively")
+
+System(cli, "CodeGenerator CLI", "Provides rich progress display, tree views, and structured error output in terminals; plain text in CI")
+
+Rel(user, cli, "Invokes interactively", "Terminal")
+Rel(ci, cli, "Invokes non-interactively", "Redirected stdout")
+Rel_Back(cli, user, "Colored progress, tree view, summary")
+Rel_Back(cli, ci, "Plain text progress, file list, summary")
+
+@enduml

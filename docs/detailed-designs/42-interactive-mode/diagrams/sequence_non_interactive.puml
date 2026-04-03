@@ -1,0 +1,23 @@
+@startuml sequence_non_interactive
+!theme plain
+
+title Non-Interactive Flow -- All arguments provided on command line
+
+actor User as user
+participant "System.CommandLine\nParser" as parser
+participant "CreateCodeGeneratorCommand\nHandler" as handler
+participant "Generation\nEngine" as engine
+
+user -> parser : codegen-cli -n MyProject -o ./output -f net8.0 --slnx
+parser --> handler : name="MyProject", output="./output", framework="net8.0", slnx=true, localSource=null
+
+handler -> handler : Construct GenerationOptions\n(Name = "MyProject")
+handler -> handler : Name is not empty\n=> skip prompt service
+
+handler -> engine : Generate with options
+engine --> handler : success
+handler --> user : "Solution created successfully"
+
+note over handler : No IInteractivePromptService\ncall is made when all\nrequired args are present
+
+@enduml

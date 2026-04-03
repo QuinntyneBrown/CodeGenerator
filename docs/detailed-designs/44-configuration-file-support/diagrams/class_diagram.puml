@@ -1,0 +1,74 @@
+@startuml class_diagram
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 12
+
+title Configuration File Support — Class Diagram
+
+class CodeGeneratorConfig {
+    +Defaults : DefaultsSection
+    +Templates : TemplatesSection
+}
+
+class DefaultsSection {
+    +Framework : string?
+    +SolutionFormat : string?
+    +Output : string?
+}
+
+class TemplatesSection {
+    +Author : string?
+    +License : string?
+    +TemplatesDirectory : string?
+}
+
+interface IConfigurationLoader {
+    +LoadAsync(directory : string) : Task<CodeGeneratorConfig>
+}
+
+class ConfigurationLoader {
+    +LoadAsync(directory : string) : Task<CodeGeneratorConfig>
+    -FindConfigFile(directory : string) : string?
+}
+
+class ConfigurationMerger {
+    {static} +Merge(cliArgs : CliArgs, config : CodeGeneratorConfig, env : IConfiguration) : ResolvedConfig
+}
+
+class ResolvedConfig {
+    +Framework : string
+    +SolutionFormat : string
+    +Output : string
+    +Slnx : bool
+    +Author : string?
+    +License : string?
+}
+
+class CliArgs <<value>> {
+    +Name : string
+    +Framework : string?
+    +Output : string?
+    +Slnx : bool?
+    +LocalSourceRoot : string?
+}
+
+class CreateCodeGeneratorCommand <<RootCommand>> {
+    -_serviceProvider : IServiceProvider
+    -HandleAsync(...) : Task
+}
+
+CodeGeneratorConfig *-- DefaultsSection : defaults
+CodeGeneratorConfig *-- TemplatesSection : templates
+
+IConfigurationLoader <|.. ConfigurationLoader : implements
+ConfigurationLoader ..> CodeGeneratorConfig : returns
+
+ConfigurationMerger ..> CodeGeneratorConfig : reads
+ConfigurationMerger ..> CliArgs : reads
+ConfigurationMerger ..> ResolvedConfig : produces
+
+CreateCodeGeneratorCommand ..> IConfigurationLoader : resolves from DI
+CreateCodeGeneratorCommand ..> ConfigurationMerger : calls
+CreateCodeGeneratorCommand ..> ResolvedConfig : uses
+
+@enduml

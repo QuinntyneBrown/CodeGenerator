@@ -1,0 +1,65 @@
+@startuml sequence_install_completions
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Completion Installation Flow
+
+actor Developer as dev
+participant "InstallCommand" as install
+participant "ShellDetector" as detector
+participant "CompletionInstaller" as installer
+participant "ICommandService" as cmdsvc
+database "Shell Profile" as profile
+
+dev -> install : codegen install --completions auto
+activate install
+
+install -> detector : DetectShell()
+activate detector
+
+detector -> detector : Check $SHELL env var
+detector -> detector : Check PSModulePath
+detector -> detector : Check OS platform
+
+detector --> install : "powershell"
+deactivate detector
+
+install -> installer : InstallAsync("powershell")
+activate installer
+
+installer -> cmdsvc : Start("dotnet tool list -g")
+activate cmdsvc
+cmdsvc --> installer : tool list output
+deactivate cmdsvc
+
+installer -> installer : Check if dotnet-suggest\nis in tool list
+
+alt dotnet-suggest not installed
+    installer -> cmdsvc : Start("dotnet tool install -g dotnet-suggest")
+    activate cmdsvc
+    cmdsvc --> installer : installed
+    deactivate cmdsvc
+end
+
+installer -> detector : GetProfilePath("powershell")
+detector --> installer : "$HOME/Documents/PowerShell/Microsoft.PowerShell_profile.ps1"
+
+installer -> installer : Generate PowerShell\ncompletion script
+
+installer -> profile : Append completion script\n(if not already present)
+activate profile
+profile --> installer : done
+deactivate profile
+
+installer -> cmdsvc : Start("dotnet-suggest register\n--command-path codegen")
+activate cmdsvc
+cmdsvc --> installer : registered
+deactivate cmdsvc
+
+installer --> install : success
+deactivate installer
+
+install --> dev : Shell completions installed for PowerShell.\nRestart your shell to activate.
+deactivate install
+
+@enduml

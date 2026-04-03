@@ -1,0 +1,52 @@
+@startuml sequence_loading
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Plugin Assembly Loading — Detail Sequence
+
+participant "PluginLoader" as Loader
+participant "PluginLoadContext" as LoadCtx
+participant "Default\nAssemblyLoadContext" as DefaultCtx
+participant "Plugin Assembly" as Asm
+participant "ICliPlugin\nimplementation" as Plugin
+
+Loader -> LoadCtx ** : new PluginLoadContext(\n  pluginDir: "plugins/my-plugin/",\n  isCollectible: true)
+
+Loader -> LoadCtx : LoadFromAssemblyPath(\n  "plugins/my-plugin/MyPlugin.dll")
+
+LoadCtx -> Asm ** : Load assembly bytes
+
+note right of LoadCtx
+    Assembly loaded into
+    isolated context.
+end note
+
+== Dependency Resolution ==
+
+Asm -> LoadCtx : Resolve "CodeGenerator.Abstractions"
+LoadCtx -> LoadCtx : Is shared assembly? YES
+LoadCtx -> DefaultCtx : Load("CodeGenerator.Abstractions")
+DefaultCtx --> Asm : Host's Abstractions assembly
+
+Asm -> LoadCtx : Resolve "MyPlugin.Utils"
+LoadCtx -> LoadCtx : Is shared assembly? NO
+LoadCtx -> LoadCtx : Look in pluginDir\nfor MyPlugin.Utils.dll
+LoadCtx --> Asm : Plugin-local assembly
+
+== Type Discovery ==
+
+Loader -> Asm : GetTypes()
+Asm --> Loader : [MyPluginCommand, Helper, ...]
+
+Loader -> Loader : Filter types implementing\nICliPlugin interface
+
+alt ICliPlugin found
+    Loader -> Plugin ** : Activator.CreateInstance(\n  typeof(MyPluginCommand))
+    Loader -> Plugin : .Name
+    Plugin --> Loader : "My Custom Generator"
+    Loader --> Loader : Add to results
+else No ICliPlugin found
+    Loader -> Loader : Log warning:\n"No ICliPlugin in assembly"
+end
+
+@enduml

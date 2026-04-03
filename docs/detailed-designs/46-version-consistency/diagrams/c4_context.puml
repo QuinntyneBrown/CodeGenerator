@@ -1,0 +1,20 @@
+@startuml c4_context
+!theme plain
+!include <C4/C4_Context>
+
+title Version Consistency — System Context
+
+Person(dev, "Developer", "Generates code with correct NuGet package references")
+Person(maintainer, "CLI Maintainer", "Updates PackageVersions when publishing new packages")
+
+System(cli, "CodeGenerator CLI", "Generates project files with centralized, consistent package version references")
+
+System_Ext(nuget, "NuGet.org", "Published CodeGenerator packages with specific versions")
+System_Ext(fs, "File System", "Generated .csproj files with PackageReference elements")
+
+Rel(dev, cli, "Invokes", "codegen -n MyApp")
+Rel(maintainer, cli, "Updates PackageVersions.cs")
+Rel(cli, fs, "Writes .csproj with correct versions")
+Rel(nuget, cli, "Published versions must match constants")
+
+@enduml

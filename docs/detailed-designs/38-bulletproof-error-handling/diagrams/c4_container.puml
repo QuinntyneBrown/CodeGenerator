@@ -1,0 +1,24 @@
+@startuml c4_container
+!theme plain
+!include <C4/C4_Container>
+
+title C4 Container — Error Handling Layer
+
+Person(user, "CLI User")
+
+System_Boundary(codegen, "CodeGenerator") {
+    Container(cli, "CodeGenerator.Cli", ".NET Console App", "Command definitions, exit codes, exception mapping")
+    Container(core, "CodeGenerator.Core", ".NET Class Library", "Generation engine, rollback service, validation contracts")
+    Container(abstractions, "CodeGenerator.Abstractions", ".NET Class Library", "IValidatable, ValidationResult, ModelValidationException")
+}
+
+System_Ext(dotnet, ".NET SDK")
+System_Ext(fs, "File System")
+
+Rel(user, cli, "Invokes")
+Rel(cli, core, "Uses generation + rollback services")
+Rel(core, abstractions, "Implements validation contracts")
+Rel(core, fs, "File I/O via IFileSystem")
+Rel(cli, dotnet, "Shell commands via ICommandService")
+
+@enduml

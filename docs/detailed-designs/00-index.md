@@ -57,3 +57,21 @@
 | 35 | [Underscore-Prefix Ordering](35-underscore-prefix-ordering/README.md) | Draft | Pattern 5 | `_`-prefixed templates render last with enriched context |
 | 36 | [Hierarchical Configuration](36-hierarchical-configuration/README.md) | Draft | Pattern 11 | Four-tier config: CLI > env vars > .codegenerator.json > defaults |
 | 37 | [Input Validation with JSON Schema](37-input-validation-json-schema/README.md) | Draft | Pattern 12 | Validate YAML/JSON inputs against bundled JSON Schemas before generation |
+
+### CLI Vision — Part 1: Making CodeGenerator.Cli 10/10
+
+| # | Feature | Status | Vision Ref | Description |
+|---|---------|--------|------------|-------------|
+| 38 | [Bulletproof Error Handling](38-bulletproof-error-handling/README.md) | Draft | Vision 1.1 | Categorized exceptions, meaningful exit codes, rollback on failure |
+| 39 | [Input Validation Layer](39-input-validation-layer/README.md) | Draft | Vision 1.2 | GenerationOptionsValidator for CLI inputs before generation |
+| 40 | [Rich Console Output](40-rich-console-output/README.md) | Draft | Vision 1.3 | Spectre.Console progress display, tree view, structured errors |
+| 41 | [Comprehensive Test Suite](41-comprehensive-test-suite/README.md) | Draft | Vision 1.4 | 90%+ coverage: unit tests, integration tests, Roslyn validation |
+| 42 | [Interactive Mode](42-interactive-mode/README.md) | Draft | Vision 1.5 | Spectre.Console prompts when args missing, TTY detection for CI |
+| 43 | [Dry-Run and Preview](43-dry-run-and-preview/README.md) | Draft | Vision 1.6 | --dry-run/--what-if flags wired to existing GenerationContext |
+| 44 | [Configuration File Support](44-configuration-file-support/README.md) | Draft | Vision 1.7 | .codegenerator.json with 4-tier resolution hierarchy |
+| 45 | [Extract Embedded Templates](45-extract-embedded-templates/README.md) | Draft | Vision 1.8 | Move 500+ lines to .liquid embedded resources with user overrides |
+| 46 | [Version Consistency](46-version-consistency/README.md) | Draft | Vision 1.9 | Centralize package versions, assembly metadata at runtime |
+| 47 | [Shell Completion](47-shell-completion/README.md) | Draft | Vision 1.10 | dotnet-suggest integration for bash, zsh, PowerShell, fish |
+| 48 | [Post-Generation Verification](48-post-generation-verification/README.md) | Draft | Vision 1.11 | --verify flag: dotnet build + smoke test on generated output |
+| 49 | [Telemetry and Diagnostics](49-telemetry-and-diagnostics/README.md) | Draft | Vision 1.12 | --diagnostics flag: environment info, per-step timing |
+| 50 | [Plugin Discovery](50-plugin-discovery/README.md) | Draft | Vision 1.13 | ICliPlugin interface, NuGet/directory/flag-based assembly loading |

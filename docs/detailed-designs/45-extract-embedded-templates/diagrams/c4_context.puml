@@ -1,0 +1,20 @@
+@startuml c4_context
+!theme plain
+!include <C4/C4_Context>
+
+title Extract Embedded Templates — System Context
+
+Person(dev, "Developer", "Generates code using built-in or custom Liquid templates")
+
+System(cli, "CodeGenerator CLI", "Resolves Liquid templates, renders with DotLiquid, generates project files")
+
+System_Ext(embedded, "Embedded Resources", ".liquid template files bundled in CLI assembly")
+System_Ext(userdir, "User Template Directory", "Optional custom .liquid overrides via --templates flag")
+System_Ext(fs, "File System", "Generated output files")
+
+Rel(dev, cli, "Invokes", "codegen -n MyApp [--templates ./tpl]")
+Rel(cli, embedded, "Reads built-in templates")
+Rel(cli, userdir, "Reads user overrides (if --templates)")
+Rel(cli, fs, "Writes generated files")
+
+@enduml

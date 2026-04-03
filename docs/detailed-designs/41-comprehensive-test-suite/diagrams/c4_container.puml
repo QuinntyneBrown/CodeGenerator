@@ -1,0 +1,36 @@
+@startuml c4_container
+!theme plain
+!include <C4/C4_Container>
+
+title Comprehensive Test Suite -- Container Diagram
+
+Person(developer, "Developer", "Runs tests locally")
+
+System_Boundary(tests, "Test Projects") {
+    Container(unitTests, "CodeGenerator.Cli.UnitTests", "xUnit, C#", "Option parsing, template validation, handler logic, error handling tests")
+    Container(integrationTests, "CodeGenerator.Cli.IntegrationTests", "xUnit, C#", "End-to-end CLI invocation, directory structure, dotnet build verification")
+}
+
+System_Boundary(sut, "System Under Test") {
+    Container(cli, "CodeGenerator.Cli", ".NET CLI", "CreateCodeGeneratorCommand, ScaffoldCommand, InstallCommand")
+    Container(core, "CodeGenerator.Core", ".NET Library", "IArtifactGenerator, GenerationContext, DryRunCommandService")
+    Container(dotnet, "CodeGenerator.DotNet", ".NET Library", "Solution/Project/File models and strategies")
+}
+
+System_Boundary(infra, "Test Infrastructure") {
+    Container(mockFs, "MockFileSystem", "System.IO.Abstractions.TestingHelpers", "In-memory file system for unit tests")
+    Container(testConsole, "TestConsole", "System.CommandLine.Testing", "Captured stdout/stderr for CLI invocation tests")
+    Container(roslyn, "Roslyn CSharp", "Microsoft.CodeAnalysis.CSharp", "C# syntax validation")
+}
+
+Rel(developer, unitTests, "dotnet test")
+Rel(developer, integrationTests, "dotnet test")
+Rel(unitTests, cli, "References and invokes in-process")
+Rel(unitTests, mockFs, "Uses for file system isolation")
+Rel(unitTests, testConsole, "Uses for CLI output capture")
+Rel(unitTests, roslyn, "Uses for C# validation")
+Rel(unitTests, core, "Uses DryRunCommandService, GenerationResult")
+Rel(integrationTests, cli, "Invokes via dotnet run process")
+Rel(integrationTests, dotnet, "References models for verification")
+
+@enduml

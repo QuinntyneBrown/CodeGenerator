@@ -1,0 +1,28 @@
+@startuml c4_container
+!theme plain
+!include <C4/C4_Container>
+
+title Extract Embedded Templates — Container Diagram
+
+Person(dev, "Developer", "Invokes CLI with optional --templates flag")
+
+System_Boundary(codegen, "CodeGenerator CLI") {
+    Container(cli, "CLI Application", "System.CommandLine 2.0", "Arg parsing, template model construction")
+    Container(resolver, "Template Resolution", "ITemplateResolver", "Locates .liquid files from embedded resources or user directory")
+    Container(processor, "Template Processing", "DotLiquid / ITemplateProcessor", "Renders Liquid templates with token dictionaries")
+    Container(core, "CodeGenerator.Core", ".NET 9.0 Library", "IArtifactGenerator for file writing")
+}
+
+System_Ext(embedded, "Embedded Resources", ".liquid files in assembly")
+System_Ext(userdir, "User Directory", "Custom .liquid overrides")
+System_Ext(fs, "File System", "Generated output")
+
+Rel(dev, cli, "Invokes CLI")
+Rel(cli, resolver, "ResolveAsync(templateName)")
+Rel(resolver, embedded, "Reads embedded .liquid")
+Rel(resolver, userdir, "Reads user .liquid (priority)")
+Rel(cli, processor, "ProcessAsync(template, tokens)")
+Rel(cli, core, "GenerateAsync(ContentFileModel)")
+Rel(core, fs, "Writes files")
+
+@enduml

@@ -1,0 +1,25 @@
+@startuml c4_component
+!theme plain
+!include <C4/C4_Component>
+
+title Version Consistency — Component Diagram
+
+Container_Boundary(cli, "CodeGenerator CLI Application") {
+    Component(cmd, "CreateCodeGeneratorCommand", "RootCommand", "Builds token dictionary with version values")
+    Component(install, "InstallCommand", "Command", "Generates SKILL.md with version references")
+    Component(versions, "PackageVersions", "Static Class", "Core, DotNet, Angular, React, Flask, Python, Playwright, Detox, ReactNative constants")
+    Component(cliversion, "CliVersion", "Static Class", "Reads CLI version from assembly metadata")
+}
+
+Container_Boundary(core, "CodeGenerator.Core") {
+    Component(processor, "LiquidTemplateProcessor", "ITemplateProcessor", "Renders {{ package_version_* }} tokens")
+    Component(artgen, "IArtifactGenerator", "Interface", "Writes generated files")
+}
+
+Rel(cmd, versions, "PackageVersions.AsTokenDictionary()")
+Rel(cmd, processor, "ProcessAsync(template, tokens)")
+Rel(cmd, artgen, "GenerateAsync(ContentFileModel)")
+Rel(install, versions, "PackageVersions.Core, etc.")
+Rel(cmd, cliversion, "CliVersion.Current (for --version)")
+
+@enduml

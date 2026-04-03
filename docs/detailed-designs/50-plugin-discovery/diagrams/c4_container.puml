@@ -1,0 +1,41 @@
+@startuml c4_container
+!theme plain
+!include <C4/C4_Container>
+
+title Plugin Discovery for Commands — Container Diagram
+
+Person(user, "CLI User", "Runs CLI commands")
+
+System_Boundary(cli, "CodeGenerator.Cli") {
+    Container(root, "CreateCodeGeneratorCommand", "RootCommand", "Built-in commands + plugin commands")
+    Container(registrar, "PluginCommandRegistrar", "Class", "Registers plugin commands on root command")
+}
+
+System_Boundary(core, "CodeGenerator.Core.Plugins") {
+    Container(composite, "CompositePluginDiscovery", "Class", "Aggregates all discovery strategies")
+    Container(nugetD, "NuGetPluginDiscovery", "Class", "Scans NuGet packages folder")
+    Container(dirD, "DirectoryPluginDiscovery", "Class", "Scans plugins/ directory")
+    Container(explD, "ExplicitPluginDiscovery", "Class", "Resolves --plugin flag paths")
+    Container(loader, "PluginLoader", "Class", "Loads assemblies via AssemblyLoadContext")
+}
+
+System_Boundary(abs, "CodeGenerator.Abstractions") {
+    Container(iface, "ICliPlugin", "Interface", "Name, Description, CreateCommand()")
+}
+
+System_Ext(nuget, "NuGet Packages", "~/.nuget/packages/")
+System_Ext(plugDir, "plugins/ Directory", "Local plugin assemblies")
+
+Rel(user, root, "CLI invocation")
+Rel(root, registrar, "At startup")
+Rel(registrar, loader, "LoadPlugins()")
+Rel(loader, composite, "DiscoverAsync()")
+Rel(composite, nugetD, "DiscoverAsync()")
+Rel(composite, dirD, "DiscoverAsync()")
+Rel(composite, explD, "DiscoverAsync()")
+Rel(nugetD, nuget, "Scans")
+Rel(dirD, plugDir, "Scans")
+Rel(loader, iface, "Instantiates ICliPlugin types")
+Rel(registrar, root, "AddCommand()")
+
+@enduml

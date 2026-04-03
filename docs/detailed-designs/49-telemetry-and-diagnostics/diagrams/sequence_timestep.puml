@@ -1,0 +1,45 @@
+@startuml sequence_timestep
+!theme plain
+skinparam sequenceMessageAlign center
+
+title TimeStep Lifecycle — Disposable Timing Scope
+
+participant "Handler" as H
+participant "GenerationTimer" as Timer
+participant "IStopwatchProvider" as SWP
+participant "IStopwatchInstance" as SW
+participant "TimingScope" as Scope
+
+H -> Timer : TimeStep("Create solution file")
+
+Timer -> SWP : StartNew()
+SWP -> SW ** : new (started)
+SWP --> Timer : stopwatchInstance
+
+Timer -> Scope ** : new TimingScope(\n  name: "Create solution file",\n  stopwatch: sw,\n  timer: this,\n  order: nextOrder++)
+
+Timer --> H : IDisposable (scope)
+
+note right of H
+    Handler executes the
+    generation step inside
+    the using block.
+end note
+
+H -> H : commandService.Start(\n  "dotnet new sln ...")
+
+H -> Scope : Dispose()
+
+Scope -> SW : Stop()
+Scope -> SW : Elapsed
+SW --> Scope : 1.23s
+
+Scope -> Timer : AddEntry(\n  new TimingEntry(\n    "Create solution file",\n    1.23s,\n    order: 1))
+
+note right of Timer
+    Entry is stored in
+    ConcurrentBag<TimingEntry>
+    for thread safety.
+end note
+
+@enduml

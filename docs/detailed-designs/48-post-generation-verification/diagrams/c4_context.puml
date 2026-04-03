@@ -1,0 +1,19 @@
+@startuml c4_context
+!theme plain
+!include <C4/C4_Context>
+
+title Post-Generation Verification — System Context
+
+Person(dev, "Developer / CI", "Runs code generation with --verify flag to validate output")
+
+System(codegen, "CodeGenerator CLI", "Generates code generator projects and optionally verifies they compile and run")
+
+System_Ext(sdk, ".NET SDK", "dotnet build / dotnet run used for verification")
+System_Ext(fs, "File System", "Generated project files written to disk")
+
+Rel(dev, codegen, "codegen -n Foo --verify")
+Rel(codegen, fs, "Writes generated files")
+Rel(codegen, sdk, "Runs dotnet build / dotnet run\nfor verification")
+Rel(codegen, dev, "Returns verification report\n(pass/fail, errors, warnings)")
+
+@enduml

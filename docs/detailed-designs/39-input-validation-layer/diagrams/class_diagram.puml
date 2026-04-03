@@ -1,0 +1,53 @@
+@startuml class_diagram
+!theme plain
+
+title Class Diagram — Input Validation Types
+
+package "CodeGenerator.Cli.Validation" {
+    class GenerationOptions <<record>> {
+        +Name : string
+        +OutputDirectory : string
+        +Framework : string
+        +Slnx : bool
+        +LocalSourceRoot : string?
+    }
+
+    class GenerationOptionsValidator {
+        -{static} ValidCSharpIdentifier : Regex
+        -_fileSystem : IFileSystem
+        +GenerationOptionsValidator(fileSystem : IFileSystem)
+        +Validate(options : GenerationOptions) : ValidationResult
+        -ValidateName(name : string, result : ValidationResult) : void
+        -ValidateOutputDirectory(dir : string, result : ValidationResult) : void
+        -ValidateFramework(framework : string, result : ValidationResult) : void
+        -IsDirectoryWritable(path : string) : bool
+    }
+}
+
+package "CodeGenerator.Abstractions.Validation" {
+    class ValidationResult {
+        +IsValid : bool
+        +Errors : List<ValidationError>
+        +Warnings : List<ValidationError>
+        +AddError(prop : string, msg : string) : void
+        +AddWarning(prop : string, msg : string) : void
+    }
+
+    class ValidationError {
+        +PropertyName : string
+        +ErrorMessage : string
+        +Severity : ValidationSeverity
+    }
+
+    enum ValidationSeverity {
+        Error
+        Warning
+    }
+}
+
+GenerationOptionsValidator --> GenerationOptions : validates
+GenerationOptionsValidator --> ValidationResult : returns
+ValidationResult o-- ValidationError
+ValidationError --> ValidationSeverity
+
+@enduml

@@ -1,0 +1,26 @@
+@startuml c4_component
+!theme plain
+!include <C4/C4_Component>
+
+title Interactive Mode -- Component Diagram
+
+Container_Boundary(cli, "CodeGenerator.Cli") {
+    Component(createCmd, "CreateCodeGeneratorCommand", "RootCommand", "Parses args, detects missing name, delegates to prompt service or proceeds")
+    Component(genOpts, "GenerationOptions", "Record", "Immutable record: Name, OutputDirectory, Framework, Slnx, LocalSourceRoot")
+
+    Component(iPrompt, "IInteractivePromptService", "Interface", "IsInteractive, PromptForMissingOptions(partial)")
+    Component(spectrePrompt, "SpectrePromptService", "Class", "Spectre.Console prompts; checks Console.IsInputRedirected")
+    Component(nonInteractive, "NonInteractivePromptService", "Class", "Validates required options present; throws if missing")
+
+    Component(ttyDetect, "TTY Detection", "Logic", "Console.IsInputRedirected check in DI registration and IsInteractive property")
+}
+
+Rel(createCmd, genOpts, "Constructs partial from CLI args")
+Rel(createCmd, iPrompt, "Calls PromptForMissingOptions when name is empty")
+Rel(iPrompt, genOpts, "Returns fully-populated")
+spectrePrompt ..|> iPrompt : implements
+nonInteractive ..|> iPrompt : implements
+Rel(spectrePrompt, ttyDetect, "Uses for IsInteractive")
+Rel(nonInteractive, ttyDetect, "Returns false")
+
+@enduml

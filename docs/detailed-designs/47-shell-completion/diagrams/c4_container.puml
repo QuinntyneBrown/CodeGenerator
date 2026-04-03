@@ -1,0 +1,28 @@
+@startuml c4_container
+!theme plain
+!include <C4/C4_Container>
+
+title Shell Completion — Container Diagram
+
+Person(dev, "Developer", "Uses tab completion")
+
+System_Boundary(completion, "Completion System") {
+    Container(shell, "Shell", "bash/zsh/PowerShell/fish", "User terminal with completion scripts")
+    Container(suggest, "dotnet-suggest", ".NET Global Tool", "Bridges shell Tab events to CLI [suggest]")
+    Container(cli, "CodeGenerator CLI", "System.CommandLine 2.0", "Processes [suggest] requests, returns candidates")
+    Container(provider, "CompletionProvider", "Static class", "Custom completions: frameworks, names, directories")
+}
+
+System_Ext(fs, "File System", "Current directory for context-aware completions")
+System_Ext(profile, "Shell Profile", ".bashrc / .zshrc / $PROFILE / config.fish")
+
+Rel(dev, shell, "Presses Tab")
+Rel(shell, suggest, "Completion request")
+Rel(suggest, cli, "[suggest] directive")
+Rel(cli, provider, "GetFrameworkCompletions, etc.")
+Rel(provider, fs, "Directory.GetCurrentDirectory()")
+Rel(cli, suggest, "Candidate list")
+Rel(suggest, shell, "Formatted completions")
+Rel(shell, profile, "Reads completion registration")
+
+@enduml

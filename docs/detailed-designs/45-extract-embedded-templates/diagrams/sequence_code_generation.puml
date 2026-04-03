@@ -1,0 +1,40 @@
+@startuml sequence_code_generation
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Code Generation with Templates
+
+actor Developer as dev
+participant "CreateCodeGeneratorCommand" as cmd
+participant "ITemplateResolver" as resolver
+participant "ITemplateProcessor" as processor
+participant "IArtifactGenerator" as artgen
+database "File System" as fs
+
+dev -> cmd : codegen -n MyApp -f net9.0
+activate cmd
+
+cmd -> cmd : Build token dictionary\n{ name: "MyApp", framework: "net9.0", ... }
+
+loop for each template (Program.cs, AppRootCommand.cs, ...)
+    cmd -> resolver : ResolveAsync("Program.cs")
+    activate resolver
+    resolver --> cmd : raw Liquid template
+    deactivate resolver
+
+    cmd -> processor : ProcessAsync(template, tokens)
+    activate processor
+    processor --> cmd : rendered content
+    deactivate processor
+
+    cmd -> artgen : GenerateAsync(\nContentFileModel(content, name, dir, ext))
+    activate artgen
+    artgen -> fs : Write file
+    artgen --> cmd : done
+    deactivate artgen
+end
+
+cmd --> dev : Solution created successfully
+deactivate cmd
+
+@enduml

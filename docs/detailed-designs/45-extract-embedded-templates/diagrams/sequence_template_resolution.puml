@@ -1,0 +1,65 @@
+@startuml sequence_template_resolution
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Template Resolution with User Overrides
+
+participant "CreateCodeGeneratorCommand" as cmd
+participant "CompositeTemplateResolver" as composite
+participant "FileSystemTemplateResolver" as fsResolver
+participant "EmbeddedResourceTemplateResolver" as embedResolver
+database "User Directory\n./my-templates/" as userDir
+database "Assembly\nEmbedded Resources" as assembly
+
+== Template found in user directory ==
+
+cmd -> composite : ResolveAsync("Program.cs")
+activate composite
+
+composite -> fsResolver : CanResolve("Program.cs")
+activate fsResolver
+fsResolver -> userDir : Exists("./my-templates/Program.cs.liquid")
+userDir --> fsResolver : true
+fsResolver --> composite : true
+deactivate fsResolver
+
+composite -> fsResolver : ResolveAsync("Program.cs")
+activate fsResolver
+fsResolver -> userDir : ReadAllTextAsync("Program.cs.liquid")
+userDir --> fsResolver : template content
+fsResolver --> composite : template content
+deactivate fsResolver
+
+composite --> cmd : template content (from user dir)
+deactivate composite
+
+== Template NOT in user directory, fallback to embedded ==
+
+cmd -> composite : ResolveAsync("install-cli.bat")
+activate composite
+
+composite -> fsResolver : CanResolve("install-cli.bat")
+activate fsResolver
+fsResolver -> userDir : Exists("./my-templates/install-cli.bat.liquid")
+userDir --> fsResolver : false
+fsResolver --> composite : false
+deactivate fsResolver
+
+composite -> embedResolver : CanResolve("install-cli.bat")
+activate embedResolver
+embedResolver -> assembly : GetManifestResourceStream(...)
+assembly --> embedResolver : stream (not null)
+embedResolver --> composite : true
+deactivate embedResolver
+
+composite -> embedResolver : ResolveAsync("install-cli.bat")
+activate embedResolver
+embedResolver -> assembly : GetManifestResourceStream(...)
+assembly --> embedResolver : stream
+embedResolver --> composite : template content
+deactivate embedResolver
+
+composite --> cmd : template content (from embedded)
+deactivate composite
+
+@enduml

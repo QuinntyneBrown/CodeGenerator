@@ -1,0 +1,35 @@
+@startuml sequence_unwritable_dir
+!theme plain
+
+title Sequence — Unwritable Directory Detected
+
+actor User
+participant "HandleAsync" as Handler
+participant "GenerationOptionsValidator" as Validator
+participant "IFileSystem" as FS
+participant "ValidationResult" as Result
+
+User -> Handler : codegenerator-cli -n MyApp -o /readonly-mount
+activate Handler
+
+Handler -> Handler : Create GenerationOptions record
+
+Handler -> Validator : Validate(options)
+activate Validator
+
+Validator -> FS : Directory.Exists("/readonly-mount")
+FS --> Validator : true
+
+Validator -> FS : File.Create(tempTestFile)
+FS --> Validator : throws UnauthorizedAccessException
+
+Validator -> Result : AddError("OutputDirectory",\n"not writable: '/readonly-mount'")
+Validator --> Handler : result (IsValid = false)
+deactivate Validator
+
+Handler -> Handler : throw CliValidationException(result)
+Handler --> User : exit code 1 +\n"OutputDirectory: not writable"
+
+deactivate Handler
+
+@enduml

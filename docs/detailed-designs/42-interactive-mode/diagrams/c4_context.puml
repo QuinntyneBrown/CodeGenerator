@@ -1,0 +1,20 @@
+@startuml c4_context
+!theme plain
+!include <C4/C4_Context>
+
+title Interactive Mode -- System Context
+
+Person(interactiveUser, "Interactive User", "Developer at a terminal who invokes CLI without all arguments")
+Person(scriptedUser, "Scripted User", "CI pipeline or script that provides all arguments")
+
+System(cli, "CodeGenerator CLI", "Code generation CLI with interactive questionnaire fallback when required args are missing")
+
+System_Ext(terminal, "Terminal / TTY", "User's interactive terminal session")
+System_Ext(ciEnv, "CI Environment", "Non-interactive environment with redirected stdin")
+
+Rel(interactiveUser, cli, "Invokes without args")
+Rel(scriptedUser, cli, "Invokes with all args")
+Rel(cli, terminal, "Reads interactive prompts via Spectre.Console")
+Rel(cli, ciEnv, "Detects non-TTY, skips prompts")
+
+@enduml

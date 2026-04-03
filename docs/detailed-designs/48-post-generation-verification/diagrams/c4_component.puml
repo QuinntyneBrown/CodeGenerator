@@ -1,0 +1,33 @@
+@startuml c4_component
+!theme plain
+!include <C4/C4_Component>
+
+title Post-Generation Verification — Component Diagram
+
+Container_Boundary(verification, "CodeGenerator.Core.Verification") {
+    Component(iverifier, "IPostGenerationVerifier", "Interface", "Name, VerifyAsync(dir, options)")
+    Component(buildV, "DotNetBuildVerifier", "Class", "Runs dotnet build\nParses errors/warnings from MSBuild output")
+    Component(runV, "DotNetRunVerifier", "Class", "Runs dotnet run -- --help\nChecks exit code and stdout")
+    Component(runner, "VerificationRunner", "Class", "Orchestrates verifiers in sequence\nShort-circuits on build failure")
+    Component(options, "VerificationOptions", "Class", "SolutionDirectory, ProjectPath,\nTreatWarningsAsErrors, Timeout")
+    Component(stepResult, "VerificationStepResult", "Record", "VerifierName, Passed, ErrorCount,\nWarningCount, Output, Duration")
+    Component(result, "VerificationResult", "Class", "Steps, AllPassed, TotalErrors,\nTotalWarnings, TotalDuration")
+}
+
+Container_Boundary(cli, "CodeGenerator.Cli") {
+    Component(renderer, "VerificationResultRenderer", "Class", "Formats VerificationResult\nfor console display")
+}
+
+Component(cmdSvc, "ICommandService", "Interface", "Start / StartWithOutput")
+
+iverifier <|.. buildV
+iverifier <|.. runV
+runner --> "1..*" iverifier : executes
+runner --> result : produces
+result *-- "0..*" stepResult
+runner ..> options : reads
+buildV --> cmdSvc : uses
+runV --> cmdSvc : uses
+renderer --> result : renders
+
+@enduml

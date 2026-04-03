@@ -1,0 +1,32 @@
+@startuml sequence_process_failure
+!theme plain
+
+title Sequence — Process Failure (dotnet CLI)
+
+actor User
+participant "HandleAsync" as Handler
+participant "IGenerationRollbackService" as Rollback
+participant "ICommandService" as Cmd
+
+User -> Handler : codegenerator-cli -n MyApp
+activate Handler
+
+Handler -> Rollback : TrackDirectory(solutionDir)
+
+Handler -> Cmd : Start("dotnet new sln -n MyApp")
+Cmd --> Handler : exitCode = 1 (failure)
+
+Handler -> Handler : throw CliProcessException(\n  "dotnet new sln", exitCode=1)
+
+Handler -> Handler : catch CliProcessException
+Handler -> Rollback : Rollback()
+activate Rollback
+Rollback -> Rollback : Delete empty tracked dirs
+Rollback --> Handler
+deactivate Rollback
+
+Handler --> User : exit code 3 +\n"Command 'dotnet new sln' failed with exit code 1"
+
+deactivate Handler
+
+@enduml

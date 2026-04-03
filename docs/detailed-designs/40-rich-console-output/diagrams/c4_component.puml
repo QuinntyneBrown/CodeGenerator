@@ -1,0 +1,31 @@
+@startuml c4_component
+!theme plain
+!include <C4/C4_Component>
+
+title C4 Component — Console Rendering Components
+
+Container_Boundary(cli, "CodeGenerator.Cli.Rendering") {
+    Component(irenderer, "IConsoleRenderer", "Interface", "WriteStep, WriteTree, WriteSummary, WriteError, etc.")
+    Component(spectre, "SpectreConsoleRenderer", "Class", "Rich ANSI output via Spectre.Console")
+    Component(plain, "PlainConsoleRenderer", "Class", "Plain text output for CI/redirected")
+    Component(progress, "GenerationProgressReporter", "Class", "Tracks step count, delegates to IConsoleRenderer")
+}
+
+Container_Boundary(core, "CodeGenerator.Core") {
+    Component(genResult, "GenerationResult", "Class", "Files list, TotalFileCount, TotalSizeBytes")
+    Component(fileEntry, "GeneratedFileEntry", "Record", "Path, Content, SizeBytes")
+}
+
+Container_Boundary(handler, "CodeGenerator.Cli.Commands") {
+    Component(cmd, "CreateCodeGeneratorCommand", "RootCommand", "Uses progress reporter and renderer")
+}
+
+irenderer <|.. spectre
+irenderer <|.. plain
+cmd --> progress : creates
+progress --> irenderer : delegates output
+cmd --> irenderer : WriteTree, WriteSummary
+irenderer --> genResult : reads file list
+genResult o-- fileEntry
+
+@enduml

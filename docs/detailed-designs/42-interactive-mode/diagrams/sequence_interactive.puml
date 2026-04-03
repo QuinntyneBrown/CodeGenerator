@@ -1,0 +1,52 @@
+@startuml sequence_interactive
+!theme plain
+
+title Interactive Flow -- User invokes CLI without arguments
+
+actor User as user
+participant "System.CommandLine\nParser" as parser
+participant "CreateCodeGeneratorCommand\nHandler" as handler
+participant "SpectrePromptService" as prompt
+participant "Spectre.Console\nAnsiConsole" as ansi
+participant "Generation\nEngine" as engine
+
+user -> parser : codegen-cli (no args)
+parser --> handler : name=null, output=CWD, framework="net9.0", slnx=false, localSource=null
+
+handler -> handler : Construct partial GenerationOptions\n(Name = "")
+handler -> prompt : IsInteractive?
+prompt --> handler : true (stdin is TTY)
+
+handler -> prompt : PromptForMissingOptions(partial)
+
+prompt -> ansi : TextPrompt("Solution name:")
+ansi -> user : "Solution name: "
+user --> ansi : "MyProject"
+ansi --> prompt : "MyProject"
+
+prompt -> ansi : TextPrompt("Output directory:", default=CWD)
+ansi -> user : "Output directory [CWD]: "
+user --> ansi : (Enter - accept default)
+ansi --> prompt : CWD
+
+prompt -> ansi : SelectionPrompt("Target framework:")
+ansi -> user : "> net9.0\n  net8.0"
+user --> ansi : (select net9.0)
+ansi --> prompt : "net9.0"
+
+prompt -> ansi : ConfirmationPrompt("Use .slnx?")
+ansi -> user : "Use .slnx format? [y/n]: "
+user --> ansi : "n"
+ansi --> prompt : false
+
+prompt -> ansi : TextPrompt("Local source root (optional):")
+ansi -> user : "Local source root: "
+user --> ansi : (Enter - skip)
+ansi --> prompt : ""
+
+prompt --> handler : GenerationOptions { Name="MyProject", ... }
+handler -> engine : Generate with options
+engine --> handler : success
+handler --> user : "Solution created successfully"
+
+@enduml

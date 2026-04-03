@@ -1,0 +1,35 @@
+@startuml sequence_invalid_name
+!theme plain
+
+title Sequence — Invalid Name Rejected Before Generation
+
+actor User
+participant "HandleAsync" as Handler
+participant "GenerationOptionsValidator" as Validator
+participant "ValidationResult" as Result
+
+User -> Handler : codegenerator-cli -n "123-bad!" -o ./out
+activate Handler
+
+Handler -> Handler : Create GenerationOptions record
+
+Handler -> Validator : Validate(options)
+activate Validator
+Validator -> Result : new ValidationResult()
+Validator -> Result : AddError("Name",\n"'123-bad!' is not a valid C# identifier")
+Validator --> Handler : result (IsValid = false)
+deactivate Validator
+
+Handler -> Handler : throw CliValidationException(result)
+
+note right of Handler
+  No files created.
+  No directories created.
+  No dotnet commands run.
+end note
+
+Handler --> User : exit code 1 +\n"Name: '123-bad!' is not a valid C# identifier"
+
+deactivate Handler
+
+@enduml

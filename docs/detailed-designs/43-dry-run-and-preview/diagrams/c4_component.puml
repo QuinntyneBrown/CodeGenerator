@@ -1,0 +1,31 @@
+@startuml c4_component
+!theme plain
+!include <C4/C4_Component>
+
+title Dry-Run and Preview -- Component Diagram
+
+Container_Boundary(cli, "CodeGenerator.Cli") {
+    Component(dryRunOption, "--dry-run / --what-if", "Option<bool>", "Boolean CLI option aliased as both --dry-run and --what-if")
+    Component(handler, "CreateCodeGeneratorCommand\nHandler", "Method", "Branches on dryRun flag to use real or dry-run context")
+    Component(iFormatter, "IDryRunOutputFormatter", "Interface", "Render(GenerationResult) contract")
+    Component(formatter, "DryRunOutputFormatter", "Class", "Renders files table, commands list, summary; plain or rich mode")
+}
+
+Container_Boundary(core, "CodeGenerator.Core") {
+    Component(ctxFactory, "GenerationContextFactory", "Static Class", "Create(dryRun, fileSystem, commandService)")
+    Component(genCtx, "GenerationContext", "Class", "Carries DryRun flag, Result, FileSystem, CommandService")
+    Component(genResult, "GenerationResult", "Class", "Files list, Commands list, TotalFileCount, TotalSizeBytes")
+    Component(dryRunCmd, "DryRunCommandService", "Class", "Records commands in GenerationResult without executing")
+}
+
+Rel(handler, dryRunOption, "Reads dryRun flag")
+Rel(handler, ctxFactory, "Create(dryRun: true, ...)")
+Rel(ctxFactory, genCtx, "Returns with DryRunCommandService")
+Rel(ctxFactory, dryRunCmd, "Creates and wires into context")
+Rel(genCtx, genResult, "Owns")
+Rel(dryRunCmd, genResult, "AddCommand()")
+Rel(handler, iFormatter, "Render(result) when dryRun")
+formatter ..|> iFormatter : implements
+Rel(formatter, genResult, "Reads Files, Commands, totals")
+
+@enduml

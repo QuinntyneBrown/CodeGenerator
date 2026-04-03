@@ -1,0 +1,79 @@
+@startuml class_diagram
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 12
+
+title Post-Generation Verification — Class Diagram
+
+interface IPostGenerationVerifier {
+    +Name : string {get}
+    +VerifyAsync(projectDir: string, options: VerificationOptions) : Task<VerificationStepResult>
+}
+
+class DotNetBuildVerifier {
+    -_commandService : ICommandService
+    -_logger : ILogger
+    +Name : string = "dotnet build"
+    +VerifyAsync(projectDir, options) : Task<VerificationStepResult>
+    -ParseBuildOutput(output: string) : (int errors, int warnings)
+}
+
+class DotNetRunVerifier {
+    -_commandService : ICommandService
+    -_logger : ILogger
+    +Name : string = "dotnet run --help"
+    +VerifyAsync(projectDir, options) : Task<VerificationStepResult>
+}
+
+class VerificationOptions {
+    +SolutionDirectory : string
+    +ProjectPath : string?
+    +TreatWarningsAsErrors : bool = true
+    +Timeout : TimeSpan = 120s
+}
+
+class VerificationStepResult <<record>> {
+    +VerifierName : string
+    +Passed : bool
+    +ErrorCount : int
+    +WarningCount : int
+    +Output : string
+    +Duration : TimeSpan
+    +FailureReason : string?
+}
+
+class VerificationResult {
+    +Steps : List<VerificationStepResult>
+    +AllPassed : bool {computed}
+    +TotalErrors : int {computed}
+    +TotalWarnings : int {computed}
+    +TotalDuration : TimeSpan {computed}
+}
+
+class VerificationRunner {
+    -_verifiers : IEnumerable<IPostGenerationVerifier>
+    -_logger : ILogger
+    +RunAllAsync(options: VerificationOptions) : Task<VerificationResult>
+}
+
+class VerificationResultRenderer {
+    +Render(result: VerificationResult) : void
+}
+
+class CommandOutput <<record>> {
+    +ExitCode : int
+    +StandardOutput : string
+    +StandardError : string
+}
+
+IPostGenerationVerifier <|.. DotNetBuildVerifier
+IPostGenerationVerifier <|.. DotNetRunVerifier
+VerificationRunner --> "1..*" IPostGenerationVerifier : executes
+VerificationRunner --> VerificationResult : produces
+VerificationResult *-- "0..*" VerificationStepResult
+VerificationRunner ..> VerificationOptions : reads
+VerificationResultRenderer --> VerificationResult : renders
+DotNetBuildVerifier ..> CommandOutput : receives
+DotNetRunVerifier ..> CommandOutput : receives
+
+@enduml

@@ -1,0 +1,48 @@
+@startuml sequence_dryrun
+!theme plain
+
+title Dry-Run Generation Workflow
+
+actor User as user
+participant "System.CommandLine\nParser" as parser
+participant "CreateCodeGeneratorCommand\nHandler" as handler
+participant "GenerationContextFactory" as factory
+participant "DryRunCommandService" as dryCmd
+participant "IArtifactGenerator" as artGen
+participant "GenerationResult" as result
+participant "DryRunOutputFormatter" as formatter
+
+user -> parser : codegen-cli -n MyProject --dry-run
+parser --> handler : name="MyProject", dryRun=true
+
+handler -> factory : Create(dryRun: true, fileSystem, commandService)
+factory -> result : new GenerationResult()
+factory -> dryCmd : new DryRunCommandService(result)
+factory --> handler : IGenerationContext (dryRun)
+
+handler -> dryCmd : Start("dotnet new sln -n MyProject", dir)
+dryCmd -> result : AddCommand("dotnet new sln ...", dir)
+dryCmd --> handler : 0
+
+handler -> artGen : GenerateAsync(csprojFileModel)
+artGen -> result : AddFile("MyProject.Cli.csproj", content)
+artGen --> handler : done
+
+handler -> artGen : GenerateAsync(programFileModel)
+artGen -> result : AddFile("Program.cs", content)
+
+handler -> artGen : GenerateAsync(rootCommandFileModel)
+artGen -> result : AddFile("AppRootCommand.cs", content)
+
+handler -> dryCmd : Start("dotnet sln add ...", dir)
+dryCmd -> result : AddCommand("dotnet sln add ...", dir)
+
+handler -> formatter : Render(result)
+formatter -> result : Read Files (4 entries)
+formatter -> result : Read Commands (2 entries)
+formatter -> result : TotalFileCount = 4, TotalSizeBytes = 12345
+formatter --> user : Preview table output
+
+note over user : No files written\nNo commands executed
+
+@enduml

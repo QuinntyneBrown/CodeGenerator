@@ -1,0 +1,34 @@
+@startuml sequence_io_failure
+!theme plain
+
+title Sequence — I/O Failure with Rollback
+
+actor User
+participant "HandleAsync" as Handler
+participant "IGenerationRollbackService" as Rollback
+participant "IArtifactGenerator" as Gen
+
+User -> Handler : codegenerator-cli -n MyApp -o /readonly
+activate Handler
+
+Handler -> Rollback : TrackDirectory(solutionDir)
+Handler -> Rollback : TrackDirectory(srcDir)
+
+Handler -> Gen : GenerateAsync(csproj)
+Gen --> Handler : throws IOException
+
+Handler -> Handler : catch IOException
+Handler -> Handler : wrap as CliIOException
+
+Handler -> Rollback : Rollback()
+activate Rollback
+Rollback -> Rollback : Delete tracked files
+Rollback -> Rollback : Delete empty tracked dirs
+Rollback --> Handler
+deactivate Rollback
+
+Handler --> User : exit code 2 + error message
+
+deactivate Handler
+
+@enduml

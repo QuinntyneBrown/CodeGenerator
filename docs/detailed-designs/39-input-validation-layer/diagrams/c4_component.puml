@@ -1,0 +1,28 @@
+@startuml c4_component
+!theme plain
+!include <C4/C4_Component>
+
+title C4 Component - Input Validation Components
+
+Container_Boundary(cli, "CodeGenerator.Cli") {
+    Component(handler, "CreateCodeGeneratorCommand", "RootCommand", "Calls validator before generation")
+    Component(options, "GenerationOptions", "Record", "Immutable validated options")
+    Component(validator, "GenerationOptionsValidator", "Class", "Name, output dir, framework validation rules")
+}
+
+Container_Boundary(abstractions, "CodeGenerator.Abstractions") {
+    Component(valResult, "ValidationResult", "Class", "Errors and Warnings lists")
+    Component(valError, "ValidationError", "Class", "PropertyName, ErrorMessage, Severity")
+}
+
+Container_Boundary(cliErrors, "CodeGenerator.Cli.Errors") {
+    Component(cliValEx, "CliValidationException", "Exception", "Wraps ValidationResult, exit code 1")
+}
+
+Rel(handler, validator, "Validate(options)")
+Rel(handler, options, "Creates from CLI args")
+Rel(validator, valResult, "Returns")
+Rel(valResult, valError, "Contains")
+Rel(handler, cliValEx, "Throws if !IsValid")
+
+@enduml

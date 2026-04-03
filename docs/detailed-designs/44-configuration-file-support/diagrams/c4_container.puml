@@ -1,0 +1,27 @@
+@startuml c4_container
+!theme plain
+!include <C4/C4_Container>
+
+title Configuration File Support — Container Diagram
+
+Person(dev, "Developer", "Invokes CLI with or without explicit flags")
+
+System_Boundary(codegen, "CodeGenerator CLI") {
+    Container(cli, "CLI Application", "System.CommandLine 2.0", "Arg parsing, command routing, config merging")
+    Container(config, "Configuration Module", "System.Text.Json, M.E.Configuration", "Config file discovery, parsing, merging")
+    Container(core, "CodeGenerator.Core", ".NET 9.0 Library", "IArtifactGenerator, ICommandService, ITemplateProcessor")
+    Container(dotnet, "CodeGenerator.DotNet", ".NET 9.0 Library", "SolutionModel, ProjectModel, ContentFileModel")
+}
+
+System_Ext(fs, "File System", ".codegenerator.json, generated output")
+System_Ext(env, "Environment", "CODEGEN_* environment variables")
+
+Rel(dev, cli, "Invokes", "codegen -n MyApp")
+Rel(cli, config, "Loads merged config")
+Rel(config, fs, "Reads .codegenerator.json")
+Rel(config, env, "Reads CODEGEN_* vars")
+Rel(cli, core, "Generates artifacts")
+Rel(cli, dotnet, "Uses solution/project models")
+Rel(core, fs, "Writes generated files")
+
+@enduml

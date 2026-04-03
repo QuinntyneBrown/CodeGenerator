@@ -1,0 +1,44 @@
+@startuml sequence_end_to_end
+!theme plain
+
+title Integration Test -- End-to-End Generation Workflow
+
+actor Test as test
+participant "GeneratedProjectFixture" as fixture
+participant "dotnet run\n(CLI process)" as cli
+participant "File System\n(temp directory)" as fs
+participant "dotnet build" as build
+
+test -> fixture : InitializeAsync()
+fixture -> fs : CreateDirectory(tempDir)
+fixture -> cli : dotnet run --project CLI -- -n TestSolution -o tempDir
+cli -> fs : Create solution directory structure
+cli -> fs : Write .sln / .slnx file
+cli -> fs : Write .csproj file
+cli -> fs : Write Program.cs, Commands/*.cs
+cli -> fs : Write install-cli.bat
+cli --> fixture : exitCode = 0
+
+fixture --> test : ready
+
+test -> fixture : Assert ExitCode == 0
+test -> fixture : FileExists("TestSolution.sln")
+fixture -> fs : File.Exists(path)
+fixture --> test : true
+
+test -> fixture : FileExists("src/TestSolution.Cli/Program.cs")
+fixture --> test : true
+
+test -> fixture : ReadFile("src/TestSolution.Cli/Program.cs")
+fixture --> test : fileContent
+test -> test : Assert content contains "AddCoreServices"
+
+note over test : [Trait("Category", "Slow")]
+test -> build : dotnet build (in solution dir)
+build --> test : exitCode = 0
+test -> test : Assert build succeeded
+
+test -> fixture : DisposeAsync()
+fixture -> fs : Delete(tempDir, recursive)
+
+@enduml

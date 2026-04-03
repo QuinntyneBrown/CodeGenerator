@@ -1,0 +1,31 @@
+@startuml c4_component
+!theme plain
+!include <C4/C4_Component>
+
+title Configuration File Support — Component Diagram
+
+Container_Boundary(cli, "CodeGenerator CLI Application") {
+    Component(cmd, "CreateCodeGeneratorCommand", "RootCommand", "Parses CLI args, merges with config, delegates generation")
+    Component(loader, "ConfigurationLoader", "IConfigurationLoader", "Discovers .codegenerator.json by walking directory tree")
+    Component(model, "CodeGeneratorConfig", "POCO", "Strongly-typed config: defaults, templates sections")
+    Component(merger, "ConfigurationMerger", "Static Helper", "Merges CLI args > config file > env vars > defaults")
+}
+
+Container_Boundary(core, "CodeGenerator.Core") {
+    Component(artgen, "IArtifactGenerator", "Interface", "Generates files from models")
+    Component(cmdsvc, "ICommandService", "Interface", "Runs shell commands")
+}
+
+System_Ext(fs, "File System", ".codegenerator.json files")
+System_Ext(env, "Environment", "CODEGEN_* variables")
+
+Rel(cmd, loader, "LoadAsync(directory)")
+Rel(loader, fs, "Searches up directory tree")
+Rel(loader, model, "Deserializes into")
+Rel(cmd, merger, "Merge(cliArgs, config, envVars)")
+Rel(merger, model, "Reads config values")
+Rel(merger, env, "Reads env vars")
+Rel(cmd, artgen, "GenerateAsync(model)")
+Rel(cmd, cmdsvc, "Start(command, dir)")
+
+@enduml

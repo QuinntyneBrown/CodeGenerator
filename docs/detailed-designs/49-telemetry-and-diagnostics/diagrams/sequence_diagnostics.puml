@@ -1,0 +1,68 @@
+@startuml sequence_diagnostics
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Diagnostics Collection — Full Workflow
+
+participant "Developer" as Dev
+participant "CreateCodeGeneratorCommand" as Cmd
+participant "DiagnosticsCollector" as Collector
+participant "GenerationTimer" as Timer
+participant "ICommandService" as CS
+participant "IArtifactGenerator" as AG
+participant "DiagnosticsRenderer" as Renderer
+
+== Initialization ==
+
+Dev -> Cmd : HandleAsync(name, output, ...,\n  diagnostics: true)
+
+Cmd -> Collector : CollectEnvironment()
+Collector -> CS : StartWithOutput("dotnet --version")
+CS --> Collector : "9.0.100"
+Collector --> Cmd : EnvironmentInfo
+
+== Generation with Timing ==
+
+Cmd -> Timer : TimeStep("Create directories")
+note right: returns TimingScope (IDisposable)
+Cmd -> Cmd : Directory.CreateDirectory(...)
+Cmd -> Timer : Dispose() -> records 0.02s
+
+Cmd -> Timer : TimeStep("Create solution file")
+Cmd -> CS : Start("dotnet new sln ...")
+CS --> Cmd : exit 0
+Cmd -> Timer : Dispose() -> records 1.23s
+
+Cmd -> Timer : TimeStep("Generate CLI project")
+Cmd -> AG : GenerateAsync(csproj)
+AG --> Cmd : done
+Cmd -> Timer : Dispose() -> records 0.45s
+
+loop each file in project.Files
+    Cmd -> Timer : TimeStep("Generate <filename>")
+    Cmd -> AG : GenerateAsync(file)
+    AG --> Cmd : done
+    Cmd -> Timer : Dispose() -> records duration
+end
+
+Cmd -> Timer : TimeStep("dotnet sln add")
+Cmd -> CS : Start("dotnet sln add ...")
+CS --> Cmd : exit 0
+Cmd -> Timer : Dispose() -> records 0.89s
+
+Cmd -> Timer : TimeStep("Generate install script")
+Cmd -> AG : GenerateAsync(install-cli.bat)
+AG --> Cmd : done
+Cmd -> Timer : Dispose() -> records 0.01s
+
+== Report ==
+
+Cmd -> Timer : GetEntries()
+Timer --> Cmd : List<TimingEntry>
+
+Cmd -> Cmd : new DiagnosticsReport(\n  environment, entries, total)
+
+Cmd -> Renderer : Render(report)
+Renderer --> Dev : Formatted diagnostics output
+
+@enduml

@@ -1,0 +1,26 @@
+@startuml c4_container
+!theme plain
+!include <C4/C4_Container>
+
+title Interactive Mode -- Container Diagram
+
+Person(user, "User", "Developer or CI system")
+
+System_Boundary(cliSystem, "CodeGenerator CLI") {
+    Container(cmdHandler, "Command Handlers", "C#", "CreateCodeGeneratorCommand handler with interactive fallback logic")
+    Container(promptService, "Prompt Service", "C#", "IInteractivePromptService with Spectre and NonInteractive implementations")
+    Container(genOptions, "GenerationOptions", "C# record", "Unified options record populated from CLI args or prompts")
+    Container(core, "CodeGenerator.Core", ".NET Library", "Generation engine, artifact generator")
+}
+
+System_Ext(spectre, "Spectre.Console", "Rich terminal prompts: TextPrompt, SelectionPrompt, ConfirmationPrompt")
+System_Ext(sysCmdLine, "System.CommandLine", "CLI argument parsing")
+
+Rel(user, cmdHandler, "Invokes CLI")
+Rel(cmdHandler, sysCmdLine, "Parses arguments")
+Rel(cmdHandler, promptService, "Fills missing options")
+Rel(promptService, spectre, "Uses for interactive prompts")
+Rel(cmdHandler, genOptions, "Constructs from args or prompts")
+Rel(cmdHandler, core, "Passes options to generation")
+
+@enduml

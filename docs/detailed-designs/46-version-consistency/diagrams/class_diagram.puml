@@ -1,0 +1,59 @@
+@startuml class_diagram
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 12
+
+title Version Consistency — Class Diagram
+
+class PackageVersions <<static>> {
+    {static} +Core : string = "1.3.0"
+    {static} +DotNet : string = "1.2.0"
+    {static} +Angular : string = "1.2.0"
+    {static} +React : string = "1.2.5"
+    {static} +Flask : string = "1.2.6"
+    {static} +Python : string = "1.2.1"
+    {static} +Playwright : string = "1.2.5"
+    {static} +Detox : string = "1.2.1"
+    {static} +ReactNative : string = "1.2.1"
+    --
+    {static} +AsTokenDictionary() : Dictionary<string, object>
+}
+
+class CliVersion <<static>> {
+    {static} +Current : string <<get>>
+}
+
+class CreateCodeGeneratorCommand <<RootCommand>> {
+    -_serviceProvider : IServiceProvider
+    -HandleAsync(...) : Task
+    -{static} GetPackageReferences() : string
+}
+
+class InstallCommand <<Command>> {
+    -_serviceProvider : IServiceProvider
+    -HandleAsync(outputDirectory) : Task
+    -{static} GetSkillContent() : string
+}
+
+interface ITemplateProcessor {
+    +ProcessAsync(template, tokens) : Task<string>
+}
+
+CreateCodeGeneratorCommand ..> PackageVersions : reads constants\nor AsTokenDictionary()
+InstallCommand ..> PackageVersions : reads constants\nfor SKILL.md content
+CreateCodeGeneratorCommand ..> ITemplateProcessor : injects version tokens
+CreateCodeGeneratorCommand ..> CliVersion : --version display
+
+note right of PackageVersions
+  Single source of truth.
+  Update here when publishing
+  new package versions.
+end note
+
+note bottom of CliVersion
+  Reads version from
+  AssemblyInformationalVersionAttribute
+  or Assembly.GetName().Version
+end note
+
+@enduml

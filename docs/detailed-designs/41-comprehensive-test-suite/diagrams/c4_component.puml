@@ -1,0 +1,32 @@
+@startuml c4_component
+!theme plain
+!include <C4/C4_Component>
+
+title Comprehensive Test Suite -- Component Diagram (Unit Test Project)
+
+Container_Boundary(unitTests, "CodeGenerator.Cli.UnitTests") {
+    Component(harness, "CliTestHarness", "Class", "Wraps System.CommandLine TestConsole for in-process CLI invocation")
+    Component(spFactory, "ServiceProviderFactory", "Static Class", "Builds IServiceProvider with MockFileSystem and DryRunCommandService")
+    Component(roslynVal, "RoslynValidator", "Static Class", "Parses C# source text via Roslyn and asserts zero syntax errors")
+    Component(optionTests, "OptionParsingTests", "Test Classes", "Verify -n, -o, -f, --slnx, --local-source-root parsing")
+    Component(templateTests, "TemplateTests", "Test Classes", "Verify generated C# and XML templates are syntactically valid")
+    Component(handlerTests, "CommandHandlerTests", "Test Classes", "Verify handler logic: directory creation, command execution, logging")
+    Component(validationTests, "ValidationTests", "Test Classes", "Verify input validation rules for name, framework, paths")
+}
+
+Container_Boundary(integrationTests, "CodeGenerator.Cli.IntegrationTests") {
+    Component(fixture, "GeneratedProjectFixture", "IAsyncLifetime", "Creates temp dir, runs CLI, provides file accessors, cleans up")
+    Component(tempDir, "TempDirectoryFixture", "IAsyncLifetime", "Manages unique temp directory lifecycle")
+    Component(e2eTests, "EndToEndTests", "Test Classes", "Full CLI invocation and output verification")
+    Component(buildTests, "DotnetBuildTests", "Test Classes", "Runs dotnet build on generated solution [Slow]")
+}
+
+Rel(optionTests, harness, "Uses")
+Rel(handlerTests, harness, "Uses")
+Rel(harness, spFactory, "Gets IServiceProvider from")
+Rel(templateTests, roslynVal, "Validates generated code via")
+Rel(e2eTests, fixture, "Uses for project generation")
+Rel(buildTests, fixture, "Uses generated project from")
+Rel(fixture, tempDir, "Delegates temp dir mgmt to")
+
+@enduml

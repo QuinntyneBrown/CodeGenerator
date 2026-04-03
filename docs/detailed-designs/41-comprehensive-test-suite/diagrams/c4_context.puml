@@ -1,0 +1,22 @@
+@startuml c4_context
+!theme plain
+!include <C4/C4_Context>
+
+title Comprehensive Test Suite -- System Context
+
+Person(developer, "Developer", "Writes and runs tests locally during development")
+Person(ci, "CI Pipeline", "Executes tests on every PR; enforces coverage gate")
+
+System(testSuite, "CLI Test Suite", "Unit and integration tests for CodeGenerator CLI with 90%+ coverage target")
+
+System(cli, "CodeGenerator CLI", "System under test: option parsing, command handlers, template generation")
+System_Ext(dotnet, ".NET SDK", "Used by integration tests to build generated projects")
+System_Ext(roslyn, "Roslyn Compiler", "Used by unit tests to validate generated C# syntax")
+
+Rel(developer, testSuite, "Runs tests via dotnet test")
+Rel(ci, testSuite, "Runs tests on PR merge")
+Rel(testSuite, cli, "Invokes commands, inspects output")
+Rel(testSuite, roslyn, "Parses generated C# for syntax errors")
+Rel(testSuite, dotnet, "dotnet build on generated output (integration)")
+
+@enduml

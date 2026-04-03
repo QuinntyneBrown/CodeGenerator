@@ -1,0 +1,21 @@
+@startuml c4_context
+!theme plain
+!include <C4/C4_Context>
+
+title Dry-Run and Preview -- System Context
+
+Person(developer, "Developer", "Previews generation output before committing to disk")
+Person(ci, "CI Pipeline", "Validates generation plans with --what-if")
+
+System(cli, "CodeGenerator CLI", "Code generation CLI with --dry-run/--what-if preview capability")
+
+System_Ext(fs, "File System", "Target directory (not touched in dry-run mode)")
+System_Ext(shell, "OS Shell", "dotnet/npm commands (not executed in dry-run mode)")
+
+Rel(developer, cli, "codegen-cli -n MyProject --dry-run")
+Rel(ci, cli, "codegen-cli -n MyProject --what-if")
+Rel_L(cli, fs, "Writes files (normal mode only)")
+Rel_R(cli, shell, "Executes commands (normal mode only)")
+Rel(cli, developer, "Renders preview: file list, sizes, commands")
+
+@enduml

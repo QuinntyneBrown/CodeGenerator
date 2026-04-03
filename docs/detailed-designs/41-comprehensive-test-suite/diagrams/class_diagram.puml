@@ -1,0 +1,78 @@
+@startuml class_diagram
+!theme plain
+
+title Comprehensive Test Suite -- Class Diagram
+
+package "CodeGenerator.Cli.UnitTests.Helpers" {
+    class CliTestHarness {
+        - _serviceProvider : IServiceProvider
+        - _console : TestConsole
+        + CliTestHarness(serviceProvider : IServiceProvider)
+        + InvokeAsync(args : string[]) : Task<CliTestResult>
+    }
+
+    class CliTestResult <<record>> {
+        + ExitCode : int
+        + StdOut : string
+        + StdErr : string
+    }
+
+    class ServiceProviderFactory <<static>> {
+        + {static} CreateForUnitTest(fileSystem?, captureResult?) : IServiceProvider
+    }
+
+    class RoslynValidator <<static>> {
+        + {static} ValidateCSharpSyntax(sourceText : string) : IReadOnlyList<Diagnostic>
+        + {static} AssertValidCSharp(sourceText : string, context? : string) : void
+    }
+}
+
+package "CodeGenerator.Cli.IntegrationTests.Helpers" {
+    class GeneratedProjectFixture {
+        + OutputDirectory : string
+        + SolutionName : string
+        + ExitCode : int
+        + InitializeAsync() : Task
+        + DisposeAsync() : Task
+        + FileExists(relativePath : string) : bool
+        + ReadFile(relativePath : string) : string
+        + DirectoryExists(relativePath : string) : bool
+    }
+
+    class TempDirectoryFixture {
+        + Path : string
+        + InitializeAsync() : Task
+        + DisposeAsync() : Task
+    }
+
+    abstract class IntegrationTestBase {
+        # TempDir : TempDirectoryFixture
+        + InitializeAsync() : Task
+        + DisposeAsync() : Task
+    }
+}
+
+package "CodeGenerator.Core (existing)" {
+    class DryRunCommandService {
+        - _result : GenerationResult
+        + Start(command, workingDirectory?, waitForExit?) : int
+    }
+
+    class GenerationResult {
+        + Files : List<GeneratedFileEntry>
+        + Commands : List<SkippedCommandEntry>
+        + TotalFileCount : int
+        + TotalSizeBytes : long
+        + AddFile(path, content) : void
+        + AddCommand(command, workingDirectory) : void
+    }
+}
+
+CliTestHarness --> CliTestResult : returns
+CliTestHarness ..> ServiceProviderFactory : uses
+ServiceProviderFactory ..> DryRunCommandService : creates
+ServiceProviderFactory ..> GenerationResult : creates
+GeneratedProjectFixture --|> TempDirectoryFixture : uses
+IntegrationTestBase --> TempDirectoryFixture : owns
+
+@enduml

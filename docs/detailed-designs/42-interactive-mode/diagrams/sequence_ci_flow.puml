@@ -1,0 +1,26 @@
+@startuml sequence_ci_flow
+!theme plain
+
+title CI/Piped Flow -- Missing arguments in non-interactive environment
+
+actor "CI Pipeline" as ci
+participant "System.CommandLine\nParser" as parser
+participant "CreateCodeGeneratorCommand\nHandler" as handler
+participant "NonInteractivePromptService" as prompt
+participant "ILogger" as logger
+
+ci -> parser : codegen-cli (no -n, stdin redirected)
+parser --> handler : name=null, output=CWD, framework="net9.0", slnx=false
+
+handler -> handler : Construct partial GenerationOptions\n(Name = "")
+handler -> prompt : IsInteractive?
+prompt --> handler : false (stdin is redirected)
+
+handler -> handler : Name is empty AND not interactive
+
+handler -> logger : LogError("Required option '--name'\nnot provided and interactive\nmode not available")
+handler --> ci : exit code 1
+
+note over ci : CI pipeline fails with\nclear error message\n(no hanging on prompt)
+
+@enduml

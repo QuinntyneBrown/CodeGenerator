@@ -1,0 +1,40 @@
+@startuml sequence_dryrun_capture
+!theme plain
+
+title Unit Test -- DryRunCommandService Capture Testing
+
+actor Test as test
+participant "ServiceProviderFactory" as factory
+participant "CliTestHarness" as harness
+participant "CreateCodeGeneratorCommand\nHandler" as handler
+participant "DryRunCommandService" as dryCmd
+participant "MockFileSystem" as mockFs
+participant "GenerationResult" as result
+
+test -> result : new GenerationResult()
+test -> factory : CreateForUnitTest(captureResult: result)
+factory -> dryCmd : new DryRunCommandService(result)
+factory -> mockFs : new MockFileSystem()
+factory --> test : serviceProvider
+
+test -> harness : new CliTestHarness(serviceProvider)
+test -> harness : InvokeAsync("-n", "TestProject")
+
+harness -> handler : HandleAsync("TestProject", ...)
+handler -> mockFs : Directory.CreateDirectory(solutionDir)
+handler -> dryCmd : Start("dotnet new sln -n TestProject", dir)
+dryCmd -> result : AddCommand("dotnet new sln -n TestProject", dir)
+
+handler -> mockFs : File.WriteAllText(csprojPath, content)
+handler -> dryCmd : Start("dotnet sln add src/TestProject.Cli/...", dir)
+dryCmd -> result : AddCommand("dotnet sln add ...", dir)
+
+handler --> harness : exitCode = 0
+harness --> test : CliTestResult(0, ...)
+
+test -> result : Assert Commands.Count == 2
+test -> result : Assert Commands[0].Command contains "dotnet new sln"
+test -> result : Assert Commands[1].Command contains "dotnet sln add"
+test -> result : Assert Files.Count > 0
+
+@enduml

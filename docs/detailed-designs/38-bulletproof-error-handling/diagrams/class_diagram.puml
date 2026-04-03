@@ -1,0 +1,67 @@
+@startuml class_diagram
+!theme plain
+
+title Class Diagram — Error Handling Types
+
+package "CodeGenerator.Cli.Errors" {
+    class CliExitCodes <<static>> {
+        +{static} Success : int = 0
+        +{static} ValidationError : int = 1
+        +{static} IOError : int = 2
+        +{static} ProcessError : int = 3
+        +{static} TemplateError : int = 4
+        +{static} UnexpectedError : int = 99
+    }
+
+    abstract class CliException {
+        +{abstract} ExitCode : int
+        #CliException(message : string)
+        #CliException(message : string, inner : Exception)
+    }
+
+    class CliValidationException {
+        +ExitCode : int = 1
+        +ValidationResult : ValidationResult
+    }
+
+    class CliIOException {
+        +ExitCode : int = 2
+        +Path : string?
+    }
+
+    class CliProcessException {
+        +ExitCode : int = 3
+        +Command : string
+        +ProcessExitCode : int
+    }
+
+    class CliTemplateException {
+        +ExitCode : int = 4
+        +TemplateName : string?
+    }
+}
+
+package "CodeGenerator.Core.Services" {
+    interface IGenerationRollbackService {
+        +TrackDirectory(path : string) : void
+        +TrackFile(path : string) : void
+        +Rollback() : void
+        +Commit() : void
+    }
+
+    class GenerationRollbackService {
+        -_createdFiles : Stack<string>
+        -_createdDirectories : Stack<string>
+        -_committed : bool
+    }
+}
+
+CliException <|-- CliValidationException
+CliException <|-- CliIOException
+CliException <|-- CliProcessException
+CliException <|-- CliTemplateException
+Exception <|-- CliException
+
+IGenerationRollbackService <|.. GenerationRollbackService
+
+@enduml

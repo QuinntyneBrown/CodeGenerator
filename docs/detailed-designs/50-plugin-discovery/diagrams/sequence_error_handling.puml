@@ -1,0 +1,54 @@
+@startuml sequence_error_handling
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Plugin Error Handling — Fail-Safe Loading
+
+participant "PluginLoader" as Loader
+participant "PluginLoadContext" as LoadCtx
+participant "PluginCommandRegistrar" as Registrar
+participant "ICliPlugin" as Plugin
+participant "RootCommand" as Root
+participant "ILogger" as Log
+
+== Scenario 1: Assembly Load Failure ==
+
+Loader -> LoadCtx : LoadFromAssemblyPath(\n  "plugins/corrupt/Bad.dll")
+
+LoadCtx --> Loader : <<throws>>\nBadImageFormatException
+
+Loader -> Log : LogWarning(\n  "Failed to load plugin: {path}\n  Error: {message}")
+
+note right of Loader
+    Plugin is skipped.
+    Other plugins continue loading.
+end note
+
+== Scenario 2: No ICliPlugin Types ==
+
+Loader -> LoadCtx : LoadFromAssemblyPath(\n  "plugins/lib/Utility.dll")
+LoadCtx --> Loader : Assembly (loaded OK)
+
+Loader -> Loader : Scan types for ICliPlugin
+Loader -> Loader : No matching types found
+
+Loader -> Log : LogWarning(\n  "No ICliPlugin types in: {path}")
+
+== Scenario 3: CreateCommand Throws ==
+
+Registrar -> Plugin : CreateCommand(serviceProvider)
+Plugin --> Registrar : <<throws>>\nInvalidOperationException(\n  "Missing config file")
+
+Registrar -> Log : LogWarning(\n  "Plugin '{name}' failed to\n  create command: {message}")
+
+Registrar -> Registrar : Create fallback command:\n  name = plugin.Name\n  handler prints error
+
+Registrar -> Root : AddCommand(fallbackCommand)
+
+note right of Root
+    User sees the command in --help
+    but gets a clear error message
+    if they try to invoke it.
+end note
+
+@enduml

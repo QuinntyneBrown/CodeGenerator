@@ -1,0 +1,20 @@
+@startuml c4_context
+!theme plain
+!include <C4/C4_Context>
+
+title Shell Completion — System Context
+
+Person(dev, "Developer", "Types codegen commands and presses Tab for completions")
+
+System(cli, "CodeGenerator CLI", "Provides tab completion candidates for commands, options, and values")
+
+System_Ext(shell, "Shell", "bash, zsh, PowerShell, or fish terminal")
+System_Ext(suggest, "dotnet-suggest", ".NET global tool that bridges shell completion to System.CommandLine")
+
+Rel(dev, shell, "Types command, presses Tab")
+Rel(shell, suggest, "Invokes completion handler")
+Rel(suggest, cli, "Invokes with [suggest] directive")
+Rel(cli, suggest, "Returns completion candidates")
+Rel(suggest, shell, "Returns completions to shell")
+
+@enduml

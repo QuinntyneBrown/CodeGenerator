@@ -1,0 +1,30 @@
+@startuml c4_component
+!theme plain
+!include <C4/C4_Component>
+
+title Extract Embedded Templates — Component Diagram
+
+Container_Boundary(cli, "CodeGenerator CLI Application") {
+    Component(cmd, "CreateCodeGeneratorCommand", "RootCommand", "Orchestrates code generation using templates")
+    Component(composite, "CompositeTemplateResolver", "ITemplateResolver", "Chains resolvers: user dir first, embedded fallback")
+    Component(fsresolver, "FileSystemTemplateResolver", "ITemplateResolver", "Loads .liquid from user --templates directory")
+    Component(embedresolver, "EmbeddedResourceTemplateResolver", "ITemplateResolver", "Loads .liquid from assembly embedded resources")
+}
+
+Container_Boundary(core, "CodeGenerator.Core") {
+    Component(processor, "LiquidTemplateProcessor", "ITemplateProcessor", "Renders Liquid templates with DotLiquid")
+    Component(artgen, "IArtifactGenerator", "Interface", "Writes ContentFileModel to disk")
+}
+
+System_Ext(userdir, "User Templates", "./my-templates/*.liquid")
+System_Ext(assembly, "CLI Assembly", "Embedded *.liquid resources")
+
+Rel(cmd, composite, "ResolveAsync(templateName)")
+Rel(composite, fsresolver, "CanResolve? ResolveAsync")
+Rel(composite, embedresolver, "Fallback: ResolveAsync")
+Rel(fsresolver, userdir, "File.ReadAllTextAsync")
+Rel(embedresolver, assembly, "GetManifestResourceStream")
+Rel(cmd, processor, "ProcessAsync(template, tokens)")
+Rel(cmd, artgen, "GenerateAsync(ContentFileModel)")
+
+@enduml

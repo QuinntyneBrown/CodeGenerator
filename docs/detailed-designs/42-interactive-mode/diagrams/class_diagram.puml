@@ -1,0 +1,66 @@
+@startuml class_diagram
+!theme plain
+
+title Interactive Mode -- Class Diagram
+
+package "CodeGenerator.Cli.Options" {
+    class GenerationOptions <<record>> {
+        + Name : string <<required>>
+        + OutputDirectory : string = CWD
+        + Framework : string = "net9.0"
+        + Slnx : bool = false
+        + LocalSourceRoot : string?
+    }
+}
+
+package "CodeGenerator.Cli.Services" {
+    interface IInteractivePromptService {
+        + IsInteractive : bool <<get>>
+        + PromptForMissingOptions(partial : GenerationOptions) : GenerationOptions
+    }
+
+    class SpectrePromptService {
+        + IsInteractive : bool
+        + PromptForMissingOptions(partial : GenerationOptions) : GenerationOptions
+        - PromptName() : string
+        - PromptOutputDirectory(defaultValue : string) : string
+        - PromptFramework() : string
+        - PromptSlnx(defaultValue : bool) : bool
+        - PromptLocalSourceRoot() : string?
+    }
+
+    class NonInteractivePromptService {
+        + IsInteractive : bool
+        + PromptForMissingOptions(partial : GenerationOptions) : GenerationOptions
+    }
+}
+
+package "CodeGenerator.Cli.Commands" {
+    class CreateCodeGeneratorCommand {
+        - _serviceProvider : IServiceProvider
+        - HandleAsync(name?, outputDirectory, framework, slnx, localSourceRoot?) : Task
+    }
+}
+
+SpectrePromptService ..|> IInteractivePromptService
+NonInteractivePromptService ..|> IInteractivePromptService
+
+CreateCodeGeneratorCommand --> IInteractivePromptService : resolves from DI
+CreateCodeGeneratorCommand --> GenerationOptions : constructs and consumes
+
+IInteractivePromptService --> GenerationOptions : returns populated
+
+note right of SpectrePromptService
+  Uses Spectre.Console:
+  - TextPrompt<string> for name, output, local source
+  - SelectionPrompt<string> for framework
+  - ConfirmationPrompt for slnx
+end note
+
+note right of NonInteractivePromptService
+  Throws InvalidOperationException
+  when Name is missing and
+  stdin is not a terminal
+end note
+
+@enduml

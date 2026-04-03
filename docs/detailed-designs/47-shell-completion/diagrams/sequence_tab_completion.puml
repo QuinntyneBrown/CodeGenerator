@@ -1,0 +1,71 @@
+@startuml sequence_tab_completion
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Tab Completion Flow
+
+actor Developer as dev
+participant "Shell\n(bash/zsh/PS/fish)" as shell
+participant "dotnet-suggest" as suggest
+participant "CodeGenerator CLI" as cli
+participant "System.CommandLine\nParser" as parser
+participant "CompletionProvider" as provider
+
+dev -> shell : codegen -f <Tab>
+activate shell
+
+shell -> suggest : completion request\n(executable: "codegen", args: "-f ")
+activate suggest
+
+suggest -> cli : codegen [suggest] "-f "
+activate cli
+
+cli -> parser : Parse [suggest] request
+activate parser
+
+parser -> parser : Identify current option:\n--framework
+
+parser -> provider : GetFrameworkCompletions(\nCompletionContext { WordToComplete: "" })
+activate provider
+
+provider --> parser : ["net8.0", "net9.0", "net10.0"]
+deactivate provider
+
+parser --> cli : completion candidates
+deactivate parser
+
+cli --> suggest : "net8.0\nnet9.0\nnet10.0"
+deactivate cli
+
+suggest --> shell : formatted completions
+deactivate suggest
+
+shell --> dev : net8.0  net9.0  net10.0
+deactivate shell
+
+== Developer types partial match ==
+
+dev -> shell : codegen -f net9<Tab>
+activate shell
+
+shell -> suggest : completion request\n(args: "-f net9")
+activate suggest
+suggest -> cli : codegen [suggest] "-f net9"
+activate cli
+cli -> parser : Parse [suggest]
+activate parser
+parser -> provider : GetFrameworkCompletions(\n{ WordToComplete: "net9" })
+activate provider
+provider --> parser : ["net9.0"]
+deactivate provider
+parser --> cli : ["net9.0"]
+deactivate parser
+cli --> suggest : "net9.0"
+deactivate cli
+suggest --> shell : net9.0
+deactivate suggest
+
+shell --> dev : codegen -f net9.0
+deactivate shell
+
+@enduml

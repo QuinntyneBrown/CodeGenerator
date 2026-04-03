@@ -1,0 +1,53 @@
+@startuml sequence_version_update
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Version Update Workflow (Maintainer)
+
+actor "CLI Maintainer" as maintainer
+participant "PackageVersions.cs" as versions
+participant "Unit Tests" as tests
+participant "CI Pipeline" as ci
+participant "NuGet.org" as nuget
+
+maintainer -> nuget : Publish CodeGenerator.React 1.3.0
+activate nuget
+nuget --> maintainer : Published
+deactivate nuget
+
+maintainer -> versions : Update React = "1.3.0"
+activate versions
+note right of versions
+  Only ONE line changes:
+  public const string React = "1.3.0";
+
+  Previously was "1.2.5"
+end note
+versions --> maintainer : saved
+deactivate versions
+
+maintainer -> ci : git push (triggers CI)
+activate ci
+
+ci -> tests : Run version consistency tests
+activate tests
+note right of tests
+  Test verifies:
+  - All constants are non-empty
+  - All constants match semver format
+  - GetPackageReferences() uses constants
+  - SKILL.md content uses constants
+end note
+tests --> ci : pass
+deactivate tests
+
+ci --> maintainer : Build + tests green
+deactivate ci
+
+note over maintainer
+  All generated projects will now
+  reference React 1.3.0 consistently
+  in both .csproj and SKILL.md output.
+end note
+
+@enduml

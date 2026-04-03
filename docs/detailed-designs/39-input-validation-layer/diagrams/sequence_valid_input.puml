@@ -1,0 +1,34 @@
+@startuml sequence_valid_input
+!theme plain
+
+title Sequence — Valid Input Passes Validation
+
+actor User
+participant "HandleAsync" as Handler
+participant "GenerationOptionsValidator" as Validator
+participant "ValidationResult" as Result
+participant "IArtifactGenerator" as Gen
+
+User -> Handler : codegenerator-cli -n MyApp -o ./out -f net9.0
+activate Handler
+
+Handler -> Handler : Create GenerationOptions record
+
+Handler -> Validator : Validate(options)
+activate Validator
+Validator -> Result : new ValidationResult()
+Validator -> Validator : ValidateName("MyApp") - OK
+Validator -> Validator : ValidateOutputDirectory("./out") - OK
+Validator -> Validator : ValidateFramework("net9.0") - OK
+Validator --> Handler : result (IsValid = true)
+deactivate Validator
+
+Handler -> Handler : Log warnings (if any)
+Handler -> Gen : Begin generation
+Gen --> Handler : success
+
+Handler --> User : exit code 0
+
+deactivate Handler
+
+@enduml

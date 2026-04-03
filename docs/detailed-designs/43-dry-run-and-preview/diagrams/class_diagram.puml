@@ -1,0 +1,91 @@
+@startuml class_diagram
+!theme plain
+
+title Dry-Run and Preview -- Class Diagram
+
+package "CodeGenerator.Cli.Formatting" <<new>> {
+    interface IDryRunOutputFormatter {
+        + Render(result : GenerationResult) : void
+    }
+
+    class DryRunOutputFormatter {
+        - _renderer : IConsoleRenderer?
+        - _logger : ILogger<DryRunOutputFormatter>
+        + DryRunOutputFormatter(logger, renderer?)
+        + Render(result : GenerationResult) : void
+        - RenderRich(result : GenerationResult) : void
+        - RenderPlain(result : GenerationResult) : void
+        + {static} FormatSize(bytes : long) : string
+    }
+}
+
+package "CodeGenerator.Cli.Commands" {
+    class CreateCodeGeneratorCommand {
+        - _serviceProvider : IServiceProvider
+        + <<option>> --dry-run / --what-if : bool
+        - HandleAsync(name, output, framework, slnx, localSource, dryRun) : Task
+    }
+}
+
+package "CodeGenerator.Core.Artifacts" <<existing>> {
+    class GenerationContextFactory <<static>> {
+        + {static} Create(dryRun, realFileSystem, realCommandService) : IGenerationContext
+    }
+
+    interface IGenerationContext {
+        + DryRun : bool
+        + Result : GenerationResult
+        + FileSystem : IFileSystem
+        + CommandService : ICommandService
+    }
+
+    class GenerationContext {
+        + DryRun : bool
+        + Result : GenerationResult
+        + FileSystem : IFileSystem
+        + CommandService : ICommandService
+    }
+
+    class GenerationResult {
+        + Files : List<GeneratedFileEntry>
+        + Commands : List<SkippedCommandEntry>
+        + IsSuccess : bool
+        + ErrorMessage : string?
+        + TotalFileCount : int
+        + TotalSizeBytes : long
+        + AddFile(path, content) : void
+        + AddCommand(command, workingDirectory) : void
+    }
+
+    class GeneratedFileEntry <<record>> {
+        + Path : string
+        + Content : string
+        + SizeBytes : long
+    }
+
+    class SkippedCommandEntry <<record>> {
+        + Command : string
+        + WorkingDirectory : string?
+    }
+}
+
+package "CodeGenerator.Core.Services" <<existing>> {
+    class DryRunCommandService {
+        - _result : GenerationResult
+        + Start(command, workingDirectory?, waitForExit?) : int
+    }
+}
+
+DryRunOutputFormatter ..|> IDryRunOutputFormatter
+CreateCodeGeneratorCommand --> IDryRunOutputFormatter : resolves from DI
+CreateCodeGeneratorCommand --> GenerationContextFactory : calls Create()
+GenerationContextFactory --> GenerationContext : creates
+GenerationContext ..|> IGenerationContext
+GenerationContext --> GenerationResult : owns
+GenerationContext --> DryRunCommandService : uses (when dryRun)
+DryRunCommandService --> GenerationResult : AddCommand()
+GenerationResult *-- GeneratedFileEntry : contains
+GenerationResult *-- SkippedCommandEntry : contains
+DryRunOutputFormatter --> GenerationResult : reads
+
+@enduml

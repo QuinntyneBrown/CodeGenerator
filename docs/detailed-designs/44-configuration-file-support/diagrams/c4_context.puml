@@ -1,0 +1,19 @@
+@startuml c4_context
+!theme plain
+!include <C4/C4_Context>
+
+title Configuration File Support — System Context
+
+Person(dev, "Developer", "Configures CodeGenerator defaults via .codegenerator.json")
+
+System(cli, "CodeGenerator CLI", "CLI tool that merges config from CLI args, config file, env vars, and built-in defaults")
+
+System_Ext(fs, "File System", ".codegenerator.json files in project directories")
+System_Ext(env, "Environment Variables", "CODEGEN_FRAMEWORK, CODEGEN_OUTPUT, etc.")
+
+Rel(dev, cli, "Invokes", "codegen -n MyApp")
+Rel(dev, fs, "Creates/edits", ".codegenerator.json")
+Rel(cli, fs, "Searches directory tree for", ".codegenerator.json")
+Rel(cli, env, "Reads", "CODEGEN_* variables")
+
+@enduml

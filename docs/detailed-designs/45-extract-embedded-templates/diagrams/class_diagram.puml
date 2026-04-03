@@ -1,0 +1,73 @@
+@startuml class_diagram
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 12
+
+title Extract Embedded Templates — Class Diagram
+
+interface ITemplateResolver {
+    +ResolveAsync(templateName : string) : Task<string>
+    +CanResolve(templateName : string) : bool
+}
+
+class EmbeddedResourceTemplateResolver {
+    -_assembly : Assembly
+    -ResourcePrefix : string = "CodeGenerator.Cli.Templates."
+    +ResolveAsync(templateName : string) : Task<string>
+    +CanResolve(templateName : string) : bool
+}
+
+class FileSystemTemplateResolver {
+    -_templatesDirectory : string
+    +FileSystemTemplateResolver(templatesDirectory : string)
+    +ResolveAsync(templateName : string) : Task<string>
+    +CanResolve(templateName : string) : bool
+}
+
+class CompositeTemplateResolver {
+    -_resolvers : IReadOnlyList<ITemplateResolver>
+    +CompositeTemplateResolver(resolvers : IEnumerable<ITemplateResolver>)
+    +ResolveAsync(templateName : string) : Task<string>
+    +CanResolve(templateName : string) : bool
+}
+
+class TemplateNotFoundException <<Exception>> {
+    +TemplateName : string
+    +TemplateNotFoundException(templateName : string)
+}
+
+interface ITemplateProcessor {
+    +Process(template, tokens) : string
+    +Process(template, tokens, ignoreTokens) : string
+    +Process(template, model) : string
+    +ProcessAsync(template, tokens) : Task<string>
+    +ProcessAsync(template, tokens, ignoreTokens) : Task<string>
+    +ProcessAsync(template, model) : Task<string>
+}
+
+class LiquidTemplateProcessor {
+}
+
+class CreateCodeGeneratorCommand <<RootCommand>> {
+    -_serviceProvider : IServiceProvider
+    -HandleAsync(..., templates? : string) : Task
+    -GenerateProgramContentAsync(name) : Task<string>
+    -GenerateRootCommandContentAsync(name) : Task<string>
+}
+
+ITemplateResolver <|.. EmbeddedResourceTemplateResolver : implements
+ITemplateResolver <|.. FileSystemTemplateResolver : implements
+ITemplateResolver <|.. CompositeTemplateResolver : implements
+
+CompositeTemplateResolver o-- "1..*" ITemplateResolver : chains
+
+ITemplateProcessor <|.. LiquidTemplateProcessor : implements
+
+CreateCodeGeneratorCommand ..> ITemplateResolver : resolves template content
+CreateCodeGeneratorCommand ..> ITemplateProcessor : renders with tokens
+
+EmbeddedResourceTemplateResolver ..> TemplateNotFoundException : throws
+FileSystemTemplateResolver ..> TemplateNotFoundException : throws
+CompositeTemplateResolver ..> TemplateNotFoundException : throws
+
+@enduml

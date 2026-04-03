@@ -1,0 +1,50 @@
+@startuml sequence_formatter
+!theme plain
+
+title Formatter Rendering Workflow
+
+participant "Handler" as handler
+participant "DryRunOutputFormatter" as formatter
+participant "IConsoleRenderer?" as renderer
+participant "ILogger" as logger
+participant "GenerationResult" as result
+
+handler -> formatter : Render(result)
+
+formatter -> renderer : Check if available
+alt IConsoleRenderer available (rich mode)
+    formatter -> result : Read Files
+    formatter -> renderer : RenderTable(fileTable)
+    note right : Columns: Path, Size\nWith colors and alignment
+
+    formatter -> result : Read Commands
+    formatter -> renderer : RenderTable(commandTable)
+    note right : Columns: #, Command, Working Dir
+
+    formatter -> result : TotalFileCount, TotalSizeBytes
+    formatter -> formatter : FormatSize(totalSizeBytes)
+    formatter -> renderer : RenderRule("Summary")
+    formatter -> renderer : RenderText("Total files: N")
+    formatter -> renderer : RenderText("Total size: X KB")
+    formatter -> renderer : RenderText("Total commands: N")
+    formatter -> renderer : RenderText("No files written. No commands executed.")
+
+else Plain mode (no IConsoleRenderer)
+    formatter -> result : Read Files
+    loop each file in result.Files
+        formatter -> logger : LogInformation("  {Path}  {Size}", ...)
+    end
+
+    formatter -> result : Read Commands
+    loop each cmd in result.Commands
+        formatter -> logger : LogInformation("  {#}  {Command}  {Dir}", ...)
+    end
+
+    formatter -> result : TotalFileCount, TotalSizeBytes
+    formatter -> logger : LogInformation("Total: {Count} files, {Size}")
+    formatter -> logger : LogInformation("No files written. No commands executed.")
+end
+
+formatter --> handler : done
+
+@enduml

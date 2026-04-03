@@ -1,0 +1,64 @@
+@startuml class_diagram
+!theme plain
+
+title Class Diagram — Console Rendering Types
+
+package "CodeGenerator.Cli.Rendering" {
+    interface IConsoleRenderer {
+        +WriteHeader(title : string) : void
+        +WriteStep(current : int, total : int, description : string) : void
+        +WriteStepComplete(current : int, total : int, description : string) : void
+        +WriteSuccess(message : string) : void
+        +WriteError(message : string) : void
+        +WriteWarning(message : string) : void
+        +WriteInfo(message : string) : void
+        +WriteTree(rootLabel : string, files : IReadOnlyList<GeneratedFileEntry>) : void
+        +WriteSummary(result : GenerationResult) : void
+        +WriteLine() : void
+    }
+
+    class SpectreConsoleRenderer {
+        -_console : IAnsiConsole
+        +SpectreConsoleRenderer(console : IAnsiConsole)
+    }
+
+    class PlainConsoleRenderer {
+        -_writer : TextWriter
+        +PlainConsoleRenderer(writer : TextWriter)
+    }
+
+    class GenerationProgressReporter {
+        -_renderer : IConsoleRenderer
+        -_totalSteps : int
+        -_currentStep : int
+        +GenerationProgressReporter(renderer : IConsoleRenderer, totalSteps : int)
+        +BeginStep(description : string) : void
+        +CompleteStep(description : string) : void
+        +RunStepAsync(description : string, action : Func<Task>) : Task
+        +RunStep(description : string, action : Action) : void
+    }
+}
+
+package "CodeGenerator.Core.Artifacts" {
+    class GenerationResult {
+        +Files : List<GeneratedFileEntry>
+        +Commands : List<SkippedCommandEntry>
+        +TotalFileCount : int
+        +TotalSizeBytes : long
+    }
+
+    class GeneratedFileEntry <<record>> {
+        +Path : string
+        +Content : string
+        +SizeBytes : long
+    }
+}
+
+IConsoleRenderer <|.. SpectreConsoleRenderer
+IConsoleRenderer <|.. PlainConsoleRenderer
+GenerationProgressReporter --> IConsoleRenderer
+SpectreConsoleRenderer ..> GenerationResult : reads
+PlainConsoleRenderer ..> GenerationResult : reads
+GenerationResult o-- GeneratedFileEntry
+
+@enduml

@@ -1,0 +1,24 @@
+@startuml c4_container
+!theme plain
+!include <C4/C4_Container>
+
+title Version Consistency — Container Diagram
+
+Person(dev, "Developer", "Generates projects")
+
+System_Boundary(codegen, "CodeGenerator CLI") {
+    Container(cli, "CLI Application", "System.CommandLine 2.0", "Command routing, template model construction")
+    Container(versions, "PackageVersions", "Static class", "Single source of truth for all package version constants")
+    Container(templates, "Template Processing", "DotLiquid / ITemplateProcessor", "Renders templates with version tokens")
+    Container(core, "CodeGenerator.Core", ".NET 9.0 Library", "IArtifactGenerator for file writing")
+}
+
+System_Ext(fs, "File System", "Generated .csproj, SKILL.md files")
+
+Rel(dev, cli, "Invokes CLI")
+Rel(cli, versions, "Reads version constants")
+Rel(cli, templates, "Injects version tokens")
+Rel(templates, core, "Rendered content")
+Rel(core, fs, "Writes files with correct versions")
+
+@enduml

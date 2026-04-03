@@ -1,0 +1,51 @@
+@startuml sequence_version_injection
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Version Token Injection into Templates
+
+actor Developer as dev
+participant "CreateCodeGeneratorCommand" as cmd
+participant "PackageVersions" as versions
+participant "ITemplateResolver" as resolver
+participant "ITemplateProcessor" as processor
+participant "IArtifactGenerator" as artgen
+
+dev -> cmd : codegen -n MyApp -f net9.0
+activate cmd
+
+cmd -> versions : AsTokenDictionary()
+activate versions
+versions --> cmd : { package_version_core: "1.3.0",\n  package_version_dotnet: "1.2.0", ... }
+deactivate versions
+
+cmd -> cmd : Merge version tokens\nwith name/framework tokens
+
+cmd -> resolver : ResolveAsync("CliProject.csproj")
+activate resolver
+resolver --> cmd : Liquid template with\n{{ package_version_core }}, etc.
+deactivate resolver
+
+cmd -> processor : ProcessAsync(template, mergedTokens)
+activate processor
+
+note right of processor
+  DotLiquid replaces:
+  {{ package_version_core }} -> "1.3.0"
+  {{ package_version_dotnet }} -> "1.2.0"
+  {{ name }} -> "MyApp"
+  {{ framework }} -> "net9.0"
+end note
+
+processor --> cmd : rendered .csproj content
+deactivate processor
+
+cmd -> artgen : GenerateAsync(\nContentFileModel(content, "MyApp.Cli", dir, ".csproj"))
+activate artgen
+artgen --> cmd : done
+deactivate artgen
+
+cmd --> dev : Project generated with correct versions
+deactivate cmd
+
+@enduml

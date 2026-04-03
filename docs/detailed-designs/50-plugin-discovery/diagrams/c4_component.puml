@@ -1,0 +1,37 @@
+@startuml c4_component
+!theme plain
+!include <C4/C4_Component>
+
+title Plugin Discovery for Commands — Component Diagram
+
+Container_Boundary(plugins, "CodeGenerator.Core.Plugins") {
+    Component(idiscovery, "IPluginDiscoveryService", "Interface", "DiscoverAsync() : List<DiscoveredPlugin>")
+    Component(nugetD, "NuGetPluginDiscovery", "Class", "Scans ~/.nuget/packages/\nfor codegenerator.cli.plugin.*")
+    Component(dirD, "DirectoryPluginDiscovery", "Class", "Scans <exe>/plugins/\nand ~/.codegen/plugins/")
+    Component(explD, "ExplicitPluginDiscovery", "Class", "Resolves --plugin flag paths")
+    Component(composite, "CompositePluginDiscovery", "Class", "Aggregates + deduplicates\nall discovery results")
+    Component(discovered, "DiscoveredPlugin", "Record", "AssemblyPath, Source, PackageName")
+    Component(loader, "PluginLoader", "Class", "Loads assemblies into isolated\nAssemblyLoadContext instances")
+    Component(loadCtx, "PluginLoadContext", "Class", "Custom AssemblyLoadContext\nShared framework + isolated deps")
+}
+
+Container_Boundary(abs, "CodeGenerator.Abstractions") {
+    Component(icli, "ICliPlugin", "Interface", "Name, Description,\nCreateCommand(IServiceProvider)")
+}
+
+Container_Boundary(cli, "CodeGenerator.Cli") {
+    Component(registrar, "PluginCommandRegistrar", "Class", "Registers plugin commands\non RootCommand")
+}
+
+idiscovery <|.. nugetD
+idiscovery <|.. dirD
+idiscovery <|.. explD
+composite --> "1..*" idiscovery : delegates to
+composite --> "0..*" discovered : produces
+loader --> composite : uses
+loader --> loadCtx : creates per plugin
+loader --> icli : instantiates
+registrar --> loader : gets ICliPlugin list
+registrar --> icli : calls CreateCommand
+
+@enduml

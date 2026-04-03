@@ -1,0 +1,34 @@
+@startuml c4_container
+!theme plain
+!include <C4/C4_Container>
+
+title Post-Generation Verification — Container Diagram
+
+Person(dev, "Developer / CI", "Generates and verifies")
+
+System_Boundary(cli, "CodeGenerator.Cli") {
+    Container(cmd, "CreateCodeGeneratorCommand", "RootCommand", "Handles --verify flag, orchestrates generation then verification")
+    Container(renderer, "VerificationResultRenderer", "Class", "Formats verification results for console output")
+}
+
+System_Boundary(core, "CodeGenerator.Core") {
+    Container(runner, "VerificationRunner", "Class", "Executes verifiers in sequence, aggregates results")
+    Container(buildV, "DotNetBuildVerifier", "Class", "Runs dotnet build, parses MSBuild output")
+    Container(runV, "DotNetRunVerifier", "Class", "Runs dotnet run -- --help, checks exit code")
+    Container(cmdSvc, "ICommandService", "Interface", "Cross-platform command execution with output capture")
+}
+
+System_Ext(sdk, ".NET SDK", "dotnet CLI")
+
+Rel(dev, cmd, "--verify flag")
+Rel(cmd, runner, "RunAllAsync(options)")
+Rel(runner, buildV, "VerifyAsync()")
+Rel(runner, runV, "VerifyAsync()")
+Rel(buildV, cmdSvc, "StartWithOutput(dotnet build)")
+Rel(runV, cmdSvc, "StartWithOutput(dotnet run)")
+Rel(cmdSvc, sdk, "Executes dotnet commands")
+Rel(runner, cmd, "VerificationResult")
+Rel(cmd, renderer, "Render(result)")
+Rel(renderer, dev, "Formatted output")
+
+@enduml

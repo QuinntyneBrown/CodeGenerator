@@ -1,0 +1,56 @@
+@startuml sequence_verify
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Post-Generation Verification — Full Workflow
+
+participant "Developer" as Dev
+participant "CreateCodeGeneratorCommand" as Cmd
+participant "IArtifactGenerator" as AG
+participant "ICommandService" as CS
+participant "VerificationRunner" as Runner
+participant "DotNetBuildVerifier" as BV
+participant "DotNetRunVerifier" as RV
+participant "VerificationResultRenderer" as Renderer
+
+== Generation Phase ==
+
+Dev -> Cmd : HandleAsync(name, output, ..., verify: true)
+Cmd -> AG : GenerateAsync(solutionModel)
+AG --> Cmd : files written
+Cmd -> CS : Start("dotnet sln add ...")
+CS --> Cmd : exit code 0
+
+== Verification Phase ==
+
+Cmd -> Runner : RunAllAsync(options)
+
+Runner -> BV : VerifyAsync(solutionDir, options)
+BV -> CS : StartWithOutput("dotnet build")
+CS --> BV : CommandOutput(exitCode, stdout, stderr)
+BV -> BV : Parse errors/warnings\nfrom MSBuild output
+BV --> Runner : VerificationStepResult(passed: true)
+
+alt Build passed
+    Runner -> RV : VerifyAsync(solutionDir, options)
+    RV -> CS : StartWithOutput("dotnet run -- --help")
+    CS --> RV : CommandOutput(exitCode, stdout, stderr)
+    RV --> Runner : VerificationStepResult(passed: true)
+else Build failed
+    Runner -> Runner : Skip DotNetRunVerifier
+end
+
+Runner --> Cmd : VerificationResult
+
+== Reporting Phase ==
+
+Cmd -> Renderer : Render(result)
+Renderer --> Dev : Formatted verification output
+
+alt AllPassed == true
+    Cmd --> Dev : exit code 0
+else AllPassed == false
+    Cmd --> Dev : exit code 1
+end
+
+@enduml

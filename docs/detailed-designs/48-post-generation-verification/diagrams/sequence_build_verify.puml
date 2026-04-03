@@ -1,0 +1,37 @@
+@startuml sequence_build_verify
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Build Verification — Detail Sequence
+
+participant "VerificationRunner" as Runner
+participant "DotNetBuildVerifier" as BV
+participant "ICommandService" as CS
+participant ".NET SDK\n(dotnet build)" as SDK
+
+Runner -> BV : VerifyAsync(solutionDir, options)
+
+BV -> BV : Start timer
+
+BV -> CS : StartWithOutput(\n  "dotnet build --no-restore",\n  solutionDir)
+
+CS -> SDK : Execute process
+SDK --> CS : stdout + stderr + exit code
+
+CS --> BV : CommandOutput(\n  exitCode,\n  standardOutput,\n  standardError)
+
+BV -> BV : Regex parse stdout:\n  /error CS\\d+/ -> errorCount\n  /warning CS\\d+/ -> warningCount
+
+BV -> BV : Stop timer
+
+alt exitCode == 0 AND errorCount == 0
+    alt warningCount == 0 OR !treatWarningsAsErrors
+        BV --> Runner : VerificationStepResult(\n  passed: true,\n  errors: 0,\n  warnings: warningCount)
+    else warningCount > 0 AND treatWarningsAsErrors
+        BV --> Runner : VerificationStepResult(\n  passed: false,\n  errors: 0,\n  warnings: warningCount,\n  reason: "warnings treated as errors")
+    end
+else exitCode != 0 OR errorCount > 0
+    BV --> Runner : VerificationStepResult(\n  passed: false,\n  errors: errorCount,\n  warnings: warningCount,\n  reason: "build failed")
+end
+
+@enduml

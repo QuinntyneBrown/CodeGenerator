@@ -1,0 +1,33 @@
+@startuml sequence_config_discovery
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Config File Discovery — Directory Walk
+
+participant "ConfigurationLoader" as loader
+database "File System" as fs
+
+[-> loader : LoadAsync("/home/dev/projects/myapp/src")
+activate loader
+
+loader -> fs : Exists("/home/dev/projects/myapp/src/.codegenerator.json")
+fs --> loader : false
+
+loader -> fs : Exists("/home/dev/projects/myapp/.codegenerator.json")
+fs --> loader : true
+
+loader -> fs : ReadAllTextAsync(\n"/home/dev/projects/myapp/.codegenerator.json")
+fs --> loader : JSON content
+
+loader -> loader : Deserialize<CodeGeneratorConfig>(json)
+
+[<-- loader : CodeGeneratorConfig { ... }
+deactivate loader
+
+note right of loader
+  If no file found up to root,
+  returns default CodeGeneratorConfig
+  with all null/empty values.
+end note
+
+@enduml

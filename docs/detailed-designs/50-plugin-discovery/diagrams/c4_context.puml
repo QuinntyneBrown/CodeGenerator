@@ -1,0 +1,21 @@
+@startuml c4_context
+!theme plain
+!include <C4/C4_Context>
+
+title Plugin Discovery for Commands — System Context
+
+Person(user, "CLI User", "Runs CodeGenerator CLI with built-in and plugin commands")
+Person(author, "Plugin Author", "Creates plugin assemblies or NuGet packages")
+
+System(codegen, "CodeGenerator CLI", "Code generation CLI with extensible plugin-contributed commands")
+
+System_Ext(nuget, "NuGet Package Store", "~/.nuget/packages/ — plugin packages with naming convention")
+System_Ext(fs, "File System", "plugins/ directory containing plugin assemblies")
+
+Rel(user, codegen, "codegen <plugin-command> ...")
+Rel(author, nuget, "Publishes CodeGenerator.Cli.Plugin.* packages")
+Rel(author, fs, "Places plugin DLLs in plugins/ directory")
+Rel(codegen, nuget, "Discovers plugin packages")
+Rel(codegen, fs, "Discovers plugin assemblies")
+
+@enduml
