@@ -1,0 +1,60 @@
+@startuml
+!theme plain
+
+title Artifact Models — CodeGenerator.React
+
+abstract class ArtifactModel {
+    + Parent : ArtifactModel
+    + GetChildren() : IEnumerable<ArtifactModel>
+    + GetDescendants() : List<ArtifactModel>
+}
+
+class WorkspaceModel {
+    + Name : string
+    + Version : string
+    + RootDirectory : string
+    + Directory : string
+    + Projects : List<ProjectModel>
+    --
+    + GetChildren() : Projects
+}
+
+class ProjectModel {
+    + Name : string
+    + Directory : string
+    + RootDirectory : string
+    + ProjectType : string
+}
+
+class ProjectReferenceModel {
+    + Name : string
+    + ReferencedDirectory : string
+    + ProjectType : string
+}
+
+class FileModel {
+    + Name : string
+    + Directory : string
+    + Extension : string
+    + Path : string
+    + Body : string
+}
+
+class "FileFactory\n(Barrel Index)" as FileFactory {
+    + IndexCreate(directory) : List<FileModel>
+    --
+    Scans .ts/.tsx files,
+    excludes .spec/.test/index,
+    produces re-export statements
+}
+
+ArtifactModel <|-- WorkspaceModel
+ArtifactModel <|-- ProjectModel
+ArtifactModel <|-- ProjectReferenceModel
+ArtifactModel <|-- FileModel
+
+WorkspaceModel "1" *-- "0..*" ProjectModel : Projects
+ProjectModel ..> FileModel : generates
+FileFactory ..> FileModel : creates barrel index files
+
+@enduml

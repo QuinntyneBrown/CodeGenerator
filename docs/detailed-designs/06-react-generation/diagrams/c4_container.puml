@@ -1,0 +1,23 @@
+@startuml
+!theme plain
+!include <C4/C4_Container>
+
+title Container Diagram — CodeGenerator.React
+
+System_Boundary(react, "CodeGenerator.React") {
+    Container(syntaxEngine, "Syntax Engine", "C# / ISyntaxGenerator", "Converts syntax models into\nTypeScript / TSX code strings.\nDispatches to type-specific strategies\nvia DI and priority ordering.")
+
+    Container(artifactEngine, "Artifact Engine", "C# / IArtifactGenerator", "Orchestrates workspace and project\ncreation. Runs npm commands,\ncreates directories, and writes files.")
+}
+
+System_Ext(core, "CodeGenerator.Core", "Base framework: SyntaxModel,\nArtifactModel, generation pipeline,\nDI auto-discovery")
+System_Ext(fs, "File System", "Target output directory")
+System_Ext(node, "Node.js / npm", "Package manager and\nVite scaffolding")
+
+Rel(syntaxEngine, core, "Extends base classes\nand interfaces")
+Rel(artifactEngine, core, "Extends base classes\nand interfaces")
+Rel(artifactEngine, syntaxEngine, "Calls ISyntaxGenerator\nto produce file content")
+Rel(artifactEngine, fs, "Writes .ts / .tsx files")
+Rel(artifactEngine, node, "Runs npm create vite,\nnpm install via ICommandService")
+
+@enduml

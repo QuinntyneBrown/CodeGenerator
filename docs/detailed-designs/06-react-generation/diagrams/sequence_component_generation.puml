@@ -1,0 +1,50 @@
+@startuml
+!theme plain
+
+title Component Syntax Generation Sequence
+
+participant "Caller" as caller
+participant "ISyntaxGenerator" as gen
+participant "ComponentSyntaxGenerationStrategy" as strat
+participant "INamingConventionConverter" as naming
+
+caller -> gen : GenerateAsync<ComponentModel>(model)
+activate gen
+
+gen -> strat : GenerateAsync(componentModel)
+activate strat
+
+alt IsClient == true
+    strat -> strat : Append '"use client"' directive
+end
+
+strat -> strat : Generate import statements\nfrom model.Imports
+
+strat -> strat : Generate props interface\n"export interface {Name}Props {\n  prop?: type;\n}"
+
+strat -> naming : Convert(Name, KebabCase)\nfor CSS class name
+naming --> strat : kebab-case-name
+
+alt ComponentStyle == "forwardRef"
+    strat -> strat : Generate forwardRef component\n"export const {Name} =\nReact.forwardRef<HTMLDivElement, Props>\n((props, ref) => { ... })"
+end
+
+loop for each hook in Hooks
+    strat -> naming : Convert hook name → result variable
+    naming --> strat : hookResult
+    strat -> strat : Append "const {result} = {hook}()"
+end
+
+loop for each child in Children
+    strat -> strat : Append "<{ChildName} />" to JSX body
+end
+
+strat -> strat : Close component and add\n'{Name}.displayName = "{Name}"'
+
+strat --> gen : generated TypeScript/TSX string
+deactivate strat
+
+gen --> caller : code string
+deactivate gen
+
+@enduml

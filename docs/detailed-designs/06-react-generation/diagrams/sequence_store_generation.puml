@@ -1,0 +1,52 @@
+@startuml
+!theme plain
+
+title Zustand Store Syntax Generation Sequence
+
+participant "Caller" as caller
+participant "ISyntaxGenerator" as gen
+participant "StoreSyntaxGenerationStrategy" as strat
+
+caller -> gen : GenerateAsync<StoreModel>(model)
+activate gen
+
+gen -> strat : GenerateAsync(storeModel)
+activate strat
+
+strat -> strat : Import zustand create\n"import { create } from 'zustand'"
+
+strat -> strat : Derive state interface name\n"{Name}State" (auto-suffix if needed)
+
+strat -> strat : Generate state interface\n"export interface {Name}State {\n  prop: type;\n  action: signature;\n}"
+
+loop for each action in Actions
+    alt ActionSignatures has custom signature
+        strat -> strat : Use custom signature\ne.g. "(id: string) => Promise<void>"
+    else
+        strat -> strat : Default to "() => void"
+    end
+end
+
+strat -> strat : Generate create<StateType> call\n"export const use{Name} =\ncreate<{Name}State>((set) => ({ ... }))"
+
+loop for each stateProperty
+    strat -> strat : Assign default value by type\nstring→"" | number→0\nbool→false | T[]→[] | other→null!
+end
+
+loop for each action in Actions
+    alt ActionImplementations has body
+        strat -> strat : Use provided implementation\nwith set() calls
+    else
+        strat -> strat : Generate empty action stub
+    end
+end
+
+strat -> strat : Close create() call
+
+strat --> gen : generated Zustand store string
+deactivate strat
+
+gen --> caller : code string
+deactivate gen
+
+@enduml

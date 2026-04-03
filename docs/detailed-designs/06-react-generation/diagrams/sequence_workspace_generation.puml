@@ -1,0 +1,47 @@
+@startuml
+!theme plain
+
+title Workspace Generation Sequence
+
+actor "Host App" as host
+participant "IArtifactGenerator" as gen
+participant "WorkspaceGenerationStrategy" as wsStrat
+participant "ICommandService" as cmd
+participant "ProjectGenerationStrategy" as projStrat
+participant "ISyntaxGenerator" as syntaxGen
+participant "File System" as fs
+
+host -> gen : GenerateAsync(WorkspaceModel)
+activate gen
+
+gen -> wsStrat : GenerateAsync(workspaceModel)
+activate wsStrat
+
+wsStrat -> cmd : npm create vite@latest {name}\n-- --template react-ts
+cmd --> wsStrat : project scaffolded
+
+wsStrat -> cmd : npm install --force\n@tanstack/react-query zustand\nreact-router axios\ntailwindcss vitest
+cmd --> wsStrat : dependencies installed
+
+loop for each project in Projects
+    wsStrat -> gen : GenerateAsync(projectModel)
+    gen -> projStrat : GenerateAsync(projectModel)
+    activate projStrat
+
+    projStrat -> cmd : npm create vite@latest {name}\n-- --template react-ts
+    cmd --> projStrat : project created
+
+    loop for each file in project
+        projStrat -> syntaxGen : GenerateAsync(syntaxModel)
+        syntaxGen --> projStrat : generated code string
+        projStrat -> fs : Write file (.ts / .tsx)
+    end
+
+    deactivate projStrat
+end
+
+wsStrat --> gen : workspace complete
+deactivate wsStrat
+deactivate gen
+
+@enduml

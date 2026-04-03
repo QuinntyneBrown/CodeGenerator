@@ -1,0 +1,35 @@
+@startuml
+!theme plain
+!include <C4/C4_Component>
+
+title Component Diagram — CodeGenerator.React
+
+Container_Boundary(syntax, "Syntax Engine") {
+    Component(compGen, "ComponentSyntaxGenerationStrategy", "ISyntaxGenerationStrategy<ComponentModel>", "Generates forwardRef components\nwith props interface, hooks,\nchildren, and 'use client' directive")
+
+    Component(hookGen, "HookSyntaxGenerationStrategy", "ISyntaxGenerationStrategy<HookModel>", "Generates custom hook functions\nwith parameters and return type")
+
+    Component(storeGen, "StoreSyntaxGenerationStrategy", "ISyntaxGenerationStrategy<StoreModel>", "Generates Zustand stores:\nstate interface + create<T>()\nwith defaults and actions")
+
+    Component(apiGen, "ApiClientSyntaxGenerationStrategy", "ISyntaxGenerationStrategy<ApiClientModel>", "Generates axios instance\nand async API functions")
+
+    Component(tsIfaceGen, "TypeScriptInterfaceSyntaxGenerationStrategy", "ISyntaxGenerationStrategy<TypeScriptInterfaceModel>", "Generates TS interfaces\nwith extends and sub-interfaces")
+
+    Component(indexGen, "FileFactory (IndexCreate)", "IFileFactory", "Generates barrel index files\nexcluding .spec/.test/index")
+}
+
+Container_Boundary(artifact, "Artifact Engine") {
+    Component(wsGen, "WorkspaceGenerationStrategy", "IArtifactGenerationStrategy<WorkspaceModel>", "Runs npm create vite@latest\nand installs dependencies")
+
+    Component(projGen, "ProjectGenerationStrategy", "IArtifactGenerationStrategy<ProjectModel>", "Creates Vite react-ts project\nvia npm create command")
+}
+
+Rel(wsGen, projGen, "Creates projects\nwithin workspace")
+Rel(projGen, compGen, "Generates component files")
+Rel(projGen, hookGen, "Generates hook files")
+Rel(projGen, storeGen, "Generates store files")
+Rel(projGen, apiGen, "Generates API client files")
+Rel(projGen, tsIfaceGen, "Generates interface files")
+Rel(projGen, indexGen, "Generates barrel index files")
+
+@enduml

@@ -1,0 +1,22 @@
+@startuml
+!theme plain
+!include <C4/C4_Context>
+
+title System Context — CodeGenerator.React
+
+Person(dev, "Developer", "Defines React models\nand invokes generation")
+
+System(react, "CodeGenerator.React", "Generates React + TypeScript + Vite\nworkspaces, components, hooks,\nstores, and API clients")
+
+System_Ext(hostApp, "Host Application", "CLI or orchestrator that\nconfigures DI and triggers generation")
+System_Ext(fs, "File System", "Target directory where\ngenerated files are written")
+System_Ext(node, "Node.js / npm", "Executes npm create vite,\nnpm install for dependencies")
+System_Ext(vite, "Vite", "React-TS project template\nand dev server toolchain")
+
+Rel(dev, hostApp, "Configures models")
+Rel(hostApp, react, "Calls ISyntaxGenerator\nand IArtifactGenerator")
+Rel(react, fs, "Writes generated\n.ts / .tsx files")
+Rel(react, node, "Runs npm commands\nvia ICommandService")
+Rel(node, vite, "Scaffolds react-ts\nproject template")
+
+@enduml

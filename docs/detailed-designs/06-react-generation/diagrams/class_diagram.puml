@@ -1,0 +1,98 @@
+@startuml
+!theme plain
+
+title Syntax Models — CodeGenerator.React
+
+abstract class SyntaxModel {
+    + Parent : SyntaxModel?
+    + Usings : List<UsingModel>
+    + GetChildren() : IEnumerable<SyntaxModel>
+    + GetDescendants() : List<SyntaxModel>
+}
+
+class ComponentModel {
+    + Name : string
+    + Props : List<PropertyModel>
+    + Hooks : List<string>
+    + Children : List<string>
+    + Imports : List<ImportModel>
+    + IsClient : bool
+    + ComponentStyle : string
+    + BodyContent : string?
+    + ExportDefault : bool
+}
+
+class HookModel {
+    + Name : string
+    + Params : List<PropertyModel>
+    + ReturnType : string
+    + Body : string
+    + Imports : List<ImportModel>
+}
+
+class StoreModel {
+    + Name : string
+    + StateProperties : List<PropertyModel>
+    + Actions : List<string>
+    + ActionImplementations : Dictionary<string, string>
+    + ActionSignatures : Dictionary<string, string>
+    + EntityName : string?
+}
+
+class ApiClientModel {
+    + Name : string
+    + BaseUrl : string
+    + Methods : List<ApiClientMethodModel>
+    + UseSharedInstance : bool
+    + SharedInstanceImport : string?
+    + ExportStyle : string
+}
+
+class ApiClientMethodModel {
+    + Name : string
+    + HttpMethod : string
+    + Route : string
+    + ResponseType : string
+    + RequestBodyType : string?
+}
+
+class TypeScriptInterfaceModel {
+    + Name : string
+    + Properties : List<PropertyModel>
+    + Extends : List<string>
+    + SubInterfaces : List<TypeScriptInterfaceModel>
+}
+
+class PropertyModel {
+    + Name : string
+    + Type : TypeModel
+    + IsOptional : bool
+}
+
+class ImportModel {
+    + Types : List<TypeModel>
+    + Module : string
+}
+
+class TypeModel {
+    + Name : string
+}
+
+SyntaxModel <|-- ComponentModel
+SyntaxModel <|-- HookModel
+SyntaxModel <|-- StoreModel
+SyntaxModel <|-- ApiClientModel
+SyntaxModel <|-- TypeScriptInterfaceModel
+
+ComponentModel "1" *-- "0..*" PropertyModel : Props
+ComponentModel "1" *-- "0..*" ImportModel : Imports
+HookModel "1" *-- "0..*" PropertyModel : Params
+HookModel "1" *-- "0..*" ImportModel : Imports
+StoreModel "1" *-- "0..*" PropertyModel : StateProperties
+ApiClientModel "1" *-- "1..*" ApiClientMethodModel : Methods
+TypeScriptInterfaceModel "1" *-- "0..*" PropertyModel : Properties
+TypeScriptInterfaceModel "1" *-- "0..*" TypeScriptInterfaceModel : SubInterfaces
+PropertyModel "1" *-- "1" TypeModel : Type
+ImportModel "1" *-- "1..*" TypeModel : Types
+
+@enduml
