@@ -30,3 +30,11 @@
 | 18 | [Non-DotNet Parity](18-non-dotnet-parity/README.md) | Draft | Priority #8 | Bring all non-DotNet modules to minimum capability baseline |
 | 19 | [Simplify Strategy Chain](19-simplify-strategy-chain/README.md) | Draft | Priority #9 | Reduce 4-layer wrapper chain to 2-layer direct dispatch |
 | 20 | [Unit Tests](20-unit-tests/README.md) | Draft | Priority #10 | Add unit test coverage for Core logic |
+
+### YAML-Driven Codebase Scaffolding (FR-19)
+
+| # | Feature | Status | Requirements | Description |
+|---|---------|--------|--------------|-------------|
+| 21 | [YAML Scaffold Command](21-yaml-scaffold-command/README.md) | Draft | FR-19.1, FR-19.10, FR-19.11 | CLI `scaffold` command with --dry-run, --force, --validate, --export-schema, --init |
+| 22 | [YAML Configuration Schema](22-yaml-configuration-schema/README.md) | Draft | FR-19.2, FR-19.3, FR-19.4, FR-19.8 | Schema definition, parsing, validation, type mapping, default file generation |
+| 23 | [YAML Scaffolding Engine](23-yaml-scaffolding-engine/README.md) | Draft | FR-19.5, FR-19.6, FR-19.7, FR-19.9 | Architecture patterns, entity/DTO generation, test config, multi-solution/monorepo |
