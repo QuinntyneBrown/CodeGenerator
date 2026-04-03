@@ -1,6 +1,6 @@
 # Shell Completion — Detailed Design
 
-**Status:** Proposed
+**Status:** Implemented
 **Feature:** 47
 
 ## 1. Overview

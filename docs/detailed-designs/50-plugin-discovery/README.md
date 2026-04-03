@@ -1,7 +1,7 @@
 # Plugin Discovery for Commands — Detailed Design
 
 **Feature:** 50-plugin-discovery (Vision 1.13)
-**Status:** Proposed
+**Status:** Implemented
 **Requirements:** codegenerator-cli-vision.md section 1.13 — "Plugin Discovery for Commands"
 
 ---

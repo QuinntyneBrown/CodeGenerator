@@ -1,7 +1,7 @@
 # Telemetry and Diagnostics — Detailed Design
 
 **Feature:** 49-telemetry-and-diagnostics (Vision 1.12)
-**Status:** Proposed
+**Status:** Implemented
 **Requirements:** codegenerator-cli-vision.md section 1.12 — "Telemetry and Diagnostics"
 
 ---
