@@ -6,6 +6,8 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
 using DotLiquid;
+using CodeGenerator.Core.Artifacts;
+using CodeGenerator.Core.Liquid;
 using CodeGenerator.Core.Syntax;
 
 namespace CodeGenerator.Core.Services;
@@ -47,6 +49,12 @@ public class LiquidTemplateProcessor : ITemplateProcessor
 {
     private readonly SharedTemplateFileSystem _fileSystem;
 
+    static LiquidTemplateProcessor()
+    {
+        Template.RegisterTag<ExitTag>("exit");
+        Template.RegisterFilter(typeof(CodeGeneratorFilters));
+    }
+
     public LiquidTemplateProcessor(SharedTemplateFileSystem fileSystem)
     {
         _fileSystem = fileSystem;
@@ -80,7 +88,13 @@ public class LiquidTemplateProcessor : ITemplateProcessor
 
             var liquidTemplate = Template.Parse(string.Join(Environment.NewLine, template));
 
-            return liquidTemplate.Render(hash);
+            var result = liquidTemplate.Render(hash);
+            ThrowIfSkipFileError(liquidTemplate);
+            return result;
+        }
+        catch (SkipFileException)
+        {
+            throw;
         }
         catch (Exception e)
         {
@@ -98,7 +112,13 @@ public class LiquidTemplateProcessor : ITemplateProcessor
 
             var liquidTemplate = Template.Parse(template);
 
-            return liquidTemplate.Render(hash);
+            var result = liquidTemplate.Render(hash);
+            ThrowIfSkipFileError(liquidTemplate);
+            return result;
+        }
+        catch (SkipFileException)
+        {
+            throw;
         }
         catch (Exception e)
         {
@@ -129,6 +149,18 @@ public class LiquidTemplateProcessor : ITemplateProcessor
     {
         string result = Process(template, model);
         return Task.FromResult(result);
+    }
+
+    private static void ThrowIfSkipFileError(Template liquidTemplate)
+    {
+        var skipError = liquidTemplate.Errors
+            .OfType<SkipFileException>()
+            .FirstOrDefault();
+
+        if (skipError != null)
+        {
+            throw skipError;
+        }
     }
 
     private static Dictionary<string, object> ConvertObjectToDictionary(object o)

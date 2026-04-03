@@ -1,6 +1,7 @@
 // Copyright (c) Quinntyne Brown. All Rights Reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
+using CodeGenerator.Core.Artifacts;
 using CodeGenerator.Core.Artifacts.Abstractions;
 using CodeGenerator.DotNet.Services;
 using CodeGenerator.Core.Services;
@@ -57,7 +58,22 @@ public class TemplatedFileArtifactGenerationStrategy : IArtifactGenerationStrate
             }
         }
 
-        var result = _templateProcessor.Process(template, model.Tokens);
+        string result;
+        try
+        {
+            result = _templateProcessor.Process(template, model.Tokens);
+        }
+        catch (SkipFileException ex)
+        {
+            _logger.LogInformation("Skipping file {Name}: {Reason}", model.Name, ex.Message);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(result))
+        {
+            _logger.LogInformation("Skipping file {Name}: rendered output is empty.", model.Name);
+            return;
+        }
 
         model.Body = string.Join(Environment.NewLine, result);
 

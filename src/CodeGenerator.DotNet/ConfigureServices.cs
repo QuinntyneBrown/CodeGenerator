@@ -1,6 +1,7 @@
 // Copyright (c) Quinntyne Brown. All Rights Reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
+using CodeGenerator.Core.Liquid;
 using CodeGenerator.DotNet;
 using CodeGenerator.DotNet.Artifacts;
 using CodeGenerator.DotNet.Artifacts.Files.Factories;
@@ -30,6 +31,7 @@ using CodeGenerator.DotNet.Syntax.Types;
 using CodeGenerator.DotNet.Syntax.Units.Factories;
 using CodeGenerator.DotNet.Syntax.Units.Services;
 using CodeGenerator.Core.Internal;
+using CodeGenerator.Core.Services;
 using MediatR;
 
 namespace Microsoft.Extensions.DependencyInjection;
@@ -67,8 +69,12 @@ public static class ConfigureServices
         services.AddSingleton<IAggregateService, AggregateService>();
         services.AddSingleton<ICommandService, CommandService>();
         services.AddSingleton<IFileSystem, FileSystem>();
-        services.AddSingleton<ITemplateProcessor, LiquidTemplateProcessor>();
         services.AddSingleton<INamingConventionConverter, NamingConventionConverter>();
+        services.AddSingleton<ITemplateProcessor>(sp =>
+        {
+            CodeGeneratorFilters.Initialize(sp.GetRequiredService<INamingConventionConverter>());
+            return new LiquidTemplateProcessor(sp.GetRequiredService<SharedTemplateFileSystem>());
+        });
         services.AddSingleton<ISettingsProvider, SettingsProvider>();
         services.AddSingleton<ITenseConverter, TenseConverter>();
         services.AddSingleton<IContext, Context>();
