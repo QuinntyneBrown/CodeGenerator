@@ -28,6 +28,11 @@ public class RepositoryModel : SyntaxModel
     public List<RepositoryMethodModel> CustomMethods { get; set; }
 
     public List<ImportModel> Imports { get; set; }
+
+    /// <summary>
+    /// When true, generates __init__ with super().__init__(Entity) instead of class attribute model = Entity.
+    /// </summary>
+    public bool UseSuperInit { get; set; } = true;
 }
 
 public class RepositoryMethodModel

@@ -180,6 +180,16 @@ public class SchemaSyntaxGenerationStrategy : ISyntaxGenerationStrategy<SchemaMo
                         fieldArgs.Add("required=True");
                     }
 
+                    if (field.DumpOnly)
+                    {
+                        fieldArgs.Add("dump_only=True");
+                    }
+
+                    if (field.LoadOnly)
+                    {
+                        fieldArgs.Add("load_only=True");
+                    }
+
                     foreach (var validation in field.Validations)
                     {
                         var validationExpr = validation.StartsWith("validate.") ? validation : $"validate.{validation}";

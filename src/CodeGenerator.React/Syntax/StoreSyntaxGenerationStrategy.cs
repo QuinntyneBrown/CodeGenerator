@@ -49,7 +49,12 @@ public class StoreSyntaxGenerationStrategy : ISyntaxGenerationStrategy<StoreMode
         {
             var actionName = namingConventionConverter.Convert(NamingConvention.CamelCase, action);
 
-            if (model.ActionImplementations.TryGetValue(action, out var impl))
+            if (model.ActionSignatures.TryGetValue(action, out var signature))
+            {
+                // Use the exact typed signature provided
+                builder.AppendLine($"{actionName}: {signature};".Indent(1, 2));
+            }
+            else if (model.ActionImplementations.TryGetValue(action, out var impl))
             {
                 builder.AppendLine($"{actionName}: (...args: any[]) => void;".Indent(1, 2));
             }

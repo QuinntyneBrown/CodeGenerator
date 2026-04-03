@@ -11,6 +11,7 @@ public class StoreModel : SyntaxModel
         StateProperties = [];
         Actions = [];
         ActionImplementations = new();
+        ActionSignatures = new();
     }
 
     public string Name { get; set; }
@@ -20,6 +21,13 @@ public class StoreModel : SyntaxModel
     public List<string> Actions { get; set; }
 
     public Dictionary<string, string> ActionImplementations { get; set; }
+
+    /// <summary>
+    /// Maps action name to its full TypeScript signature string.
+    /// E.g., "fetchUsers" -> "(page?: number, perPage?: number) => Promise&lt;void&gt;"
+    /// When present, uses this instead of generic "(...args: any[]) => void".
+    /// </summary>
+    public Dictionary<string, string> ActionSignatures { get; set; }
 
     public string? EntityName { get; set; }
 }

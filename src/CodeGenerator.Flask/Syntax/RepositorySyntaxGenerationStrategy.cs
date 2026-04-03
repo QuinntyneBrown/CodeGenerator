@@ -63,7 +63,15 @@ public class RepositorySyntaxGenerationStrategy : ISyntaxGenerationStrategy<Repo
         builder.AppendLine();
         builder.AppendLine();
         builder.AppendLine($"class {className}(BaseRepository):");
-        builder.AppendLine($"    model = {entityName}");
+        if (model.UseSuperInit)
+        {
+            builder.AppendLine($"    def __init__(self):");
+            builder.AppendLine($"        super().__init__({entityName})");
+        }
+        else
+        {
+            builder.AppendLine($"    model = {entityName}");
+        }
 
         if (model.CustomMethods.Count > 0)
         {
@@ -75,7 +83,8 @@ public class RepositorySyntaxGenerationStrategy : ISyntaxGenerationStrategy<Repo
                 methodParams.AddRange(method.Params);
                 var paramStr = string.Join(", ", methodParams);
 
-                builder.AppendLine($"    def {method.Name}({paramStr}):");
+                var returnHint = !string.IsNullOrEmpty(method.ReturnTypeHint) ? $" -> {method.ReturnTypeHint}" : "";
+                builder.AppendLine($"    def {method.Name}({paramStr}){returnHint}:");
 
                 if (!string.IsNullOrEmpty(method.Body))
                 {

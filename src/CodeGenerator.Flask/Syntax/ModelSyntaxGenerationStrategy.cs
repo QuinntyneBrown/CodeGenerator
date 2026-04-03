@@ -209,6 +209,7 @@ public class ModelSyntaxGenerationStrategy : ISyntaxGenerationStrategy<ModelMode
             builder.AppendLine();
             builder.AppendLine($"    def __repr__(self):");
             builder.AppendLine($"        return f'<{className} {{self.id}}>'");
+            builder.AppendLine();
         }
 
         return StringBuilderCache.GetStringAndRelease(builder);
