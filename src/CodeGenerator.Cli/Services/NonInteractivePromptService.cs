@@ -20,4 +20,11 @@ public class NonInteractivePromptService : IInteractivePromptService
 
         return partial;
     }
+
+    public string? PromptForConfigFile(string directory, IReadOnlyList<string> candidates)
+    {
+        throw new InvalidOperationException(
+            $"Multiple config files found in '{directory}' and interactive mode is not available "
+            + "(stdin is not a terminal). Specify the config file explicitly via --config.");
+    }
 }

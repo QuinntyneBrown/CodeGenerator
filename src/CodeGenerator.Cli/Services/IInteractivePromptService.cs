@@ -10,4 +10,6 @@ public interface IInteractivePromptService
     bool IsInteractive { get; }
 
     GenerationOptions PromptForMissingOptions(GenerationOptions partial);
+
+    string? PromptForConfigFile(string directory, IReadOnlyList<string> candidates);
 }

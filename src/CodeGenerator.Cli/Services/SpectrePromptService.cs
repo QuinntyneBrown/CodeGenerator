@@ -44,4 +44,21 @@ public class SpectrePromptService : IInteractivePromptService
             LocalSourceRoot = string.IsNullOrWhiteSpace(localSource) ? null : localSource,
         };
     }
+
+    public string? PromptForConfigFile(string directory, IReadOnlyList<string> candidates)
+    {
+        if (candidates.Count == 0)
+        {
+            return null;
+        }
+
+        var choices = new List<string>(candidates) { "(none)" };
+
+        var selected = AnsiConsole.Prompt(
+            new SelectionPrompt<string>()
+                .Title($"Multiple config files found in [green]{directory}[/]. Select one:")
+                .AddChoices(choices));
+
+        return selected == "(none)" ? null : selected;
+    }
 }

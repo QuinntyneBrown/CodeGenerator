@@ -94,4 +94,4 @@
 |---|---------|--------|-----------------|-------------|
 | 58 | [Config Loader Integration](58-config-loader-integration/README.md) | Implemented | Integration 1 | Wire 4-tier config (defaults > .codegenerator.json > env vars > CLI args) into command flow |
 | 59 | [Rollback Service Integration](59-rollback-service-integration/README.md) | Implemented | Integration 2 | Wire GenerationRollbackService into commands with try/catch/commit/rollback |
-| 60 | [Interactive Prompts Integration](60-interactive-prompts-integration/README.md) | Draft | Integration 3 | Wire SpectrePromptService into commands with TTY detection and fallback |
+| 60 | [Interactive Prompts Integration](60-interactive-prompts-integration/README.md) | Implemented | Integration 3 | Wire SpectrePromptService into commands with TTY detection and fallback |
