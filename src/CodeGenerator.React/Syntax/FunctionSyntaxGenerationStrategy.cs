@@ -40,7 +40,10 @@ public class FunctionSyntaxGenerationStrategy : ISyntaxGenerationStrategy<Functi
             }
         }
 
-        builder.AppendLine($"export function {namingConventionConverter.Convert(NamingConvention.CamelCase, model.Name)}()" + " {");
+        var funcName = namingConventionConverter.Convert(NamingConvention.CamelCase, model.Name);
+        var paramsStr = model.Parameters.Count > 0 ? string.Join(", ", model.Parameters) : "";
+        var returnTypeStr = !string.IsNullOrEmpty(model.ReturnType) ? $": {model.ReturnType}" : "";
+        builder.AppendLine($"export function {funcName}({paramsStr}){returnTypeStr}" + " {");
 
         builder.AppendLine(model.Body.Indent(1, 2));
 

@@ -27,7 +27,21 @@ public class StoreSyntaxGenerationStrategy : ISyntaxGenerationStrategy<StoreMode
 
         var builder = StringBuilderCache.Acquire();
 
-        var storeName = namingConventionConverter.Convert(NamingConvention.PascalCase, model.Name);
+        var includeAsyncState = model.IncludeAsyncState;
+        if (!includeAsyncState)
+        {
+            foreach (var action in model.Actions)
+            {
+                if (model.ActionImplementations.TryGetValue(action, out var impl) &&
+                    (impl.Contains("await ") || impl.TrimStart().StartsWith("async ")))
+                {
+                    includeAsyncState = true;
+                    break;
+                }
+            }
+        }
+
+        var storeName= namingConventionConverter.Convert(NamingConvention.PascalCase, model.Name);
         var hookName = storeName.EndsWith("Store", StringComparison.OrdinalIgnoreCase)
             ? $"use{storeName}"
             : $"use{storeName}Store";
@@ -66,7 +80,7 @@ public class StoreSyntaxGenerationStrategy : ISyntaxGenerationStrategy<StoreMode
             }
         }
 
-        if (model.IncludeAsyncState)
+        if (includeAsyncState)
         {
             builder.AppendLine("isLoading: boolean;".Indent(1, 2));
             builder.AppendLine("error: string | null;".Indent(1, 2));
@@ -84,7 +98,7 @@ public class StoreSyntaxGenerationStrategy : ISyntaxGenerationStrategy<StoreMode
             builder.AppendLine($"{propertyName}: {defaultValue},".Indent(1, 2));
         }
 
-        if (model.IncludeAsyncState)
+        if (includeAsyncState)
         {
             builder.AppendLine("isLoading: false,".Indent(1, 2));
             builder.AppendLine("error: null,".Indent(1, 2));

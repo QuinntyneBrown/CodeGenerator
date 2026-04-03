@@ -7,9 +7,9 @@ namespace CodeGenerator.React.Syntax;
 
 public class PropertyModel
 {
-    public string Name { get; set; }
+    public string Name { get; set; } = string.Empty;
 
-    public TypeModel Type { get; set; }
+    public TypeModel Type { get; set; } = new("object");
 
     public bool IsOptional { get; set; } = true;
 

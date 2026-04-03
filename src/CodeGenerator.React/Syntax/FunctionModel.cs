@@ -10,6 +10,8 @@ public class FunctionModel : SyntaxModel
         Imports = [];
         Name = string.Empty;
         Body = string.Empty;
+        ReturnType = string.Empty;
+        Parameters = [];
     }
 
     public string Name { get; set; }
@@ -17,4 +19,8 @@ public class FunctionModel : SyntaxModel
     public string Body { get; set; }
 
     public List<ImportModel> Imports { get; set; }
+
+    public string ReturnType { get; set; }
+
+    public List<string> Parameters { get; set; }
 }

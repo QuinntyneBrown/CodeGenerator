@@ -92,7 +92,15 @@ public class ComponentSyntaxGenerationStrategy : ISyntaxGenerationStrategy<Compo
             // Hooks
             foreach (var hook in model.Hooks)
             {
-                var hookCall = hook.StartsWith("use") ? $"const {hook.Substring(3, 1).ToLowerInvariant()}{hook.Substring(4)}Result = {hook}()" : hook;
+                string hookCall;
+                if (hook.StartsWith("use") && hook.Length > 3)
+                {
+                    hookCall = $"const {hook.Substring(3, 1).ToLowerInvariant()}{hook[4..]}Result = {hook}()";
+                }
+                else
+                {
+                    hookCall = $"const result = {hook}()";
+                }
                 builder.AppendLine($"{hookCall};".Indent(1, 2));
             }
             if (model.Hooks.Count > 0) builder.AppendLine();
@@ -141,7 +149,15 @@ public class ComponentSyntaxGenerationStrategy : ISyntaxGenerationStrategy<Compo
 
             foreach (var hook in model.Hooks)
             {
-                var hookCall = hook.StartsWith("use") ? $"const {hook.Substring(3, 1).ToLowerInvariant()}{hook.Substring(4)}Result = {hook}()" : hook;
+                string hookCall;
+                if (hook.StartsWith("use") && hook.Length > 3)
+                {
+                    hookCall = $"const {hook.Substring(3, 1).ToLowerInvariant()}{hook[4..]}Result = {hook}()";
+                }
+                else
+                {
+                    hookCall = $"const result = {hook}()";
+                }
                 builder.AppendLine($"{hookCall};".Indent(1, 2));
             }
             if (model.Hooks.Count > 0) builder.AppendLine();
@@ -192,7 +208,15 @@ public class ComponentSyntaxGenerationStrategy : ISyntaxGenerationStrategy<Compo
 
             foreach (var hook in model.Hooks)
             {
-                var hookCall = hook.StartsWith("use") ? $"const {hook.Substring(3, 1).ToLowerInvariant()}{hook.Substring(4)}Result = {hook}()" : hook;
+                string hookCall;
+                if (hook.StartsWith("use") && hook.Length > 3)
+                {
+                    hookCall = $"const {hook.Substring(3, 1).ToLowerInvariant()}{hook[4..]}Result = {hook}()";
+                }
+                else
+                {
+                    hookCall = $"const result = {hook}()";
+                }
                 builder.AppendLine($"{hookCall};".Indent(1, 2));
             }
             if (model.Hooks.Count > 0) builder.AppendLine();
