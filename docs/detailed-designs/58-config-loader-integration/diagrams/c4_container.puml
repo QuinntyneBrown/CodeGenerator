@@ -1,0 +1,25 @@
+@startuml c4_container
+!theme plain
+!include <C4/C4_Container>
+
+title Config Loader Integration - Container Diagram
+
+Person(user, "CLI User", "Provides CLI args")
+
+System_Boundary(sb, "CodeGenerator CLI") {
+    Container(program, "Program.cs", "C#", "Bootstrap: builds 4-tier config, registers in DI")
+    Container(cmd, "Commands", "System.CommandLine", "CreateCodeGenerator, Scaffold commands")
+    Container(config, "Configuration", "C#", "ConfigurationLoader, Mappers, CodeGeneratorConfiguration")
+}
+
+System_Ext(fs, "File System", ".codegenerator.json")
+System_Ext(env, "Environment", "CODEGEN_* vars")
+
+Rel(user, program, "CLI args")
+Rel(program, config, "Builds 4-tier config")
+Rel(config, fs, "Reads JSON")
+Rel(config, env, "Reads env vars")
+Rel(program, cmd, "Passes ICodeGeneratorConfiguration via DI")
+Rel(cmd, config, "Reads resolved values")
+
+@enduml

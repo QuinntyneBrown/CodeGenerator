@@ -1,0 +1,24 @@
+@startuml sequence_dryrun
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Dry-Run Mode - No Rollback Needed
+
+actor User
+participant "ScaffoldCommand" as CMD
+participant "IScaffoldEngine" as SE
+participant "DryRunCommandService" as DRY
+
+User -> CMD: HandleAsync(config, output, dryRun=true)
+
+CMD -> SE: ScaffoldAsync(yaml, output, dryRun=true, force)
+SE -> DRY: All writes intercepted
+DRY -> DRY: Record planned files\n(nothing written to disk)
+SE --> CMD: ScaffoldResult with PlannedFiles
+
+CMD -> CMD: Log planned files
+CMD --> User: "Dry run - files that would be created:\n  Create: src/Program.cs\n  Create: src/MyApp.csproj"
+
+note right of CMD: No rollback service\nresolved or needed
+
+@enduml

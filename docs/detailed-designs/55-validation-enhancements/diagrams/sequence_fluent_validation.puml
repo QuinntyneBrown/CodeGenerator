@@ -1,0 +1,55 @@
+@startuml sequence_fluent_validation
+!theme plain
+
+title Fluent Validation Execution Sequence
+
+participant "Caller" as caller
+participant "Validator<T>" as validator
+participant "PropertyRule" as propRule
+participant "ConditionalRuleSet" as condRule
+participant "ObjectRule" as objRule
+participant "ValidationResult" as result
+
+caller -> validator : RuleFor(c => c.Name, IsNotEmpty, msg)
+caller -> validator : When(condition, innerRules)
+caller -> validator : Must(predicate, msg)
+caller -> validator : Validate(instance)
+activate validator
+
+validator -> result : Create new ValidationResult
+activate result
+
+validator -> propRule : Evaluate(instance)
+activate propRule
+propRule -> propRule : Extract property value
+propRule -> propRule : Apply predicate
+alt predicate fails
+    propRule --> validator : ValidationError
+    validator -> result : AddError(propertyName, message)
+else predicate passes
+    propRule --> validator : null
+end
+deactivate propRule
+
+validator -> condRule : Evaluate(instance)
+activate condRule
+condRule -> condRule : Check condition
+alt condition is true
+    condRule -> condRule : Evaluate inner rules
+    condRule --> validator : ValidationError (if any fail)
+else condition is false
+    condRule --> validator : null (skip)
+end
+deactivate condRule
+
+validator -> objRule : Evaluate(instance)
+activate objRule
+objRule -> objRule : Apply predicate to instance
+objRule --> validator : ValidationError or null
+deactivate objRule
+
+validator --> caller : ValidationResult
+deactivate result
+deactivate validator
+
+@enduml

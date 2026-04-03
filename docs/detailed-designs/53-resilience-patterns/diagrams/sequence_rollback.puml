@@ -1,0 +1,40 @@
+@startuml sequence_rollback
+!theme plain
+
+title Rollback with Modified and Deleted File Restoration
+
+participant "ScaffoldEngine" as engine
+participant "RollbackService" as svc
+participant "File System" as fs
+
+== Tracking Phase ==
+engine -> svc : TrackDirectoryCreated("src/Models/")
+engine -> svc : TrackFileCreated("src/Models/User.cs")
+engine -> svc : TrackFileModified("src/Program.cs",\n  originalContent="old code")
+engine -> svc : TrackFileDeleted("src/Legacy.cs",\n  previousContent="legacy code")
+
+== Failure Occurs ==
+engine -> engine : Exception during generation
+
+== Rollback Phase (LIFO order) ==
+engine -> svc : Rollback()
+
+svc -> fs : Recreate "src/Legacy.cs"\n  with previousContent
+fs --> svc : OK
+note right: FileDeleted -> recreate
+
+svc -> fs : Restore "src/Program.cs"\n  with originalContent
+fs --> svc : OK
+note right: FileModified -> restore
+
+svc -> fs : Delete "src/Models/User.cs"
+fs --> svc : OK
+note right: FileCreated -> delete
+
+svc -> fs : Delete "src/Models/" (if empty)
+fs --> svc : OK
+note right: DirectoryCreated -> delete
+
+svc --> engine : RollbackReport\n  (2 restored, 1 deleted, 1 dir,\n   0 failures)
+
+@enduml

@@ -3,86 +3,65 @@
 skinparam classAttributeIconSize 0
 skinparam classFontSize 12
 
-title Telemetry and Diagnostics — Class Diagram
+title Telemetry and Diagnostics - Domain Model
 
-class DiagnosticsCollector {
-    -_commandService : ICommandService
-    +CollectEnvironment() : EnvironmentInfo
-    -GetSdkVersion() : string
-    -GetShell() : string
-}
-
-class EnvironmentInfo <<record>> {
-    +CliVersion : string
-    +DotNetSdkVersion : string
-    +RuntimeVersion : string
-    +OperatingSystem : string
-    +Architecture : string
-    +Shell : string
-    +WorkingDirectory : string
-}
-
-interface IStopwatchProvider {
-    +StartNew() : IStopwatchInstance
-}
-
-interface IStopwatchInstance {
-    +Elapsed : TimeSpan {get}
-    +Stop() : void
-}
-
-class SystemStopwatchProvider {
-    +StartNew() : IStopwatchInstance
-}
-
-class NullStopwatchProvider {
-    +StartNew() : IStopwatchInstance
+interface IGenerationTimer {
+    +TimeStep(stepName: string): IDisposable
+    +GetEntries(): IReadOnlyList<TimingEntry>
+    +TotalElapsed: TimeSpan
 }
 
 class GenerationTimer {
-    -_stopwatchProvider : IStopwatchProvider
-    -_entries : ConcurrentBag<TimingEntry>
-    -_order : int
-    +TimeStep(stepName: string) : IDisposable
-    +GetEntries() : IReadOnlyList<TimingEntry>
-    +TotalElapsed : TimeSpan {get}
+    -_entries: ConcurrentBag<TimingEntry>
+    -_order: int
+    -_totalStopwatch: Stopwatch
+    +TimeStep(stepName): IDisposable
+    +GetEntries(): IReadOnlyList<TimingEntry>
+    +TotalElapsed: TimeSpan
 }
 
-class TimingScope <<internal>> {
-    -_stepName : string
-    -_stopwatch : IStopwatchInstance
-    -_timer : GenerationTimer
-    -_order : int
-    +Dispose() : void
+class NullGenerationTimer {
+    +TimeStep(stepName): IDisposable
+    +GetEntries(): IReadOnlyList<TimingEntry>
+    +TotalElapsed: TimeSpan
 }
 
 class TimingEntry <<record>> {
-    +StepName : string
-    +Duration : TimeSpan
-    +Order : int
+    +StepName: string
+    +Duration: TimeSpan
+    +Order: int
 }
 
-class DiagnosticsReport <<record>> {
-    +Environment : EnvironmentInfo
-    +Steps : IReadOnlyList<TimingEntry>
-    +TotalDuration : TimeSpan
-    +GeneratedAt : DateTime
+class DiagnosticsCollector {
+    +CollectEnvironment(cliVersion: string): EnvironmentInfo
+}
+
+class EnvironmentInfo <<record>> {
+    +CliVersion: string
+    +DotNetSdkVersion: string
+    +RuntimeVersion: string
+    +OperatingSystem: string
+    +Architecture: string
+    +Shell: string
+    +WorkingDirectory: string
+}
+
+class DiagnosticsReport {
+    +Environment: EnvironmentInfo
+    +Steps: List<TimingEntry>
+    +TotalDuration: TimeSpan
+    +GeneratedAt: DateTime
 }
 
 class DiagnosticsRenderer {
-    +Render(report: DiagnosticsReport) : void
-    -FormatDuration(ts: TimeSpan) : string
-    -PadWithDots(name: string, width: int) : string
+    -_console: IAnsiConsole
+    +Render(report: DiagnosticsReport): void
 }
 
-IStopwatchProvider <|.. SystemStopwatchProvider
-IStopwatchProvider <|.. NullStopwatchProvider
-IStopwatchProvider ..> IStopwatchInstance : creates
-GenerationTimer --> IStopwatchProvider : uses
-GenerationTimer --> "0..*" TimingEntry : records
-GenerationTimer ..> TimingScope : creates
-TimingScope ..> IStopwatchInstance : wraps
-DiagnosticsCollector --> EnvironmentInfo : produces
+IGenerationTimer <|.. GenerationTimer
+IGenerationTimer <|.. NullGenerationTimer
+GenerationTimer --> TimingEntry : produces
+DiagnosticsCollector --> EnvironmentInfo : creates
 DiagnosticsReport *-- EnvironmentInfo
 DiagnosticsReport *-- "0..*" TimingEntry
 DiagnosticsRenderer --> DiagnosticsReport : renders

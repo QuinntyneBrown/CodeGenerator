@@ -1,0 +1,26 @@
+@startuml c4_component
+!theme plain
+!include <C4/C4_Component>
+
+title Interactive Prompts Integration - Component Diagram
+
+Container_Boundary(cli, "CodeGenerator.Cli") {
+    Component(program, "Program.cs", "C#", "TTY detection and DI registration")
+    Component(createCmd, "CreateCodeGeneratorCommand", "C#", "Prompts if --name missing")
+    Component(scaffoldCmd, "ScaffoldCommand", "C#", "Prompts if --config missing")
+    Component(iPrompt, "IInteractivePromptService", "Interface", "IsInteractive, PromptForMissingOptions, PromptForConfigFile")
+    Component(spectre, "SpectrePromptService", "Spectre.Console", "Rich terminal prompts")
+    Component(nonInteractive, "NonInteractivePromptService", "C#", "Throws on missing required input")
+    Component(validator, "GenerationOptionsValidator", "C#", "Validates after prompting")
+    Component(genOpts, "GenerationOptions", "Record", "Name, Output, Framework, Slnx, LocalSourceRoot")
+}
+
+Rel(program, iPrompt, "Registers impl based on TTY")
+Rel(createCmd, iPrompt, "PromptForMissingOptions(partial)")
+Rel(scaffoldCmd, iPrompt, "PromptForConfigFile(dir, candidates)")
+Rel(iPrompt, spectre, "if TTY")
+Rel(iPrompt, nonInteractive, "if piped")
+Rel(spectre, genOpts, "Returns completed")
+Rel(createCmd, validator, "Validate(options)")
+
+@enduml

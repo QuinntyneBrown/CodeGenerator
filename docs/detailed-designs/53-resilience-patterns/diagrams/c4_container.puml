@@ -1,0 +1,22 @@
+@startuml c4_container
+!theme plain
+!include <C4/C4_Container>
+
+title Resilience Patterns -- Container Diagram
+
+System_Boundary(cg, "CodeGenerator") {
+    Container(cli, "CodeGenerator.Cli", "Console App", "CancellationTokenSource, Console.CancelKeyPress handler")
+    Container(core_io, "Core / IO", "C# Library", "Retry static helper, RetryOptions profiles")
+    Container(core_scaffold, "Core / Scaffold", "C# Library", "ScaffoldEngine with CancellationToken checkpoints")
+    Container(core_artifacts, "Core / Artifacts", "C# Library", "ArtifactGenerator with CancellationToken propagation")
+    Container(core_errors, "Core / Errors", "C# Library", "Expanded GenerationRollbackService with RollbackReport")
+}
+
+Rel(cli, core_scaffold, "Passes CancellationToken")
+Rel(cli, core_artifacts, "Passes CancellationToken")
+Rel(core_scaffold, core_io, "Uses Retry for file writes")
+Rel(core_scaffold, core_errors, "Tracks mutations, triggers rollback")
+Rel(core_artifacts, core_io, "Uses Retry for file writes")
+Rel(core_artifacts, core_errors, "Tracks mutations, triggers rollback")
+
+@enduml

@@ -1,0 +1,20 @@
+@startuml c4_context
+!theme plain
+!include <C4/C4_Context>
+
+title Resilience Patterns -- System Context
+
+Person(user, "CLI User", "Presses Ctrl+C to cancel; expects clean rollback")
+
+System(cli, "CodeGenerator.Cli", "CLI with CancellationTokenSource linked to Console.CancelKeyPress")
+System(core, "CodeGenerator.Core", "Generation engine with retry, cancellation, and expanded rollback")
+
+System_Ext(fs, "File System", "Target of file writes with transient lock scenarios")
+System_Ext(shell, "OS Shell", "Post-command execution subject to cancellation")
+
+Rel(user, cli, "Invokes commands, cancels with Ctrl+C")
+Rel(cli, core, "Passes CancellationToken through pipeline")
+Rel(core, fs, "Writes files with retry on transient failure")
+Rel(core, shell, "Executes commands with cancellation support")
+
+@enduml

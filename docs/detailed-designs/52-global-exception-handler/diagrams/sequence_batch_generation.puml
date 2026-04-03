@@ -1,0 +1,33 @@
+@startuml sequence_batch_generation
+!theme plain
+
+title Batch Artifact Generation with Error Aggregation
+
+participant "Caller" as caller
+participant "ArtifactGenerator" as gen
+participant "Strategy A" as stratA
+participant "Strategy B" as stratB
+participant "Strategy C" as stratC
+participant "ArtifactGenerationResult" as result
+
+caller -> gen : GenerateAsync(model)
+gen -> gen : Validate model (fail-fast if invalid)
+
+gen -> result : Create empty result
+
+gen -> stratA : GenerateAsync(model)
+stratA --> gen : success (UserController.cs)
+gen -> result : Add to Succeeded
+
+gen -> stratB : GenerateAsync(model)
+stratB --> gen : throws TemplateRenderException
+gen -> result : Add to Failed\n(TEMPLATE_RENDER_FAILED)
+note right: Continue to next strategy\n(unless --fail-fast)
+
+gen -> stratC : GenerateAsync(model)
+stratC --> gen : success (UserService.cs)
+gen -> result : Add to Succeeded
+
+gen --> caller : ArtifactGenerationResult\n(2 succeeded, 1 failed)
+
+@enduml

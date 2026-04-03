@@ -2,18 +2,15 @@
 !theme plain
 !include <C4/C4_Context>
 
-title Telemetry and Diagnostics — System Context
+title Telemetry and Diagnostics - System Context
 
-Person(dev, "Developer / Support", "Runs generation with --diagnostics to collect environment and timing data")
+Person(user, "CLI User", "Runs commands with --diagnostics")
 
-System(codegen, "CodeGenerator CLI", "Code generation engine with built-in diagnostics collection")
+System(cli, "CodeGenerator CLI", "Code generation with optional diagnostics output")
+System_Ext(runtime, ".NET Runtime", "Provides version, OS, architecture info")
 
-System_Ext(sdk, ".NET SDK", "Queried for version information")
-System_Ext(os, "Operating System", "Queried for OS, architecture, shell info")
-
-Rel(dev, codegen, "codegen -n Foo --diagnostics")
-Rel(codegen, sdk, "dotnet --version")
-Rel(codegen, os, "RuntimeInformation queries")
-Rel(codegen, dev, "Diagnostics report\n(environment + per-step timing)")
+Rel(user, cli, "create-code-cli --diagnostics")
+Rel(cli, runtime, "Reads RuntimeInformation")
+Rel(cli, user, "Renders timing table\nand environment info")
 
 @enduml

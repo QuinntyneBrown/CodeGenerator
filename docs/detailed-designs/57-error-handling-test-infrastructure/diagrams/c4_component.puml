@@ -1,0 +1,34 @@
+@startuml c4_component
+!theme plain
+!include <C4/C4_Component>
+
+title C4 Component - Error Handling Test Infrastructure
+
+Container_Boundary(testInfra, "Test Infrastructure") {
+    Component(resultAssert, "ResultAssertions", "C# Static Class", "ShouldBeSuccess, ShouldBeFailure, ShouldBeFailureWithCode, ShouldHaveValidationError")
+    Component(faultOpts, "FaultInjectionOptions", "C# Class", "Configurable failure rates, disk full, permission denied flags")
+    Component(faultFs, "FaultInjectingFileSystem", "C# Decorator", "Wraps IFileSystem, injects I/O faults")
+    Component(faultCmd, "FaultInjectingCommandService", "C# Decorator", "Wraps ICommandService, injects process faults")
+    Component(faultTpl, "FaultInjectingTemplateProcessor", "C# Decorator", "Wraps ITemplateProcessor, injects render faults")
+    Component(diExt, "FaultInjectionServiceExtensions", "C# Static Class", "DI registration helpers for test configurations")
+}
+
+Container_Boundary(prod, "Production Interfaces") {
+    Component(iFs, "IFileSystem", "Interface", "System.IO.Abstractions")
+    Component(iCmd, "ICommandService", "Interface", "CodeGenerator.Abstractions")
+    Component(iTpl, "ITemplateProcessor", "Interface", "CodeGenerator.Abstractions")
+    Component(result, "Result<T>", "Struct", "CodeGenerator.Abstractions")
+}
+
+Rel(faultFs, iFs, "Decorates")
+Rel(faultCmd, iCmd, "Decorates")
+Rel(faultTpl, iTpl, "Decorates")
+Rel(faultFs, faultOpts, "Reads options")
+Rel(faultCmd, faultOpts, "Reads options")
+Rel(faultTpl, faultOpts, "Reads options")
+Rel(diExt, faultFs, "Registers")
+Rel(diExt, faultCmd, "Registers")
+Rel(diExt, faultTpl, "Registers")
+Rel(resultAssert, result, "Asserts on")
+
+@enduml

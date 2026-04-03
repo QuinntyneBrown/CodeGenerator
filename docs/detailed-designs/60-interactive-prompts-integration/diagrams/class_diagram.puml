@@ -1,0 +1,57 @@
+@startuml class_diagram
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 12
+
+title Interactive Prompts Integration - Domain Model
+
+interface IInteractivePromptService {
+    +IsInteractive: bool
+    +PromptForMissingOptions(partial: GenerationOptions): GenerationOptions
+    +PromptForConfigFile(dir: string, candidates: IReadOnlyList<string>): string?
+}
+
+class SpectrePromptService {
+    +IsInteractive: bool
+    +PromptForMissingOptions(partial): GenerationOptions
+    +PromptForConfigFile(dir, candidates): string?
+}
+
+class NonInteractivePromptService {
+    +IsInteractive: bool
+    +PromptForMissingOptions(partial): GenerationOptions
+    +PromptForConfigFile(dir, candidates): string?
+}
+
+class GenerationOptions <<record>> {
+    +Name: string
+    +OutputDirectory: string
+    +Framework: string
+    +Slnx: bool
+    +LocalSourceRoot: string?
+}
+
+class GenerationOptionsValidator {
+    -_fileSystem: IFileSystem
+    +Validate(options: GenerationOptions): ValidationResult
+}
+
+class CreateCodeGeneratorCommand {
+    -_serviceProvider: IServiceProvider
+    +HandleAsync(): Task
+}
+
+class ScaffoldCommand {
+    -_serviceProvider: IServiceProvider
+    +HandleAsync(): Task
+}
+
+IInteractivePromptService <|.. SpectrePromptService
+IInteractivePromptService <|.. NonInteractivePromptService
+SpectrePromptService ..> GenerationOptions : returns
+NonInteractivePromptService ..> GenerationOptions : returns or throws
+CreateCodeGeneratorCommand --> IInteractivePromptService : uses
+ScaffoldCommand --> IInteractivePromptService : uses
+CreateCodeGeneratorCommand --> GenerationOptionsValidator : validates after prompt
+
+@enduml

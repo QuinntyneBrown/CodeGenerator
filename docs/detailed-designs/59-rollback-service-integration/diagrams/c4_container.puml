@@ -1,0 +1,24 @@
+@startuml c4_container
+!theme plain
+!include <C4/C4_Container>
+
+title Rollback Service Integration - Container Diagram
+
+Person(user, "CLI User", "Runs commands")
+
+System_Boundary(sb, "CodeGenerator CLI") {
+    Container(cmd, "Commands", "System.CommandLine", "Try/catch wrapper around generation")
+    Container(gen, "Generation Pipeline", "C#", "ArtifactGenerator, strategies, ScaffoldEngine")
+    Container(rollback, "Rollback Service", "C#", "Tracks files/dirs, reverts on failure")
+}
+
+ContainerDb(fs, "File System", "Disk", "Generated files and directories")
+
+Rel(user, cmd, "Invokes")
+Rel(cmd, gen, "Calls generate/scaffold")
+Rel(gen, rollback, "TrackFile, TrackDirectory")
+Rel(gen, fs, "Writes files")
+Rel(cmd, rollback, "Commit() or Rollback()")
+Rel(rollback, fs, "Deletes on rollback")
+
+@enduml

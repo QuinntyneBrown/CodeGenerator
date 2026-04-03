@@ -1,0 +1,54 @@
+@startuml sequence_common_rules
+!theme plain
+
+title CommonRules Consolidation - Migration Sequence
+
+participant "GenerationOptionsValidator" as genVal
+participant "ConfigValidator" as cfgVal
+participant "CommonRules" as common
+participant "FileSystemRules" as fsRules
+participant "Validator<T>" as validator
+
+== Before: Scattered Inline Logic ==
+
+note over genVal
+    Own regex: ValidCSharpIdentifier
+    Own method: IsDirectoryWritable
+    Own check: framework.StartsWith("net")
+end note
+
+note over cfgVal
+    Own regex: SemverRegex()
+    Own check: path.Contains("..")
+end note
+
+== After: Consolidated CommonRules ==
+
+genVal -> validator : RuleFor(o => o.Name, ...)
+activate validator
+validator -> common : IsValidCSharpIdentifier(name)
+common --> validator : true/false
+deactivate validator
+
+genVal -> validator : RuleFor(o => o.Framework, ...)
+activate validator
+validator -> common : IsSupportedFrameworkVersion(fw)
+common --> validator : true/false
+deactivate validator
+
+genVal -> fsRules : IsWritableDirectory(path)
+fsRules --> genVal : true/false
+
+cfgVal -> validator : RuleFor(c => c.Version, ...)
+activate validator
+validator -> common : IsValidSemver(version)
+common --> validator : true/false
+deactivate validator
+
+cfgVal -> validator : RuleFor(c => c.Path, ...)
+activate validator
+validator -> common : IsValidFilePath(path)
+common --> validator : true/false
+deactivate validator
+
+@enduml

@@ -1,0 +1,44 @@
+@startuml class_validator
+!theme plain
+
+title Fluent Validator - Class Diagram
+
+class "Validator<T>" as Validator {
+    -_rules: List<IValidationRule<T>>
+    +RuleFor<TProp>(expression, predicate, errorMessage): Validator<T>
+    +When(condition: Func<T, bool>, rules: Action<Validator<T>>): Validator<T>
+    +Must(predicate: Func<T, bool>, errorMessage: string): Validator<T>
+    +Validate(instance: T): ValidationResult
+}
+
+interface "IValidationRule<T>" as IRule {
+    +Evaluate(instance: T): ValidationError?
+}
+
+class "PropertyRule<T, TProp>" as PropRule {
+    -_expression: Expression<Func<T, TProp>>
+    -_predicate: Func<TProp, bool>
+    -_errorMessage: string
+    -_propertyName: string
+    +Evaluate(instance: T): ValidationError?
+}
+
+class "ObjectRule<T>" as ObjRule {
+    -_predicate: Func<T, bool>
+    -_errorMessage: string
+    +Evaluate(instance: T): ValidationError?
+}
+
+class "ConditionalRuleSet<T>" as CondRule {
+    -_condition: Func<T, bool>
+    -_innerRules: List<IValidationRule<T>>
+    +Evaluate(instance: T): ValidationError?
+}
+
+Validator --> IRule : holds 0..*
+IRule <|.. PropRule
+IRule <|.. ObjRule
+IRule <|.. CondRule
+CondRule --> IRule : wraps 0..*
+
+@enduml

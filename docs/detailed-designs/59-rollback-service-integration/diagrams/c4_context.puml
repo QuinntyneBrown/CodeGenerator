@@ -1,0 +1,15 @@
+@startuml c4_context
+!theme plain
+!include <C4/C4_Context>
+
+title Rollback Service Integration - System Context
+
+Person(user, "CLI User", "Runs code generation commands")
+
+System(cli, "CodeGenerator CLI", "Generates code with automatic rollback on failure")
+System_Ext(fs, "File System", "Target directory for generated files")
+
+Rel(user, cli, "Runs generate/scaffold")
+Rel(cli, fs, "Creates files and directories\nRolls back on failure")
+
+@enduml

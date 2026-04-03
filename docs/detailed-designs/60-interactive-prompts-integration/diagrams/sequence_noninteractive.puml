@@ -1,0 +1,27 @@
+@startuml sequence_noninteractive
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Non-Interactive Mode - Missing Name (CI)
+
+participant "CI Pipeline" as CI
+participant "System.CommandLine" as SCL
+participant "CreateCodeGeneratorCommand" as CMD
+participant "IInteractivePromptService" as PS
+participant "NonInteractivePromptService" as NPS
+
+CI -> SCL: echo | create-code-cli (piped stdin)
+SCL -> CMD: HandleAsync(name: null, output: ".", ...)
+
+CMD -> PS: resolve from DI
+CMD -> CMD: name is null/empty
+CMD -> PS: IsInteractive?
+PS --> CMD: false
+
+CMD -> PS: PromptForMissingOptions(partial)
+PS -> NPS: delegate
+NPS --> CMD: InvalidOperationException!\n"Required option '--name' was not provided\nand interactive mode is not available"
+
+CMD --> CI: Exit code 1
+
+@enduml

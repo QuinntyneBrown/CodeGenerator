@@ -1,0 +1,33 @@
+@startuml c4_component
+!theme plain
+!include <C4/C4_Component>
+
+title Telemetry and Diagnostics — Component Diagram
+
+Container_Boundary(diag, "CodeGenerator.Core.Diagnostics") {
+    Component(collector, "DiagnosticsCollector", "Class", "Gathers environment info:\nCLI version, SDK version, OS, shell")
+    Component(envInfo, "EnvironmentInfo", "Record", "CliVersion, DotNetSdkVersion,\nRuntimeVersion, OS, Arch, Shell")
+    Component(iswp, "IStopwatchProvider", "Interface", "StartNew() : IStopwatchInstance")
+    Component(sysSwp, "SystemStopwatchProvider", "Class", "Wraps Stopwatch.StartNew()")
+    Component(nullSwp, "NullStopwatchProvider", "Class", "Returns no-op instances\n(zero overhead when disabled)")
+    Component(iswi, "IStopwatchInstance", "Interface", "Elapsed, Stop()")
+    Component(timer, "GenerationTimer", "Class", "TimeStep(name) : IDisposable\nGetEntries() : List<TimingEntry>")
+    Component(entry, "TimingEntry", "Record", "StepName, Duration, Order")
+    Component(report, "DiagnosticsReport", "Record", "Environment, Steps, TotalDuration")
+}
+
+Container_Boundary(cli, "CodeGenerator.Cli") {
+    Component(renderer, "DiagnosticsRenderer", "Class", "Formats report for console")
+}
+
+collector --> envInfo : produces
+iswp <|.. sysSwp
+iswp <|.. nullSwp
+iswp ..> iswi : creates
+timer --> iswp : uses
+timer --> "0..*" entry : records
+report --> envInfo : contains
+report --> "0..*" entry : contains
+renderer --> report : renders
+
+@enduml

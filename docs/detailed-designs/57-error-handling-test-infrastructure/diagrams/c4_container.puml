@@ -1,0 +1,28 @@
+@startuml c4_container
+!theme plain
+!include <C4/C4_Container>
+
+title C4 Container - Error Handling Test Infrastructure
+
+System_Boundary(tests, "Test Projects") {
+    Container(unitTests, "CodeGenerator.Core.UnitTests", "xUnit", "Unit tests with ResultAssertions and fault injection")
+    Container(intTests, "CodeGenerator.IntegrationTests", "xUnit", "Integration tests with fault-injecting decorators")
+    Container(assertions, "ResultAssertions", "C# Static Class", "Fluent assertion extensions for Result<T> and ValidationResult")
+    Container(faultInj, "Fault Injection", "C# Classes", "FaultInjectionOptions, decorators for IFileSystem, ICommandService, ITemplateProcessor")
+}
+
+System_Boundary(prod, "Production Code") {
+    Container(core, "CodeGenerator.Core", "C# Library", "Generation pipeline, strategies, error handling")
+    Container(abstractions, "CodeGenerator.Abstractions", "C# Library", "Interfaces, Result<T>, ErrorInfo")
+}
+
+Rel(unitTests, assertions, "Uses")
+Rel(unitTests, faultInj, "Configures")
+Rel(intTests, faultInj, "Configures")
+Rel(intTests, assertions, "Uses")
+Rel(faultInj, abstractions, "Decorates IFileSystem, ICommandService, ITemplateProcessor")
+Rel(assertions, abstractions, "Asserts on Result<T>, ValidationResult")
+Rel(unitTests, core, "Tests")
+Rel(intTests, core, "Tests")
+
+@enduml

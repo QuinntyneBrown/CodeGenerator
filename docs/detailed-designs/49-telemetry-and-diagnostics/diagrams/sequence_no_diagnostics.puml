@@ -1,0 +1,36 @@
+@startuml sequence_no_diagnostics
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Generation without --diagnostics (Default)
+
+actor User
+participant "CreateCodeGeneratorCommand" as CMD
+participant "NullGenerationTimer" as NT
+participant "IArtifactGenerator" as AG
+participant "ICommandService" as CS
+
+User -> CMD: HandleAsync(name, ..., diagnostics=false)
+CMD -> NT: new NullGenerationTimer()
+
+CMD -> NT: TimeStep("Validate options")
+NT --> CMD: NullDisposable (no-op)
+CMD -> CMD: validator.Validate(options)
+
+CMD -> NT: TimeStep("Create directories")
+NT --> CMD: NullDisposable (no-op)
+CMD -> CMD: Directory.CreateDirectory(...)
+
+CMD -> NT: TimeStep("Create solution file")
+NT --> CMD: NullDisposable (no-op)
+CMD -> CS: Start("dotnet new sln")
+
+CMD -> NT: TimeStep("Generate project files")
+NT --> CMD: NullDisposable (no-op)
+CMD -> AG: GenerateAsync(...)
+
+CMD --> User: "Solution created successfully"
+
+note right of CMD: No timer overhead.\nNo report rendered.\nZero allocations in timer.
+
+@enduml

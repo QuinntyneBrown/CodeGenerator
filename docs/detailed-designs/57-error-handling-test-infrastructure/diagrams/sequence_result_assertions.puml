@@ -1,0 +1,60 @@
+@startuml sequence_result_assertions
+!theme plain
+
+title Sequence - Result Assertion Workflow
+
+participant "Test Method" as Test
+participant "ResultAssertions" as RA
+participant "Result<T>" as Result
+
+== Success Assertion ==
+
+Test -> RA : result.ShouldBeSuccess()
+activate RA
+RA -> Result : IsFailure?
+Result --> RA : false
+RA --> Test : pass (no exception)
+deactivate RA
+
+== Success with Value ==
+
+Test -> RA : result.ShouldBeSuccessWithValue()
+activate RA
+RA -> Result : IsFailure?
+Result --> RA : false
+RA -> Result : Value
+Result --> RA : T value
+RA --> Test : returns T value
+deactivate RA
+
+== Failure Assertion ==
+
+Test -> RA : result.ShouldBeFailure()
+activate RA
+RA -> Result : IsSuccess?
+Result --> RA : false
+RA --> Test : pass (no exception)
+deactivate RA
+
+== Failure with Code ==
+
+Test -> RA : result.ShouldBeFailureWithCode("IO_ACCESS_DENIED")
+activate RA
+RA -> Result : IsSuccess?
+Result --> RA : false
+RA -> Result : Error.Code
+Result --> RA : "IO_ACCESS_DENIED"
+RA -> RA : Compare codes
+RA --> Test : pass (codes match)
+deactivate RA
+
+== Assertion Failure (unexpected success) ==
+
+Test -> RA : result.ShouldBeFailure()
+activate RA
+RA -> Result : IsSuccess?
+Result --> RA : true
+RA --> Test : throws XunitException\n"Expected Failure, but was Success"
+deactivate RA
+
+@enduml

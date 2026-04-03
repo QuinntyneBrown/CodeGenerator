@@ -1,0 +1,63 @@
+@startuml class_diagram
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 12
+
+title Config Loader Integration - Domain Model
+
+interface IConfigurationLoader {
+    +LoadAsync(directory: string): Task<CodeGeneratorConfig>
+}
+
+class ConfigurationLoader {
+    +LoadAsync(directory: string): Task<CodeGeneratorConfig>
+}
+
+class CodeGeneratorConfig {
+    +Defaults: DefaultsSection
+    +Templates: TemplatesSection
+}
+
+class DefaultsSection {
+    +Framework: string?
+    +SolutionFormat: string?
+    +Output: string?
+}
+
+class TemplatesSection {
+    +Author: string?
+    +License: string?
+    +TemplatesDirectory: string?
+}
+
+interface ICodeGeneratorConfiguration {
+    +GetValue(key: string): string?
+    +GetValue<T>(key: string, default: T): T
+    +HasKey(key: string): bool
+    +GetAll(): IReadOnlyDictionary
+    +GetSection(prefix: string): IReadOnlyDictionary
+}
+
+class CodeGeneratorConfiguration {
+    -_resolved: Dictionary<string, string>
+    +CodeGeneratorConfiguration(defaults, fileConfig, envConfig, cliConfig)
+}
+
+class EnvironmentVariableMapper <<static>> {
+    +{static} Map(config: IConfiguration): Dictionary<string, string>
+}
+
+class ConfigFileMapper <<static>> {
+    +{static} ToFlatDictionary(config: CodeGeneratorConfig): Dictionary<string, string>
+}
+
+IConfigurationLoader <|.. ConfigurationLoader
+ICodeGeneratorConfiguration <|.. CodeGeneratorConfiguration
+ConfigurationLoader ..> CodeGeneratorConfig : returns
+CodeGeneratorConfig *-- DefaultsSection
+CodeGeneratorConfig *-- TemplatesSection
+ConfigFileMapper ..> CodeGeneratorConfig : reads
+EnvironmentVariableMapper ..> CodeGeneratorConfiguration : feeds
+ConfigFileMapper ..> CodeGeneratorConfiguration : feeds
+
+@enduml

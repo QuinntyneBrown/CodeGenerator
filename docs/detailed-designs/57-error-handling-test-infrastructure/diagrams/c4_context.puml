@@ -1,0 +1,19 @@
+@startuml c4_context
+!theme plain
+!include <C4/C4_Context>
+
+title C4 Context - Error Handling Test Infrastructure
+
+Person(testAuthor, "Test Author", "Writes unit and integration tests")
+Person(ci, "CI Pipeline", "Runs tests, enforces coverage thresholds")
+
+System(testInfra, "Error Handling Test Infrastructure", "Assertion helpers, fault injection decorators, coverage targets")
+System(codegen, "CodeGenerator", "Production code under test")
+System_Ext(xunit, "xUnit Test Runner", "Executes test suites")
+
+Rel(testAuthor, testInfra, "Uses assertion helpers and fault decorators")
+Rel(ci, xunit, "Triggers test runs")
+Rel(xunit, testInfra, "Loads test infrastructure")
+Rel(testInfra, codegen, "Wraps and tests production components")
+
+@enduml

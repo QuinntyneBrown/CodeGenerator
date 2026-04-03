@@ -1,0 +1,50 @@
+@startuml class_diagram
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 12
+
+title Rollback Service Integration - Domain Model
+
+interface IGenerationRollbackService {
+    +TrackFile(filePath: string): void
+    +TrackDirectory(directoryPath: string): void
+    +Rollback(): void
+    +Commit(): void
+}
+
+class GenerationRollbackService {
+    -_trackedFiles: List<string>
+    -_trackedDirectories: List<string>
+    -_committed: bool
+    -_logger: ILogger
+    +TrackFile(filePath: string): void
+    +TrackDirectory(directoryPath: string): void
+    +Rollback(): void
+    +Commit(): void
+}
+
+interface IGenerationContext {
+    +RollbackService: IGenerationRollbackService
+}
+
+class CreateCodeGeneratorCommand {
+    -_serviceProvider: IServiceProvider
+    +HandleAsync(): Task
+}
+
+class ScaffoldCommand {
+    -_serviceProvider: IServiceProvider
+    +HandleAsync(): Task
+}
+
+class ContentFileArtifactGenerationStrategy {
+    +GenerateAsync(target): Task
+}
+
+IGenerationRollbackService <|.. GenerationRollbackService
+IGenerationContext --> IGenerationRollbackService : exposes
+CreateCodeGeneratorCommand --> IGenerationRollbackService : Commit/Rollback
+ScaffoldCommand --> IGenerationRollbackService : Commit/Rollback
+ContentFileArtifactGenerationStrategy --> IGenerationContext : TrackFile via context
+
+@enduml

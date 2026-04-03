@@ -1,0 +1,28 @@
+@startuml sequence_retry
+!theme plain
+
+title Retry with Exponential Backoff
+
+participant "ScaffoldOrchestrator" as caller
+participant "Retry" as retry
+participant "File.WriteAllTextAsync" as fileWrite
+participant "ILogger" as logger
+
+caller -> retry : ExecuteAsync(writeAction,\n  RetryOptions.FileWrite, ct)
+
+retry -> fileWrite : Attempt 1
+fileWrite --> retry : IOException\n(file locked by antivirus)
+retry -> logger : WARN: Retry 2/3 after 100ms
+retry -> retry : await Task.Delay(100ms, ct)
+
+retry -> fileWrite : Attempt 2
+fileWrite --> retry : IOException\n(still locked)
+retry -> logger : WARN: Retry 3/3 after 200ms
+retry -> retry : await Task.Delay(200ms, ct)
+
+retry -> fileWrite : Attempt 3
+fileWrite --> retry : Success
+
+retry --> caller : Result (success)
+
+@enduml

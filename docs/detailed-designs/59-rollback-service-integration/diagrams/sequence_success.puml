@@ -1,0 +1,39 @@
+@startuml sequence_success
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Successful Generation with Commit
+
+actor User
+participant "CreateCodeGeneratorCommand" as CMD
+participant "IGenerationRollbackService" as RS
+participant "IArtifactGenerator" as AG
+participant "ICommandService" as CS
+database "File System" as FS
+
+User -> CMD: HandleAsync(name, output, ...)
+CMD -> CMD: CreateScope()
+CMD -> RS: resolve from scope
+
+CMD -> FS: Directory.CreateDirectory(solutionDir)
+CMD -> RS: TrackDirectory(solutionDir)
+
+CMD -> CS: Start("dotnet new sln")
+CS -> FS: Creates .sln
+
+CMD -> AG: GenerateAsync(.csproj)
+AG -> FS: Write .csproj
+AG -> RS: TrackFile(.csproj path)
+
+CMD -> AG: GenerateAsync(Program.cs)
+AG -> FS: Write Program.cs
+AG -> RS: TrackFile(Program.cs path)
+
+CMD -> CS: Start("dotnet sln add")
+
+CMD -> RS: Commit()
+RS -> RS: _committed = true
+
+CMD --> User: Success (exit 0)
+
+@enduml

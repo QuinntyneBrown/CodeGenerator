@@ -1,0 +1,39 @@
+@startuml sequence_scaffold_interactive
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Interactive Scaffold - No Config File
+
+actor User
+participant "ScaffoldCommand" as CMD
+participant "IInteractivePromptService" as PS
+participant "SpectrePromptService" as SPS
+participant "IScaffoldEngine" as SE
+database "File System" as FS
+
+User -> CMD: create-code-cli scaffold (no --config)
+
+CMD -> FS: Check scaffold.yaml exists?
+FS --> CMD: false
+
+CMD -> FS: Search *.yaml, *.yml
+FS --> CMD: [api-config.yaml, frontend.yaml]
+
+CMD -> PS: IsInteractive?
+PS --> CMD: true
+
+CMD -> PS: PromptForConfigFile(dir, [api-config.yaml, frontend.yaml])
+PS -> SPS: delegate
+SPS -> User: "Select a configuration file:\n> api-config.yaml\n  frontend.yaml\n  [Create new scaffold.yaml]"
+User --> SPS: "api-config.yaml"
+SPS --> CMD: "api-config.yaml"
+
+CMD -> FS: ReadAllTextAsync(api-config.yaml)
+FS --> CMD: yaml content
+
+CMD -> SE: ScaffoldAsync(yaml, output, false, false)
+SE --> CMD: ScaffoldResult
+
+CMD --> User: "Scaffolding complete. 12 files created."
+
+@enduml

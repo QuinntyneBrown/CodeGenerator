@@ -1,0 +1,37 @@
+@startuml sequence_fault_injection
+!theme plain
+
+title Sequence - Fault Injection Decorator Workflow
+
+participant "Production Code" as Prod
+participant "FaultInjectingFileSystem" as FaultFs
+participant "FaultInjectionOptions" as Opts
+participant "Random" as Rng
+participant "MockFileSystem" as Inner
+
+Prod -> FaultFs : File.WriteAllText(path, contents)
+activate FaultFs
+
+FaultFs -> Opts : Check TargetPaths
+Opts --> FaultFs : path is in target list
+
+FaultFs -> Opts : SimulateDiskFull?
+Opts --> FaultFs : false
+
+FaultFs -> Opts : SimulatePermissionDenied?
+Opts --> FaultFs : false
+
+FaultFs -> Opts : FileWriteFailureRate
+Opts --> FaultFs : 0.3
+
+FaultFs -> Rng : NextDouble()
+Rng --> FaultFs : 0.15
+
+note right of FaultFs: 0.15 < 0.3, so inject fault
+
+FaultFs --> Prod : throws IOException\n"Simulated file write failure"
+deactivate FaultFs
+
+note over Prod: Production code handles\nIOException via retry or\nResult.Failure
+
+@enduml

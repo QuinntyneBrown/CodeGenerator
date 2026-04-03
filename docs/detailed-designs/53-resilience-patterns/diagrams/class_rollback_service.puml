@@ -1,0 +1,63 @@
+@startuml class_rollback_service
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 12
+
+title Expanded Rollback Service -- Class Diagram
+
+interface IGenerationRollbackService {
+    +TrackFileCreated(filePath: string)
+    +TrackFileModified(filePath: string, originalContent: string)
+    +TrackFileDeleted(filePath: string, previousContent: string)
+    +TrackDirectoryCreated(directoryPath: string)
+    +Rollback() : RollbackReport
+    +Commit()
+}
+
+class GenerationRollbackService {
+    -_actions : List<RollbackAction>
+    -_committed : bool
+    -_logger : ILogger
+    +TrackFileCreated(filePath)
+    +TrackFileModified(filePath, originalContent)
+    +TrackFileDeleted(filePath, previousContent)
+    +TrackDirectoryCreated(directoryPath)
+    +Rollback() : RollbackReport
+    +Commit()
+}
+
+class RollbackAction <<internal>> {
+    +Type : RollbackActionType
+    +Path : string
+    +OriginalContent : string?
+    +Timestamp : DateTime
+}
+
+enum RollbackActionType {
+    FileCreated
+    FileModified
+    FileDeleted
+    DirectoryCreated
+}
+
+class RollbackReport {
+    +FilesDeleted : List<string>
+    +FilesRestored : List<string>
+    +DirectoriesDeleted : List<string>
+    +Failures : List<RollbackFailure>
+    +FullyRolledBack : bool
+}
+
+class RollbackFailure {
+    +FilePath : string
+    +Operation : string
+    +Error : string
+}
+
+IGenerationRollbackService <|.. GenerationRollbackService
+GenerationRollbackService --> "*" RollbackAction
+RollbackAction --> RollbackActionType
+GenerationRollbackService ..> RollbackReport : produces
+RollbackReport --> "*" RollbackFailure
+
+@enduml

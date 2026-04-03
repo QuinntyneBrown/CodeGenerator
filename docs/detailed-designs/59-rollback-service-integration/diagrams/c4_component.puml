@@ -1,0 +1,29 @@
+@startuml c4_component
+!theme plain
+!include <C4/C4_Component>
+
+title Rollback Service Integration - Component Diagram
+
+Container_Boundary(cli, "CodeGenerator.Cli") {
+    Component(createCmd, "CreateCodeGeneratorCommand", "C#", "Wraps generation in try/catch/rollback")
+    Component(scaffoldCmd, "ScaffoldCommand", "C#", "Wraps scaffolding in try/catch/rollback")
+}
+
+Container_Boundary(core, "CodeGenerator.Core") {
+    Component(artifactGen, "ArtifactGenerator", "C#", "Dispatches to strategies")
+    Component(strategy, "ContentFileArtifactGenerationStrategy", "C#", "Writes files, calls TrackFile")
+    Component(context, "IGenerationContext", "C#", "Scoped context carrying rollback ref")
+    Component(rollback, "GenerationRollbackService", "C#", "Tracks files/dirs, deletes on Rollback()")
+    Component(scaffoldEngine, "ScaffoldEngine", "C#", "Orchestrates YAML scaffolding")
+}
+
+Rel(createCmd, rollback, "CreateScope, Commit/Rollback")
+Rel(scaffoldCmd, rollback, "CreateScope, Commit/Rollback")
+Rel(createCmd, artifactGen, "GenerateAsync()")
+Rel(scaffoldCmd, scaffoldEngine, "ScaffoldAsync()")
+Rel(artifactGen, strategy, "Dispatches")
+Rel(strategy, context, "context.RollbackService")
+Rel(context, rollback, "TrackFile(path)")
+Rel(scaffoldEngine, rollback, "TrackFile, TrackDirectory")
+
+@enduml

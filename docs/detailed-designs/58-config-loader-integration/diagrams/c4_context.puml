@@ -1,0 +1,20 @@
+@startuml c4_context
+!theme plain
+!include <C4/C4_Context>
+
+title Config Loader Integration - System Context
+
+Person(user, "CLI User", "Runs create-code-cli commands")
+Person(ci, "CI Pipeline", "Automated builds with env vars")
+
+System(cli, "CodeGenerator CLI", "Code generation tool with 4-tier config")
+
+System_Ext(fs, "File System", ".codegenerator.json files")
+System_Ext(env, "Environment", "CODEGEN_* variables")
+
+Rel(user, cli, "Runs with CLI args")
+Rel(ci, cli, "Runs with env vars")
+Rel(cli, fs, "Reads .codegenerator.json")
+Rel(cli, env, "Reads CODEGEN_* vars")
+
+@enduml

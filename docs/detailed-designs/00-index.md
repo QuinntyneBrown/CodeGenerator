@@ -75,3 +75,23 @@
 | 48 | [Post-Generation Verification](48-post-generation-verification/README.md) | Draft | Vision 1.11 | --verify flag: dotnet build + smoke test on generated output |
 | 49 | [Telemetry and Diagnostics](49-telemetry-and-diagnostics/README.md) | Draft | Vision 1.12 | --diagnostics flag: environment info, per-step timing |
 | 50 | [Plugin Discovery](50-plugin-discovery/README.md) | Draft | Vision 1.13 | ICliPlugin interface, NuGet/directory/flag-based assembly loading |
+
+### Production-Grade Error Handling (error-handling-plan.md)
+
+| # | Feature | Status | Plan Phase | Description |
+|---|---------|--------|------------|-------------|
+| 51 | [Result&lt;T&gt; Type and Error Primitives](51-result-type-error-primitives/README.md) | Draft | Phase 1 | Result monad, ErrorInfo, ErrorCategory, ErrorCodes registry, expanded exceptions |
+| 52 | [Global Exception Handler and Pipeline Aggregation](52-global-exception-handler/README.md) | Draft | Phase 2 | Program.cs try-catch, ArtifactGenerationResult, ScaffoldResult enrichment |
+| 53 | [Resilience Patterns](53-resilience-patterns/README.md) | Draft | Phase 3 | Retry with backoff, CancellationToken propagation, expanded rollback |
+| 54 | [Observability and Error Formatting](54-observability-error-formatting/README.md) | Draft | Phase 4 | Structured logging, correlation IDs, IErrorFormatter, DiagnosticContext |
+| 55 | [Validation Enhancements](55-validation-enhancements/README.md) | Draft | Phase 5 | Fluent Validator&lt;T&gt;, CommonRules, ValidationResult enhancements |
+| 56 | [Strategy and Plugin Error Isolation](56-strategy-plugin-error-isolation/README.md) | Draft | Phase 6 | StrategyExecutor boundary, plugin discovery error handling |
+| 57 | [Error Handling Test Infrastructure](57-error-handling-test-infrastructure/README.md) | Draft | Phase 7 | ResultAssertions, FaultInjectionOptions, fault-injecting decorators |
+
+### Command Flow Integration
+
+| # | Feature | Status | Integration Ref | Description |
+|---|---------|--------|-----------------|-------------|
+| 58 | [Config Loader Integration](58-config-loader-integration/README.md) | Draft | Integration 1 | Wire 4-tier config (defaults > .codegenerator.json > env vars > CLI args) into command flow |
+| 59 | [Rollback Service Integration](59-rollback-service-integration/README.md) | Draft | Integration 2 | Wire GenerationRollbackService into commands with try/catch/commit/rollback |
+| 60 | [Interactive Prompts Integration](60-interactive-prompts-integration/README.md) | Draft | Integration 3 | Wire SpectrePromptService into commands with TTY detection and fallback |

@@ -1,0 +1,49 @@
+@startuml class_common_rules
+!theme plain
+
+title CommonRules and FileSystemRules - Class Diagram
+
+class CommonRules <<static>> {
+    +{static} IsNotEmpty(value: string): bool
+    +{static} IsValidCSharpIdentifier(value: string): bool
+    +{static} IsValidFilePath(value: string): bool
+    +{static} IsValidNamespace(value: string): bool
+    +{static} IsSupportedFrameworkVersion(value: string): bool
+    +{static} IsValidSemver(value: string): bool
+}
+
+class FileSystemRules {
+    -_fileSystem: IFileSystem
+    +FileSystemRules(fileSystem: IFileSystem)
+    +IsWritableDirectory(path: string): bool
+    +ParentDirectoryExists(path: string): bool
+}
+
+interface IFileSystem <<System.IO.Abstractions>> {
+    +Path: IPath
+    +File: IFile
+    +Directory: IDirectory
+}
+
+class GenerationOptionsValidator {
+    -_fsRules: FileSystemRules
+    +Validate(options: GenerationOptions): ValidationResult
+}
+
+class ConfigValidator {
+    +Validate(config: ScaffoldConfiguration): ValidationResult
+}
+
+FileSystemRules --> IFileSystem : depends on
+GenerationOptionsValidator --> CommonRules : uses predicates
+GenerationOptionsValidator --> FileSystemRules : uses path checks
+ConfigValidator --> CommonRules : uses predicates
+
+note bottom of CommonRules
+    Consolidates validation logic
+    currently scattered across
+    GenerationOptionsValidator
+    and ConfigValidator
+end note
+
+@enduml

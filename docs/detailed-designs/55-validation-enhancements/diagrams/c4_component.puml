@@ -1,0 +1,32 @@
+@startuml c4_component
+!theme plain
+!include <C4/C4_Component>
+
+title Validation Enhancements - Component Diagram
+
+Container_Boundary(core, "CodeGenerator.Core/Validation") {
+    Component(validator, "Validator<T>", "Generic Class", "Fluent rule builder: RuleFor, When, Must, Validate")
+    Component(iRule, "IValidationRule<T>", "Internal Interface", "Evaluate(T) returns ValidationError or null")
+    Component(propRule, "PropertyRule<T,TProp>", "Internal Class", "Extracts property, applies predicate")
+    Component(objRule, "ObjectRule<T>", "Internal Class", "Applies predicate to entire object")
+    Component(condRule, "ConditionalRuleSet<T>", "Internal Class", "Wraps condition check and inner rules")
+    Component(commonRules, "CommonRules", "Static Class", "IsValidCSharpIdentifier, IsValidFilePath, IsValidSemver, etc.")
+    Component(fsRules, "FileSystemRules", "Class", "IsWritableDirectory, ParentDirectoryExists (needs IFileSystem)")
+}
+
+Container_Boundary(abstractions, "CodeGenerator.Abstractions/Validation") {
+    Component(valResult, "ValidationResult", "Class", "Enhanced: InfoMessages, All, WithContext, GroupByProperty, ToFormattedString")
+    Component(valError, "ValidationError", "Class", "PropertyName, ErrorMessage, Severity")
+    Component(severity, "ValidationSeverity", "Enum", "Error, Warning, Info")
+}
+
+validator --> iRule : holds list of
+iRule <|.. propRule
+iRule <|.. objRule
+iRule <|.. condRule
+propRule --> commonRules : uses predicates from
+validator --> valResult : produces
+valResult --> valError : contains
+valError --> severity : uses
+
+@enduml

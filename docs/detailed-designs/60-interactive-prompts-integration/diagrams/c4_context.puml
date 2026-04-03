@@ -1,0 +1,15 @@
+@startuml c4_context
+!theme plain
+!include <C4/C4_Context>
+
+title Interactive Prompts Integration - System Context
+
+Person(user, "CLI User (TTY)", "Runs commands in a terminal")
+Person(ci, "CI Pipeline", "Runs commands with piped stdin")
+
+System(cli, "CodeGenerator CLI", "Prompts interactively or fails gracefully")
+
+Rel(user, cli, "Runs without args\n(interactive prompts)")
+Rel(ci, cli, "Runs with all args\n(non-interactive)")
+
+@enduml

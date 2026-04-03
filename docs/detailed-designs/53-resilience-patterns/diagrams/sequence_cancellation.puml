@@ -1,0 +1,35 @@
+@startuml sequence_cancellation
+!theme plain
+
+title CancellationToken Propagation on Ctrl+C
+
+actor "User" as user
+participant "Program.cs" as program
+participant "CancellationTokenSource" as cts
+participant "ScaffoldEngine" as engine
+participant "ScaffoldOrchestrator" as orch
+participant "RollbackService" as rollback
+
+program -> cts : Create linked to\nConsole.CancelKeyPress
+program -> engine : ScaffoldAsync(yaml, path, ct)
+engine -> orch : OrchestrateAsync(config, path, ct)
+
+orch -> orch : Write file 1 (success)
+orch -> orch : Write file 2 (success)
+
+user -> program : Ctrl+C
+program -> cts : Cancel()
+
+orch -> orch : ct.ThrowIfCancellationRequested()
+orch --> engine : OperationCanceledException
+
+engine -> rollback : Rollback()
+rollback -> rollback : Delete file 2 (LIFO)
+rollback -> rollback : Delete file 1
+rollback --> engine : RollbackReport
+
+engine --> program : OperationCanceledException
+program -> program : stderr: "Operation cancelled."
+program --> user : Exit code 8
+
+@enduml

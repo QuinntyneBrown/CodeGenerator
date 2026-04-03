@@ -1,0 +1,27 @@
+@startuml c4_component
+!theme plain
+!include <C4/C4_Component>
+
+title Config Loader Integration - Component Diagram
+
+Container_Boundary(cli, "CodeGenerator.Cli") {
+    Component(program, "Program.cs", "C#", "Orchestrates config loading at startup")
+    Component(loader, "ConfigurationLoader", "C#", "Walks directory tree for .codegenerator.json")
+    Component(fileMapper, "ConfigFileMapper", "C# Static", "Flattens CodeGeneratorConfig to Dictionary")
+    Component(envMapper, "EnvironmentVariableMapper", "C# Static", "Maps CODEGEN_* to config keys")
+    Component(createCmd, "CreateCodeGeneratorCommand", "System.CommandLine", "Sources option defaults from config")
+    Component(scaffoldCmd, "ScaffoldCommand", "System.CommandLine", "Sources output default from config")
+}
+
+Container_Boundary(core, "CodeGenerator.Core") {
+    Component(config, "CodeGeneratorConfiguration", "C#", "4-tier merged config with precedence")
+}
+
+Rel(program, loader, "LoadAsync(cwd)")
+Rel(program, fileMapper, "ToFlatDictionary()")
+Rel(program, envMapper, "Map(IConfiguration)")
+Rel(program, config, "new(defaults, file, env, cli)")
+Rel(createCmd, config, "GetValue(key)")
+Rel(scaffoldCmd, config, "GetValue(key)")
+
+@enduml

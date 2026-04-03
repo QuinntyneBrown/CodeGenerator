@@ -1,0 +1,31 @@
+@startuml c4_component
+!theme plain
+!include <C4/C4_Component>
+
+title Resilience Patterns -- Component Diagram
+
+Container_Boundary(io, "CodeGenerator.Core/IO") {
+    Component(retry, "Retry", "Static Class", "ExecuteAsync<T> with exponential backoff")
+    Component(retryOpts, "RetryOptions", "Class", "MaxAttempts, InitialDelay, BackoffMultiplier, MaxDelay, ShouldRetry")
+}
+
+Container_Boundary(errors, "CodeGenerator.Core/Errors") {
+    Component(rollbackSvc, "GenerationRollbackService", "Class", "Tracks creates, modifications, deletions; LIFO rollback")
+    Component(rollbackReport, "RollbackReport", "Class", "FilesDeleted, FilesRestored, DirectoriesDeleted, Failures")
+    Component(rollbackAction, "RollbackAction", "Internal Class", "Type, Path, OriginalContent, Timestamp")
+}
+
+Container_Boundary(pipeline, "Async Pipeline Interfaces") {
+    Component(scaffoldEngine, "IScaffoldEngine", "Interface", "ScaffoldAsync(..., CancellationToken)")
+    Component(artifactGen, "IArtifactGenerator", "Interface", "GenerateAsync(..., CancellationToken)")
+    Component(commandSvc, "ICommandService", "Interface", "Start(..., CancellationToken)")
+    Component(templateProc, "ITemplateProcessor", "Interface", "Process(..., CancellationToken)")
+}
+
+retry --> retryOpts : configured by
+rollbackSvc --> rollbackAction : maintains list of
+rollbackSvc --> rollbackReport : produces on rollback
+scaffoldEngine ..> retry : uses for file I/O
+scaffoldEngine ..> rollbackSvc : tracks mutations
+
+@enduml

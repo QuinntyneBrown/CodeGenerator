@@ -1,0 +1,72 @@
+@startuml class_diagram
+!theme plain
+
+title Class Diagram - Error Handling Test Infrastructure
+
+class ResultAssertions <<static>> {
+    {static} + ShouldBeSuccess<T>(Result<T>)
+    {static} + ShouldBeSuccessWithValue<T>(Result<T>) : T
+    {static} + ShouldBeFailure<T>(Result<T>)
+    {static} + ShouldBeFailureWithCode<T>(Result<T>, string)
+    {static} + ShouldBeSuccess(Result)
+    {static} + ShouldBeFailure(Result)
+    {static} + ShouldBeFailureWithCode(Result, string)
+    {static} + ShouldHaveValidationError(ValidationResult, string)
+    {static} + ShouldHaveNoErrors(ValidationResult)
+}
+
+class FaultInjectionOptions {
+    + FileWriteFailureRate : double
+    + TemplateRenderFailureRate : double
+    + ProcessExecutionFailureRate : double
+    + SimulatedLatency : TimeSpan?
+    + SimulateDiskFull : bool
+    + SimulatePermissionDenied : bool
+    + RandomSeed : int?
+    + TargetPaths : List<string>
+}
+
+class FaultInjectingFileSystem {
+    - _inner : IFileSystem
+    - _options : FaultInjectionOptions
+    - _random : Random
+    + File : IFile
+    + Directory : IDirectory
+    + Path : IPath
+}
+
+class FaultInjectingCommandService {
+    - _inner : ICommandService
+    - _options : FaultInjectionOptions
+    - _random : Random
+    + Start(command, workingDir, waitForExit) : int
+}
+
+class FaultInjectingTemplateProcessor {
+    - _inner : ITemplateProcessor
+    - _options : FaultInjectionOptions
+    - _random : Random
+    + Process(template, tokens, ignoreTokens) : string
+    + Process(template, tokens) : string
+}
+
+interface IFileSystem
+interface ICommandService
+interface ITemplateProcessor
+
+FaultInjectingFileSystem ..|> IFileSystem
+FaultInjectingFileSystem --> IFileSystem : decorates _inner
+FaultInjectingFileSystem --> FaultInjectionOptions
+
+FaultInjectingCommandService ..|> ICommandService
+FaultInjectingCommandService --> ICommandService : decorates _inner
+FaultInjectingCommandService --> FaultInjectionOptions
+
+FaultInjectingTemplateProcessor ..|> ITemplateProcessor
+FaultInjectingTemplateProcessor --> ITemplateProcessor : decorates _inner
+FaultInjectingTemplateProcessor --> FaultInjectionOptions
+
+ResultAssertions ..> "Result<T>" : asserts on
+ResultAssertions ..> ValidationResult : asserts on
+
+@enduml

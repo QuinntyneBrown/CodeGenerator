@@ -1,0 +1,51 @@
+@startuml class_validation_result
+!theme plain
+
+title Enhanced ValidationResult - Class Diagram
+
+class ValidationResult {
+    +IsValid: bool {Errors.Count == 0}
+    +Errors: List<ValidationError>
+    +Warnings: List<ValidationError>
+    +InfoMessages: List<ValidationError>
+    +All: IReadOnlyList<ValidationError>
+    --
+    +AddError(propertyName, message): void
+    +AddWarning(propertyName, message): void
+    +AddInfo(propertyName, message): void
+    +Merge(other: ValidationResult): void
+    +WithContext(contextName: string): ValidationResult
+    +ToFormattedString(includeWarnings: bool): string
+    +GroupByProperty(): IReadOnlyDictionary<string, IReadOnlyList<ValidationError>>
+    +{static} Success(): ValidationResult
+}
+
+class ValidationError {
+    +PropertyName: string {required}
+    +ErrorMessage: string {required}
+    +Severity: ValidationSeverity
+}
+
+enum ValidationSeverity {
+    Error
+    Warning
+    Info
+}
+
+ValidationResult *-- "0..*" ValidationError : Errors
+ValidationResult *-- "0..*" ValidationError : Warnings
+ValidationResult *-- "0..*" ValidationError : InfoMessages
+ValidationError --> ValidationSeverity : uses
+
+note right of ValidationResult::All
+    Returns Errors + Warnings
+    + InfoMessages combined
+end note
+
+note right of ValidationResult::WithContext
+    Returns new ValidationResult with
+    all PropertyNames prefixed by
+    "contextName."
+end note
+
+@enduml

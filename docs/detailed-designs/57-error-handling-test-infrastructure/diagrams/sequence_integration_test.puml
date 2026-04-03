@@ -1,0 +1,48 @@
+@startuml sequence_integration_test
+!theme plain
+
+title Sequence - Integration Test with Fault Injection
+
+participant "Test Method" as Test
+participant "ServiceCollection" as DI
+participant "FaultInjectionOptions" as Opts
+participant "ArtifactGenerator" as AG
+participant "FaultInjectingFileSystem" as FaultFs
+participant "RollbackService" as Rollback
+participant "ResultAssertions" as RA
+
+Test -> Opts : Create(SimulateDiskFull=true,\nTargetPaths=["/out/third.cs"])
+Test -> DI : AddFaultInjection(options)
+Test -> DI : BuildServiceProvider()
+
+Test -> AG : GenerateAsync(models)
+activate AG
+
+AG -> FaultFs : WriteAllText("/out/first.cs", ...)
+FaultFs --> AG : success (not targeted)
+AG -> Rollback : TrackFile("/out/first.cs")
+
+AG -> FaultFs : WriteAllText("/out/second.cs", ...)
+FaultFs --> AG : success (not targeted)
+AG -> Rollback : TrackFile("/out/second.cs")
+
+AG -> FaultFs : WriteAllText("/out/third.cs", ...)
+FaultFs --> AG : throws IOException("No space left")
+
+AG -> Rollback : Rollback()
+activate Rollback
+Rollback -> Rollback : Delete /out/second.cs
+Rollback -> Rollback : Delete /out/first.cs
+Rollback --> AG : RollbackReport
+deactivate Rollback
+
+AG --> Test : ArtifactGenerationResult\n(2 succeeded, 1 failed, rolled back)
+deactivate AG
+
+Test -> RA : result.ShouldHaveErrors()
+RA --> Test : pass
+
+Test -> Test : Assert files cleaned up
+Test -> Test : Assert error contains "No space left"
+
+@enduml

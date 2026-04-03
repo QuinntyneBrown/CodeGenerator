@@ -1,0 +1,27 @@
+@startuml sequence_command
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Command Execution - Config-Aware Defaults
+
+actor User
+participant "System.CommandLine" as SCL
+participant "CreateCodeGeneratorCommand" as CMD
+participant "ICodeGeneratorConfiguration" as CFG
+
+User -> SCL: create-code-cli -n MyApp
+SCL -> CMD: constructor
+CMD -> CFG: GetValue("framework", "net9.0")
+CFG --> CMD: "net8.0" (from .codegenerator.json)
+CMD -> CMD: Set --framework default = "net8.0"
+CMD -> CFG: GetValue("output", cwd)
+CFG --> CMD: "./generated" (from config)
+CMD -> CMD: Set --output default = "./generated"
+CMD -> CFG: GetValue<bool>("slnx", false)
+CFG --> CMD: true (from env var)
+CMD -> CMD: Set --slnx default = true
+SCL -> SCL: Parse CLI args\n--name MyApp (explicit)\n--framework not provided\n--output not provided
+SCL -> CMD: HandleAsync("MyApp", "./generated", "net8.0", true, null)
+CMD -> CMD: Validate and generate
+
+@enduml

@@ -1,0 +1,38 @@
+@startuml class_retry_policy
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 12
+
+title Retry Policy -- Class Diagram
+
+class Retry <<static>> {
+    +{static} ExecuteAsync<T>(action, options, ct) : Task<T>
+    +{static} ExecuteAsync(action, options, ct) : Task
+}
+
+class RetryOptions {
+    +MaxAttempts : int = 3
+    +InitialDelay : TimeSpan = 100ms
+    +BackoffMultiplier : double = 2.0
+    +MaxDelay : TimeSpan = 5s
+    +ShouldRetry : Func<Exception, bool>
+    --
+    +{static} IsTransient(ex: Exception) : bool
+    +{static} FileWrite : RetryOptions
+    +{static} DirectoryCreate : RetryOptions
+    +{static} TemplateLoad : RetryOptions
+    +{static} None : RetryOptions
+}
+
+Retry --> RetryOptions : configured by
+
+note right of RetryOptions
+  IsTransient matches:
+    IOException
+    UnauthorizedAccessException
+  Does NOT match:
+    FileNotFoundException
+    DirectoryNotFoundException
+end note
+
+@enduml

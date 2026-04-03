@@ -1,0 +1,22 @@
+@startuml c4_container
+!theme plain
+!include <C4/C4_Container>
+
+title Interactive Prompts Integration - Container Diagram
+
+Person(user, "CLI User", "May or may not provide all args")
+
+System_Boundary(sb, "CodeGenerator CLI") {
+    Container(program, "Program.cs", "C#", "Registers prompt service based on TTY detection")
+    Container(cmd, "Commands", "System.CommandLine", "Calls prompt service when args missing")
+    Container(prompt, "Prompt Services", "Spectre.Console", "SpectrePromptService or NonInteractivePromptService")
+    Container(validator, "Validation", "C#", "GenerationOptionsValidator")
+}
+
+Rel(user, cmd, "CLI args (possibly incomplete)")
+Rel(program, prompt, "Registers based on Console.IsInputRedirected")
+Rel(cmd, prompt, "PromptForMissingOptions()")
+Rel(prompt, user, "Spectre.Console prompts (if TTY)")
+Rel(cmd, validator, "Validates completed options")
+
+@enduml

@@ -1,0 +1,46 @@
+@startuml sequence_diagnostics_failure
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Diagnostics on Failure - Partial Report
+
+actor User
+participant "CreateCodeGeneratorCommand" as CMD
+participant "GenerationTimer" as GT
+participant "ICommandService" as CS
+participant "DiagnosticsCollector" as DC
+participant "DiagnosticsRenderer" as DR
+
+User -> CMD: HandleAsync(name, ..., diagnostics=true)
+CMD -> GT: new GenerationTimer()
+
+CMD -> GT: TimeStep("Validate options")
+CMD -> CMD: scope.Dispose() [12ms]
+
+CMD -> GT: TimeStep("Create directories")
+CMD -> CMD: scope.Dispose() [3ms]
+
+CMD -> GT: TimeStep("Create solution file")
+CMD -> CS: Start("dotnet new sln")
+CMD -> CMD: scope.Dispose() [847ms]
+
+CMD -> GT: TimeStep("Add project to solution")
+CMD -> CS: Start("dotnet sln add")
+CS --> CMD: CliProcessException!
+CMD -> CMD: scope.Dispose() [15ms]
+
+CMD -> CMD: catch (Exception)
+
+CMD -> DC: CollectEnvironment("1.2.0")
+DC --> CMD: EnvironmentInfo
+
+CMD -> CMD: Build partial DiagnosticsReport\n(4 steps, last one failed)
+
+CMD -> DR: Render(report)
+DR --> User: Partial timing table\nshowing completed steps
+
+CMD --> User: "Error: dotnet sln add failed\n(exit code 1)"
+
+note right of DR: Report shows which\nstep failed and total\ntime before failure.
+
+@enduml

@@ -1,0 +1,40 @@
+@startuml sequence_global_handler
+!theme plain
+
+title Global Exception Handler Flow
+
+participant "Program.cs" as program
+participant "RootCommand" as cmd
+participant "stderr" as stderr
+
+program -> cmd : InvokeAsync(args)
+
+alt CliAggregateException
+    cmd --> program : throw CliAggregateException(inner1, inner2)
+    program -> stderr : "ERROR [CODE1] message1\nERROR [CODE2] message2"
+    program --> program : return max(inner.ExitCode)
+
+else CliValidationException
+    cmd --> program : throw CliValidationException(validationResult)
+    program -> stderr : "ERROR [VALIDATION] prop1: msg1; prop2: msg2"
+    program --> program : return 1
+
+else CliException (IO, Process, Template, etc.)
+    cmd --> program : throw CliIOException("disk full")
+    program -> stderr : "ERROR [IO] disk full"
+    note right: --verbose adds stack trace
+    program --> program : return ex.ExitCode
+
+else OperationCanceledException
+    cmd --> program : throw OperationCanceledException
+    program -> stderr : "Operation cancelled."
+    program --> program : return 8
+
+else Exception (unexpected)
+    cmd --> program : throw NullReferenceException
+    program -> stderr : "An unexpected error occurred.\nRun with --verbose for details."
+    note right: Full stack logged at Debug level
+    program --> program : return 99
+end
+
+@enduml

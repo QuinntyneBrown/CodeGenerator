@@ -1,0 +1,30 @@
+@startuml sequence_startup
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Application Startup - Config Resolution
+
+participant "Program.cs" as P
+participant "ConfigurationLoader" as CL
+participant "ConfigFileMapper" as FM
+participant "EnvironmentVariableMapper" as EM
+participant "CodeGeneratorConfiguration" as CC
+database ".codegenerator.json" as FS
+database "Environment" as ENV
+
+P -> P: Create defaults dict\n{framework: net9.0, output: ., slnx: false}
+P -> CL: LoadAsync(cwd)
+CL -> FS: Walk up directories\nfor .codegenerator.json
+FS --> CL: CodeGeneratorConfig
+CL --> P: CodeGeneratorConfig
+P -> FM: ToFlatDictionary(config)
+FM --> P: fileDict
+P -> EM: Map(IConfiguration)
+EM -> ENV: Read CODEGEN_* vars
+ENV --> EM: values
+EM --> P: envDict
+P -> CC: new(defaults, fileDict, envDict, cliDict: {})
+CC --> P: ICodeGeneratorConfiguration
+P -> P: Register singleton in DI
+
+@enduml

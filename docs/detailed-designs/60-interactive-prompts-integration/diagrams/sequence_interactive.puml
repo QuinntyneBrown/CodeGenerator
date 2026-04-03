@@ -1,0 +1,41 @@
+@startuml sequence_interactive
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Interactive Mode - Missing Name
+
+actor User
+participant "System.CommandLine" as SCL
+participant "CreateCodeGeneratorCommand" as CMD
+participant "IInteractivePromptService" as PS
+participant "SpectrePromptService" as SPS
+participant "GenerationOptionsValidator" as VAL
+
+User -> SCL: create-code-cli (no args)
+SCL -> CMD: HandleAsync(name: null, output: ".", ...)
+
+CMD -> PS: resolve from DI
+CMD -> CMD: name is null/empty
+CMD -> PS: IsInteractive?
+PS --> CMD: true
+
+CMD -> PS: PromptForMissingOptions(partial)
+PS -> SPS: delegate
+
+SPS -> User: "Solution name:"
+User --> SPS: "MyApp"
+SPS -> User: "Output directory:" [default: .]
+User --> SPS: Enter (accept default)
+SPS -> User: "Target framework:" [net9.0, net8.0]
+User --> SPS: "net9.0"
+SPS -> User: "Use .slnx format?" [y/N]
+User --> SPS: "N"
+
+SPS --> CMD: GenerationOptions(MyApp, ., net9.0, false)
+
+CMD -> VAL: Validate(options)
+VAL --> CMD: IsValid = true
+
+CMD -> CMD: Proceed with generation
+
+@enduml

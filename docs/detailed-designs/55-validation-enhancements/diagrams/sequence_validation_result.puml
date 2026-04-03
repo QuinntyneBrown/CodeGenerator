@@ -1,0 +1,45 @@
+@startuml sequence_validation_result
+!theme plain
+
+title Enhanced ValidationResult Usage Sequence
+
+participant "Validator" as validator
+participant "ValidationResult" as result
+participant "Caller" as caller
+participant "IErrorFormatter" as formatter
+
+validator -> result : AddError("name", "Name is required")
+validator -> result : AddWarning("name", "Name exceeds 128 chars")
+validator -> result : AddInfo("version", "Using default version")
+
+validator --> caller : return ValidationResult
+
+caller -> result : IsValid?
+result --> caller : false (1 error)
+
+caller -> result : WithContext("scaffold")
+activate result
+result --> caller : new ValidationResult
+note right
+    Error: scaffold.name - Name is required
+    Warning: scaffold.name - Name exceeds 128 chars
+    Info: scaffold.version - Using default version
+end note
+deactivate result
+
+caller -> result : All
+result --> caller : [error, warning, info] combined
+
+caller -> formatter : FormatValidationResult(result)
+activate formatter
+
+formatter -> result : GroupByProperty()
+result --> formatter : { "scaffold.name": [error, warning], "scaffold.version": [info] }
+
+formatter -> result : ToFormattedString(includeWarnings: true)
+result --> formatter : multi-line summary string
+
+formatter --> caller : formatted output
+deactivate formatter
+
+@enduml

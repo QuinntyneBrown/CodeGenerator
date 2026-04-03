@@ -1,420 +1,313 @@
 # Telemetry and Diagnostics — Detailed Design
 
-**Feature:** 49-telemetry-and-diagnostics (Vision 1.12)
-**Status:** Implemented
-**Requirements:** codegenerator-cli-vision.md section 1.12 — "Telemetry and Diagnostics"
-
----
-
 ## 1. Overview
 
-When generation is slow, fails unexpectedly, or produces incorrect output, there is currently no built-in way to collect diagnostic information about the environment or profile the timing of individual generation steps. Users reporting issues must manually gather .NET SDK versions, OS details, and timing measurements.
+When generation fails or produces unexpected output, users have no visibility into what happened — which steps ran, how long each took, or what environment the CLI was running in. The `--diagnostics` flag will expose per-step timing, environment info, and a structured report that aids debugging and support.
 
-### Problem
+Core data-collection classes already exist in `CodeGenerator.Core.Diagnostics`: `GenerationTimer` (stopwatch-based per-step timing), `DiagnosticsCollector` (environment info gathering), `DiagnosticsReport`, `EnvironmentInfo`, and `TimingEntry`. Console rendering infrastructure exists in `CodeGenerator.Cli.Rendering` with `SpectreConsoleRenderer` for rich output.
 
-- Debugging generation failures requires manual investigation: "What SDK version are you using? What OS? Did the solution creation step take unusually long?"
-- There is no per-step timing: the user sees total elapsed time (if they measure it themselves) but cannot identify which generation phase is the bottleneck.
-- Environment mismatches (wrong .NET SDK version, missing tools) are discovered only through cryptic error messages.
+**What's missing:**
+- A `--diagnostics` flag on CLI commands.
+- DI registration for `GenerationTimer` and `DiagnosticsCollector`.
+- A `DiagnosticsRenderer` to format the report to the console.
+- Integration hooks in command handlers to wrap generation steps with `timer.TimeStep()`.
+- A null-object timer for zero overhead when `--diagnostics` is off.
 
-### Goal
-
-Add a `--diagnostics` flag that, when enabled, collects and displays:
-
-1. **Environment information:** CLI version, .NET SDK version, runtime version, OS, architecture, shell.
-2. **Per-step timing:** Duration of each major generation phase (solution creation, project generation, file generation, `dotnet sln add`, etc.).
-3. **Total elapsed time** for the entire generation run.
-
-The output is displayed at the end of generation as a formatted diagnostics report.
-
-### Actors
-
-| Actor | Description |
-|-------|-------------|
-| **Developer** | Runs `codegen -n Foo --diagnostics` to profile generation timing |
-| **Support/Maintainer** | Asks user to run with `--diagnostics` and share the report for troubleshooting |
-| **CI Pipeline** | Captures diagnostics output for performance regression tracking |
-
-### Scope
-
-This design covers the `--diagnostics` option on `CreateCodeGeneratorCommand`, the diagnostics collection infrastructure in `CodeGenerator.Core`, and the rendering of the diagnostics report. It does not cover telemetry upload, persistent storage of diagnostics data, or integration with external monitoring systems.
-
-### Design Principles
-
-- **Opt-in.** Diagnostics collection only activates when `--diagnostics` is passed. Default behavior has zero overhead.
-- **Non-invasive.** Timing hooks wrap existing generation steps without modifying strategy implementations.
-- **Testable.** Time measurement is abstracted behind `IStopwatchProvider` so tests can control time.
-- **Human-readable.** Output is formatted for console consumption, not JSON (though JSON export could be added later).
-
----
+**Actors:** CLI user debugging generation issues, support/triage  
+**Scope:** `CodeGenerator.Cli` (commands, rendering, DI), `CodeGenerator.Core.Diagnostics`
 
 ## 2. Architecture
 
 ### 2.1 C4 Context Diagram
-
-Shows how diagnostics fits into the system landscape. The CLI collects environment and timing data during generation and displays a report.
-
 ![C4 Context](diagrams/c4_context.png)
 
 ### 2.2 C4 Container Diagram
-
-The logical containers involved in diagnostics collection and rendering.
-
 ![C4 Container](diagrams/c4_container.png)
 
 ### 2.3 C4 Component Diagram
-
-Internal components: the collector, timer, report model, and renderer.
-
 ![C4 Component](diagrams/c4_component.png)
-
----
 
 ## 3. Component Details
 
-### 3.1 DiagnosticsCollector
+### 3.1 GenerationTimer (Exists)
 
-- **Responsibility:** Gather static environment information at the start of a generation run.
-- **Namespace:** `CodeGenerator.Core.Diagnostics`
-- **Key members:**
-  - `EnvironmentInfo CollectEnvironment()` — synchronously collects all environment data
-- **Data collected:**
-  - CLI version: read from the executing assembly's `AssemblyInformationalVersionAttribute`
-  - .NET SDK version: run `dotnet --version` via `ICommandService` and capture output
-  - .NET runtime version: `Environment.Version` or `RuntimeInformation.FrameworkDescription`
-  - OS: `RuntimeInformation.OSDescription`
-  - Architecture: `RuntimeInformation.OSArchitecture`
-  - Shell: detect from environment (`SHELL` on Unix, `COMSPEC` on Windows)
-  - Working directory: `Environment.CurrentDirectory`
+**Location:** `src/CodeGenerator.Core/Diagnostics/GenerationTimer.cs`
 
-### 3.2 EnvironmentInfo
+**Responsibility:** Measures elapsed time for named generation steps using `Stopwatch`. Thread-safe via `ConcurrentBag<TimingEntry>` and `Interlocked.Increment` for ordering.
 
-- **Responsibility:** Immutable record holding all collected environment data.
-- **Type:** `record`
-- **Members:**
-  - `string CliVersion`
-  - `string DotNetSdkVersion`
-  - `string RuntimeVersion`
-  - `string OperatingSystem`
-  - `string Architecture`
-  - `string Shell`
-  - `string WorkingDirectory`
+**API:**
+```csharp
+public IDisposable TimeStep(string stepName);  // using (timer.TimeStep("Build .csproj")) { ... }
+public IReadOnlyList<TimingEntry> GetEntries();
+public TimeSpan TotalElapsed { get; }
+```
 
-### 3.3 IStopwatchProvider
+**No changes needed.** Already complete.
 
-- **Responsibility:** Abstraction over `System.Diagnostics.Stopwatch` to enable deterministic testing.
-- **Namespace:** `CodeGenerator.Core.Diagnostics`
-- **Key members:**
-  - `IStopwatchInstance StartNew()` — create and start a new stopwatch
-- **Default implementation:** `SystemStopwatchProvider` wraps `Stopwatch.StartNew()`.
-- **Test implementation:** `FakeStopwatchProvider` returns controllable elapsed times.
+### 3.2 NullGenerationTimer (New)
 
-### 3.4 IStopwatchInstance
+**Location:** `src/CodeGenerator.Core/Diagnostics/NullGenerationTimer.cs`
 
-- **Responsibility:** Represents a running stopwatch.
-- **Key members:**
-  - `TimeSpan Elapsed { get; }` — current elapsed time
-  - `void Stop()` — stop the stopwatch
+**Responsibility:** No-op timer for when `--diagnostics` is not set. Zero allocation, zero overhead.
 
-### 3.5 GenerationTimer
+```csharp
+public class NullGenerationTimer : GenerationTimer
+{
+    private static readonly IDisposable NullScope = new NullDisposable();
 
-- **Responsibility:** Track timing for named generation steps. Acts as the central timing registry for a single generation run.
-- **Namespace:** `CodeGenerator.Core.Diagnostics`
-- **Key members:**
-  - `IDisposable TimeStep(string stepName)` — start timing a named step; returns a disposable that records elapsed time when disposed
-  - `List<TimingEntry> GetEntries()` — return all recorded step timings
-  - `TimeSpan TotalElapsed` — total time from first step start to last step end
-- **Usage pattern:**
-  ```csharp
-  using (timer.TimeStep("Create solution file"))
-  {
-      commandService.Start("dotnet new sln ...");
-  }
-  // Timing for "Create solution file" is automatically recorded
-  ```
-- **Thread safety:** Uses `ConcurrentBag<TimingEntry>` internally.
+    public new IDisposable TimeStep(string stepName) => NullScope;
 
-### 3.6 TimingEntry
+    private class NullDisposable : IDisposable
+    {
+        public void Dispose() { }
+    }
+}
+```
 
-- **Responsibility:** Record of a single timed step.
-- **Type:** `record`
-- **Members:**
-  - `string StepName` — human-readable step name
-  - `TimeSpan Duration` — how long the step took
-  - `int Order` — sequence number (order in which steps were started)
+**Design decision:** Subclass rather than interface to avoid changing every call site. Commands always call `timer.TimeStep()` — the null variant simply returns a no-op disposable without starting a stopwatch. Since `TimeStep` is not virtual on the current class, either make it virtual or extract an `IGenerationTimer` interface. **Recommendation:** Extract `IGenerationTimer` interface.
 
-### 3.7 DiagnosticsReport
+### 3.3 IGenerationTimer (New)
 
-- **Responsibility:** Aggregate model containing both environment info and timing data for a generation run.
-- **Namespace:** `CodeGenerator.Core.Diagnostics`
-- **Key members:**
-  - `EnvironmentInfo Environment { get; }`
-  - `List<TimingEntry> Steps { get; }`
-  - `TimeSpan TotalDuration { get; }`
-  - `DateTime GeneratedAt { get; }`
+**Location:** `src/CodeGenerator.Core/Diagnostics/IGenerationTimer.cs`
 
-### 3.8 DiagnosticsRenderer
+```csharp
+public interface IGenerationTimer
+{
+    IDisposable TimeStep(string stepName);
+    IReadOnlyList<TimingEntry> GetEntries();
+    TimeSpan TotalElapsed { get; }
+}
+```
 
-- **Responsibility:** Format `DiagnosticsReport` for console output.
-- **Namespace:** `CodeGenerator.Cli.Rendering`
-- **Output format:**
-  ```
-  Diagnostics Report
-  ==================
+`GenerationTimer` implements this. `NullGenerationTimer` implements it with no-ops.
+
+### 3.4 DiagnosticsCollector (Exists)
+
+**Location:** `src/CodeGenerator.Core/Diagnostics/DiagnosticsCollector.cs`
+
+**Responsibility:** Gathers environment info: CLI version, .NET SDK version, runtime version, OS, architecture, shell, working directory.
+
+**No changes needed.** Already complete.
+
+### 3.5 DiagnosticsRenderer (New)
+
+**Location:** `src/CodeGenerator.Cli/Rendering/DiagnosticsRenderer.cs`
+
+**Responsibility:** Formats a `DiagnosticsReport` to the console using Spectre.Console tables.
+
+```csharp
+public class DiagnosticsRenderer
+{
+    private readonly IAnsiConsole _console;
+
+    public DiagnosticsRenderer(IAnsiConsole console) { ... }
+
+    public void Render(DiagnosticsReport report)
+    {
+        // Section 1: Environment info table
+        RenderEnvironment(report.Environment);
+
+        // Section 2: Step timing table with duration bars
+        RenderTimings(report.Steps, report.TotalDuration);
+
+        // Section 3: Summary line
+        RenderSummary(report);
+    }
+}
+```
+
+**Output format:**
+```
+─── Diagnostics ───────────────────────────────
 
   Environment
-  -----------
-  CLI Version:      1.2.0
-  .NET SDK:         9.0.100
-  Runtime:          .NET 9.0.0
-  OS:               Windows 11 (10.0.26200)
-  Architecture:     X64
-  Shell:            cmd.exe
-  Working Dir:      C:\projects\output
+  ┌────────────────────┬──────────────────────────┐
+  │ CLI Version        │ 1.2.0                    │
+  │ .NET SDK           │ 9.0.1                    │
+  │ Runtime            │ .NET 9.0.1               │
+  │ OS                 │ Windows 11 (10.0.26200)  │
+  │ Architecture       │ ARM64                    │
+  │ Shell              │ bash                     │
+  │ Working Directory  │ C:\projects\MyApp        │
+  └────────────────────┴──────────────────────────┘
 
-  Timing
-  ------
-  Create solution file .............. 1.23s
-  Generate CLI project .............. 0.45s
-  Generate Program.cs ............... 0.02s
-  Generate AppRootCommand.cs ........ 0.01s
-  Generate HelloWorldCommand.cs ..... 0.01s
-  Generate EnterpriseSolutionCommand  0.01s
-  dotnet sln add .................... 0.89s
-  Generate install-cli.bat .......... 0.01s
-  ----------------------------------
-  Total                               2.63s
-  ```
+  Step Timings
+  ┌───┬──────────────────────────┬──────────┬────────────────────────┐
+  │ # │ Step                     │ Duration │                        │
+  ├───┼──────────────────────────┼──────────┼────────────────────────┤
+  │ 1 │ Validate options         │    12 ms │ █                      │
+  │ 2 │ Create directories       │     3 ms │                        │
+  │ 3 │ Create solution file     │   847 ms │ ██████████████████████ │
+  │ 4 │ Generate .csproj         │    28 ms │ █                      │
+  │ 5 │ Generate project files   │    45 ms │ █                      │
+  │ 6 │ Add project to solution  │   312 ms │ ████████               │
+  │ 7 │ Generate install script  │     5 ms │                        │
+  └───┴──────────────────────────┴──────────┴────────────────────────┘
 
----
+  Total: 1.252s | Files: 6 | Generated at: 2026-04-03T14:22:31Z
+```
+
+### 3.6 Program.cs — DI Registration
+
+**Current state:** No diagnostics services registered.
+
+**Target state:**
+```csharp
+services.AddSingleton<DiagnosticsCollector>();
+// Timer is registered per-command based on --diagnostics flag (see 3.7)
+```
+
+`DiagnosticsCollector` is stateless, registered as singleton. `GenerationTimer` is scoped per command execution (one timer per generation run).
+
+### 3.7 CreateCodeGeneratorCommand — --diagnostics Flag
+
+**Responsibility:** Add `--diagnostics` flag. When set, wrap generation steps in `timer.TimeStep()`, collect environment info, and render the report after generation completes.
+
+**Changes:**
+1. Add `--diagnostics` option:
+   ```csharp
+   var diagnosticsOption = new Option<bool>(
+       aliases: ["--diagnostics"],
+       description: "Show environment info and per-step timing",
+       getDefaultValue: () => false);
+   ```
+2. Update `HandleAsync` signature to include `bool diagnostics`.
+3. Resolve `IGenerationTimer`: if `diagnostics` is true → `new GenerationTimer()`, else → `new NullGenerationTimer()`.
+4. Wrap each generation step:
+   ```csharp
+   using (timer.TimeStep("Validate options"))
+   {
+       var validationResult = validator.Validate(options);
+       ...
+   }
+
+   using (timer.TimeStep("Create directories"))
+   {
+       Directory.CreateDirectory(solution.SolutionDirectory);
+       ...
+   }
+
+   using (timer.TimeStep("Create solution file"))
+   {
+       commandService.Start("dotnet new sln ...");
+   }
+   // ... etc for each logical step
+   ```
+5. After generation, if `diagnostics` is true:
+   ```csharp
+   var collector = _serviceProvider.GetRequiredService<DiagnosticsCollector>();
+   var report = new DiagnosticsReport
+   {
+       Environment = collector.CollectEnvironment(cliVersion),
+       Steps = timer.GetEntries().ToList(),
+       TotalDuration = timer.TotalElapsed,
+   };
+   var renderer = new DiagnosticsRenderer(AnsiConsole.Console);
+   renderer.Render(report);
+   ```
+
+### 3.8 ScaffoldCommand — --diagnostics Flag
+
+**Same pattern as 3.7.** Add `--diagnostics` option, wrap `engine.ScaffoldAsync` and validation in `timer.TimeStep()` calls, render report when enabled.
+
+**Timing steps for scaffold:**
+1. "Load configuration file"
+2. "Validate YAML"
+3. "Scaffold files"
+4. "Run post-scaffold commands"
 
 ## 4. Data Model
 
 ### 4.1 Class Diagram
-
 ![Class Diagram](diagrams/class_diagram.png)
 
 ### 4.2 Entity Descriptions
 
-| Entity | Description |
-|--------|-------------|
-| `DiagnosticsCollector` | Gathers static environment information (SDK version, OS, shell, etc.) |
-| `EnvironmentInfo` | Immutable record of all collected environment data |
-| `IStopwatchProvider` | Abstraction over `Stopwatch` for testable time measurement |
-| `SystemStopwatchProvider` | Default implementation wrapping `System.Diagnostics.Stopwatch` |
-| `IStopwatchInstance` | Interface for a running stopwatch with `Elapsed` and `Stop()` |
-| `GenerationTimer` | Central timing registry; `TimeStep(name)` returns a disposable that records duration |
-| `TimingEntry` | Immutable record of a single step's name, duration, and order |
-| `DiagnosticsReport` | Aggregate model with `EnvironmentInfo`, `List<TimingEntry>`, and total duration |
-| `DiagnosticsRenderer` | Formats `DiagnosticsReport` for human-readable console output |
-
----
+| Entity | Description | Status |
+|---|---|---|
+| `IGenerationTimer` | Interface for timing steps. `TimeStep`, `GetEntries`, `TotalElapsed`. | **New** |
+| `GenerationTimer` | Real implementation using `Stopwatch` and `ConcurrentBag`. | Exists |
+| `NullGenerationTimer` | No-op implementation for zero overhead when disabled. | **New** |
+| `TimingEntry` | Record: `StepName`, `Duration`, `Order`. | Exists |
+| `DiagnosticsCollector` | Gathers CLI version, .NET SDK, OS, architecture, shell, cwd. | Exists |
+| `EnvironmentInfo` | Record holding all environment data fields. | Exists |
+| `DiagnosticsReport` | Aggregate: `EnvironmentInfo` + `List<TimingEntry>` + `TotalDuration` + `GeneratedAt`. | Exists |
+| `DiagnosticsRenderer` | Formats `DiagnosticsReport` using Spectre.Console tables. | **New** |
 
 ## 5. Key Workflows
 
-### 5.1 Diagnostics Collection During Generation
+### 5.1 Generation with --diagnostics
+![Sequence Diagram](diagrams/sequence_diagnostics.png)
 
-The user runs generation with `--diagnostics`. Timing hooks wrap each major step, and environment info is collected upfront.
+1. User runs `create-code-cli -n MyApp --diagnostics`.
+2. `HandleAsync` creates `GenerationTimer` (real, not null).
+3. Each generation step is wrapped: `using (timer.TimeStep("step name")) { ... }`.
+4. After generation completes (success or failure), `DiagnosticsCollector.CollectEnvironment()` gathers env info.
+5. `DiagnosticsReport` is assembled from timer entries + environment.
+6. `DiagnosticsRenderer.Render(report)` outputs the formatted table.
 
-![Diagnostics Sequence](diagrams/sequence_diagnostics.png)
+### 5.2 Generation without --diagnostics
+![Sequence Diagram](diagrams/sequence_no_diagnostics.png)
 
-**Steps:**
+1. User runs `create-code-cli -n MyApp` (no `--diagnostics` flag).
+2. `HandleAsync` creates `NullGenerationTimer`.
+3. `timer.TimeStep(...)` returns a no-op disposable — zero overhead.
+4. No report rendered. Normal output only.
 
-1. User invokes `codegen -n Foo --diagnostics`.
-2. `CreateCodeGeneratorCommand.HandleAsync` receives `diagnostics: true`.
-3. Handler creates a `GenerationTimer` (injected via DI, activated only when diagnostics is enabled).
-4. Handler calls `DiagnosticsCollector.CollectEnvironment()` to gather environment info.
-5. Each major generation step is wrapped with `timer.TimeStep(name)`:
-   a. `using (timer.TimeStep("Create solution file"))` around `commandService.Start("dotnet new sln ...")`.
-   b. `using (timer.TimeStep("Generate CLI project"))` around `artifactGenerator.GenerateAsync(csproj)`.
-   c. `using (timer.TimeStep("Generate <filename>"))` around each file generation call.
-   d. `using (timer.TimeStep("dotnet sln add"))` around `commandService.Start("dotnet sln add ...")`.
-6. Generation completes. Handler constructs `DiagnosticsReport` from environment info and timer entries.
-7. Handler passes `DiagnosticsReport` to `DiagnosticsRenderer` for console output.
+### 5.3 Diagnostics on Failure
+![Sequence Diagram](diagrams/sequence_diagnostics_failure.png)
 
-### 5.2 TimeStep Lifecycle
-
-![TimeStep Sequence](diagrams/sequence_timestep.png)
-
-**Steps:**
-
-1. Caller enters `using (timer.TimeStep("Create solution file"))`.
-2. `GenerationTimer` calls `IStopwatchProvider.StartNew()` to create a stopwatch.
-3. Returns a `TimingScope` disposable that holds the step name and stopwatch reference.
-4. Caller executes the generation step inside the using block.
-5. `TimingScope.Dispose()` is called (end of using block).
-6. `TimingScope` calls `stopwatch.Stop()` and reads `stopwatch.Elapsed`.
-7. `TimingScope` adds a `TimingEntry(stepName, elapsed, order)` to the `GenerationTimer`.
-
----
+1. User runs `create-code-cli -n MyApp --diagnostics`.
+2. Steps 1-4 complete, tracked by timer.
+3. Step 5 ("Add project to solution") throws `CliProcessException`.
+4. Catch block still renders the diagnostics report (partial — only completed steps shown).
+5. The timing report shows which step failed and how far generation got.
+6. Error message displayed after diagnostics table.
 
 ## 6. API Contracts
 
-### 6.1 Updated HandleAsync Signature
+### CLI Flag
 
-```csharp
-private async Task HandleAsync(
-    string name,
-    string outputDirectory,
-    string framework,
-    bool slnx,
-    string? localSourceRoot,
-    bool diagnostics)  // new parameter
+```
+create-code-cli -n MyApp --diagnostics
+create-code-cli scaffold -c config.yaml --diagnostics
 ```
 
-### 6.2 GenerationTimer API
+| Flag | Type | Default | Description |
+|---|---|---|---|
+| `--diagnostics` | `bool` | `false` | Show environment info and per-step timing after generation |
 
-```csharp
-public class GenerationTimer
+### DiagnosticsReport JSON (Future)
+
+For machine-readable output (not in initial scope, but the model supports it):
+```json
 {
-    public GenerationTimer(IStopwatchProvider stopwatchProvider);
-
-    /// <summary>
-    /// Start timing a named step. Dispose the return value to record the duration.
-    /// </summary>
-    public IDisposable TimeStep(string stepName);
-
-    /// <summary>
-    /// Get all recorded timing entries in execution order.
-    /// </summary>
-    public IReadOnlyList<TimingEntry> GetEntries();
-
-    /// <summary>
-    /// Total elapsed time across all steps.
-    /// </summary>
-    public TimeSpan TotalElapsed { get; }
+  "environment": {
+    "cliVersion": "1.2.0",
+    "dotNetSdkVersion": "9.0.1",
+    "runtimeVersion": ".NET 9.0.1",
+    "operatingSystem": "Windows 11 (10.0.26200)",
+    "architecture": "ARM64",
+    "shell": "bash",
+    "workingDirectory": "C:\\projects\\MyApp"
+  },
+  "steps": [
+    { "stepName": "Validate options", "duration": "00:00:00.012", "order": 1 },
+    { "stepName": "Create solution file", "duration": "00:00:00.847", "order": 3 }
+  ],
+  "totalDuration": "00:00:01.252",
+  "generatedAt": "2026-04-03T14:22:31Z"
 }
 ```
 
-### 6.3 Conditional Activation Pattern
+## 7. Security Considerations
 
-When `--diagnostics` is not passed, the handler should not pay the cost of timing. Two approaches:
+- `DiagnosticsCollector` exposes the working directory and shell name. This is intentional for debugging and only shown when the user explicitly opts in with `--diagnostics`.
+- CLI version is embedded at build time from assembly metadata — no external lookup.
+- No network calls. All data collected locally.
 
-**Option A: Null object.** Register a `NullGenerationTimer` that returns no-op disposables. The `using` blocks still execute but the stopwatch is never started.
+## 8. Open Questions
 
-**Option B: Conditional wrapping.** The handler checks the `diagnostics` flag before wrapping steps:
-
-```csharp
-IDisposable step = diagnostics ? timer.TimeStep("Create solution") : NullDisposable.Instance;
-using (step)
-{
-    commandService.Start("dotnet new sln ...");
-}
-```
-
-Option A is preferred for cleaner code in the handler.
-
-### 6.4 DiagnosticsCollector API
-
-```csharp
-public class DiagnosticsCollector
-{
-    public DiagnosticsCollector(ICommandService commandService);
-
-    public EnvironmentInfo CollectEnvironment();
-}
-```
-
----
-
-## 7. DI Registration
-
-### 7.1 Core Services
-
-```csharp
-public static void AddDiagnosticsServices(this IServiceCollection services)
-{
-    services.AddSingleton<IStopwatchProvider, SystemStopwatchProvider>();
-    services.AddSingleton<DiagnosticsCollector>();
-    services.AddSingleton<GenerationTimer>();
-}
-```
-
-### 7.2 CLI Services
-
-```csharp
-services.AddDiagnosticsServices();
-services.AddSingleton<DiagnosticsRenderer>();
-```
-
-### 7.3 Null Object for Disabled Diagnostics
-
-When `--diagnostics` is not passed, the `GenerationTimer` is still injected but uses a `NullStopwatchProvider` that returns no-op instances. This eliminates the need for conditional logic in the handler.
-
-```csharp
-// At startup, based on parsed options:
-if (diagnosticsEnabled)
-    services.AddSingleton<IStopwatchProvider, SystemStopwatchProvider>();
-else
-    services.AddSingleton<IStopwatchProvider, NullStopwatchProvider>();
-```
-
----
-
-## 8. Integration with Generation Pipeline
-
-The timing hooks need to wrap existing code in `CreateCodeGeneratorCommand.HandleAsync`. The current handler code:
-
-```csharp
-// Current (no timing)
-commandService.Start($"dotnet new sln -n {name}", solution.SolutionDirectory);
-```
-
-Becomes:
-
-```csharp
-// With diagnostics support
-using (timer.TimeStep("Create solution file"))
-{
-    commandService.Start($"dotnet new sln -n {name}", solution.SolutionDirectory);
-}
-```
-
-The `timer` is injected via DI. When diagnostics is disabled, `timer.TimeStep` returns a no-op disposable, so the cost is one method call and one empty `Dispose()`.
-
-### Steps to Instrument
-
-| Step Name | Code Being Wrapped |
-|-----------|--------------------|
-| `Create solution file` | `commandService.Start("dotnet new sln/slnx ...")` |
-| `Generate CLI project` | `artifactGenerator.GenerateAsync(csproj ContentFileModel)` |
-| `Generate <filename>` | Each `artifactGenerator.GenerateAsync(file)` in the file loop |
-| `dotnet sln add` | `commandService.Start("dotnet sln add ...")` |
-| `Generate install script` | `artifactGenerator.GenerateAsync(install-cli.bat)` |
-| `Create directories` | `Directory.CreateDirectory(...)` calls (grouped as one step) |
-
----
-
-## 9. Limitations and Edge Cases
-
-| Case | Handling |
-|------|----------|
-| **`dotnet --version` not available** | `DiagnosticsCollector` catches the exception and records "unknown" for SDK version. |
-| **Nested/overlapping steps** | `GenerationTimer` records each step independently by start time. Overlapping steps (if introduced with future parallel generation) are each timed from their own start to their own stop. |
-| **Very fast steps (< 1ms)** | Displayed as "< 0.01s" rather than "0.00s" to indicate the step did execute. |
-| **Diagnostics + Dry-run** | Both flags can be active simultaneously. Timing is still collected even when dry-run prevents disk writes. Environment info is still gathered. |
-| **Long-running commands** | Timing is accurate regardless of duration. The `Stopwatch` class has sufficient precision. |
-
----
-
-## 10. Testing Strategy
-
-| Test Type | Description |
-|-----------|-------------|
-| **Unit: DiagnosticsCollector** | Mock `ICommandService` to return a known SDK version string. Verify `EnvironmentInfo` fields are populated. |
-| **Unit: GenerationTimer** | Use `FakeStopwatchProvider` with controlled elapsed times. Verify `TimeStep` records correct durations. Verify `GetEntries` returns entries in order. |
-| **Unit: NullGenerationTimer** | Verify `TimeStep` returns a no-op disposable. Verify `GetEntries` returns empty. Verify zero allocation overhead. |
-| **Unit: DiagnosticsRenderer** | Feed known `DiagnosticsReport`. Assert formatted output matches expected layout. |
-| **Integration: Full generation with diagnostics** | Run `CreateCodeGeneratorCommand` with `--diagnostics`. Verify report is printed with non-zero timings for each step. |
-
----
-
-## 11. Open Questions
-
-| # | Question | Context |
-|---|----------|---------|
-| 1 | Should the diagnostics report also be available as JSON (e.g., `--diagnostics --format json`)? | JSON output is useful for CI pipelines that parse diagnostics data. Adds complexity to the renderer. |
-| 2 | Should `GenerationTimer` support hierarchical/nested steps (e.g., "Generate project" containing "Generate file" sub-steps)? | Hierarchical timing provides more detail but complicates the API. Flat list is simpler and sufficient for initial implementation. |
-| 3 | Should diagnostics include memory usage (peak working set, GC collections)? | Memory data is useful for debugging performance but adds noise. Could be a `--diagnostics-verbose` level. |
-| 4 | Should the timing infrastructure be built into the generation pipeline (e.g., `ArtifactGenerator` auto-times each strategy dispatch) rather than manually instrumented in the handler? | Auto-timing is more complete but requires changes to `ArtifactGenerator`. Manual instrumentation is simpler and does not touch core engine code. |
-| 5 | Should `GenerationTimer` be registered as scoped (per-generation) or singleton? | Singleton means a single timer for the CLI process lifetime. Scoped makes more sense if the CLI ever supports multiple generation runs in one process. For a CLI tool, singleton is fine. |
-| 6 | Should there be a `--diagnostics-output <path>` flag to write the report to a file? | Useful for CI. Could write both to console and to file. Adds a parameter but is straightforward. |
+1. **Should `--diagnostics` also increase log verbosity?** It could set the log level to `Debug` when enabled, surfacing internal logging from strategies and services. Recommendation: keep `--diagnostics` focused on timing/environment. Add a separate `--verbose` flag for log verbosity in a future iteration.
+2. **Should the report be written to a file?** A `--diagnostics-output <path>` option could write the JSON report to disk for automated analysis. Recommendation: defer — console output is sufficient for initial implementation.
+3. **CLI version source?** `DiagnosticsCollector.CollectEnvironment(cliVersion)` takes a string parameter. This should come from `Assembly.GetEntryAssembly().GetName().Version`. Wire this in `Program.cs` or the command handler.

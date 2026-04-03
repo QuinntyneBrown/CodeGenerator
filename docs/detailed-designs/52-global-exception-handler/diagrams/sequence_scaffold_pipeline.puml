@@ -1,0 +1,54 @@
+@startuml sequence_scaffold_pipeline
+!theme plain
+
+title Scaffold Pipeline with Error Enrichment and Rollback
+
+participant "ScaffoldEngine" as engine
+participant "YamlConfigParser" as parser
+participant "ConfigValidator" as validator
+participant "ScaffoldOrchestrator" as orch
+participant "PostScaffoldExecutor" as post
+participant "RollbackService" as rollback
+participant "ScaffoldResult" as result
+
+engine -> result : Create (CorrelationId, start timer)
+
+== Step 1: Parse ==
+engine -> parser : Parse(yaml)
+alt parse fails
+    parser --> engine : ScaffoldParseException
+    engine -> result : Add ErrorInfo(SCAFFOLD_PARSE_FAILED)
+    engine --> engine : Skip remaining steps, return
+end
+
+== Step 2: Validate ==
+engine -> validator : Validate(config)
+alt invalid
+    validator --> engine : ValidationResult (errors)
+    engine -> result : Set ValidationResult
+    engine --> engine : Skip remaining steps, return
+end
+
+== Step 3: Plan and Execute ==
+engine -> orch : OrchestrateAsync(config, path)
+alt orchestration fails
+    orch --> engine : Exception
+    engine -> result : Add ErrorInfo(IO or Template error)
+    engine -> rollback : Rollback()
+    rollback --> engine : rolled back files
+    engine -> result : Set RolledBackFiles
+    engine --> engine : Skip post-commands, return
+end
+
+== Step 4: Post-Commands ==
+engine -> post : Execute(commands, path)
+alt command fails
+    post --> engine : PostCommandResult (failure)
+    engine -> result : Add ErrorInfo(SCAFFOLD_POST_CMD_FAILED)
+    note right: Continue with remaining commands
+end
+
+engine -> result : Set Duration, Success
+engine -> rollback : Commit()
+
+@enduml
