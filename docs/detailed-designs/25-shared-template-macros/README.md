@@ -1,6 +1,6 @@
 # Shared Template Macros -- Detailed Design
 
-**Status:** Proposed
+**Status:** Implemented
 
 ## 1. Overview
 

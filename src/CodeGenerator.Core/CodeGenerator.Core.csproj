@@ -25,6 +25,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Dependencies\**\*.json" />
+    <EmbeddedResource Include="Templates\**\*.liquid" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="MediatR" Version="12.0.0" />
     <PackageReference Include="DotLiquid" Version="2.2.677" />
     <PackageReference Include="YamlDotNet" Version="15.1.2" />

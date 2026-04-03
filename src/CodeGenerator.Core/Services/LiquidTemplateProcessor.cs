@@ -45,6 +45,14 @@ public class RazorTemplateProcessor : ITemplateProcessor
 
 public class LiquidTemplateProcessor : ITemplateProcessor
 {
+    private readonly SharedTemplateFileSystem _fileSystem;
+
+    public LiquidTemplateProcessor(SharedTemplateFileSystem fileSystem)
+    {
+        _fileSystem = fileSystem;
+        Template.FileSystem = _fileSystem;
+    }
+
     public string Process(string template, IDictionary<string, object> tokens, string[] ignoreTokens = null)
     {
         Hash hash = default;

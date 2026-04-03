@@ -3,6 +3,7 @@
 
 using System.Reflection;
 using CodeGenerator.Core.Artifacts.Abstractions;
+using CodeGenerator.Core.Dependencies;
 using CodeGenerator.Core.Incremental.Services;
 using CodeGenerator.Core.Services;
 using CodeGenerator.Core.Syntax;
@@ -14,6 +15,14 @@ public static class ConfigureServices
 {
     public static void AddCoreServices(this IServiceCollection services, Assembly assembly)
     {
+        services.AddSingleton<IDependencyResolver, DependencyResolver>();
+        services.AddSingleton<SharedTemplateFileSystem>(sp =>
+        {
+            var assemblies = AppDomain.CurrentDomain.GetAssemblies()
+                .Where(a => a.GetName().Name?.StartsWith("CodeGenerator") == true)
+                .ToList();
+            return new SharedTemplateFileSystem(assemblies);
+        });
         services.AddSingleton<IUserInputService, UserInputService>();
         services.AddSingleton<IProjectContextFactory, ProjectContextFactory>();
         services.AddSingleton<IConflictResolver, DefaultConflictResolver>();
