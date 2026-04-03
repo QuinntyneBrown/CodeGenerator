@@ -12,4 +12,10 @@ public class PropertyModel
     public TypeModel Type { get; set; }
 
     public bool IsOptional { get; set; } = true;
+
+    public bool IsReadonly { get; set; }
+
+    public bool IsArray { get; set; }
+
+    public string? ArrayElementType { get; set; }
 }

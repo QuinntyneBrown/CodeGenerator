@@ -1,0 +1,68 @@
+@startuml
+!theme plain
+
+title Sequence — SQLAlchemy Model Syntax Generation
+
+participant "Caller" as caller
+participant "ISyntaxGenerator" as gen
+participant "ModelSyntaxGenerationStrategy" as strategy
+participant "INamingConventionConverter" as naming
+
+caller -> gen : GenerateAsync<ModelModel>(model)
+activate gen
+gen -> strategy : GenerateAsync(modelModel, ct)
+activate strategy
+
+== Import Collection ==
+
+strategy -> strategy : importsByModule["app.extensions"] = {db}
+
+alt HasUuidMixin or HasTimestampMixin
+    strategy -> strategy : importsByModule["app.models.mixins"] = {UUIDMixin, TimestampMixin}
+end
+
+loop each import in model.Imports
+    strategy -> strategy : merge into importsByModule
+end
+
+loop each module in importsByModule
+    strategy -> strategy : append "from module import a, b"
+end
+
+== Class Declaration ==
+
+strategy -> naming : Convert(PascalCase, model.Name)
+naming --> strategy : ClassName
+strategy -> strategy : build bases list (mixins + db.Model)
+strategy -> strategy : append "class ClassName(bases):"
+strategy -> strategy : append "__tablename__ = '...'"
+
+== Column Rendering ==
+
+loop each column in model.Columns
+    strategy -> naming : Convert(KebobCase, column.Name)
+    naming --> strategy : col_name
+    strategy -> strategy : build db.Column(type, constraints,\nprimary_key, nullable, unique, index, default)
+    strategy -> strategy : append "    col_name = db.Column(...)"
+end
+
+== Relationship Rendering ==
+
+loop each relationship in model.Relationships
+    strategy -> naming : Convert(KebobCase, relationship.Name)
+    naming --> strategy : rel_name
+    strategy -> strategy : build db.relationship('Target',\nbackref, lazy, uselist, cascade)
+    strategy -> strategy : append "    rel_name = db.relationship(...)"
+end
+
+== __repr__ ==
+
+strategy -> strategy : append "def __repr__(self):"
+strategy -> strategy : append "    return f'<ClassName {self.id}>'"
+
+strategy --> gen : generated model source
+deactivate strategy
+gen --> caller : Python db.Model string
+deactivate gen
+
+@enduml

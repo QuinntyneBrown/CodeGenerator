@@ -152,6 +152,16 @@ public class ControllerSyntaxGenerationStrategy : ISyntaxGenerationStrategy<Cont
             {
                 builder.AppendLine("    try:");
 
+                if (route.QueryParameters.Count > 0)
+                {
+                    foreach (var param in route.QueryParameters)
+                    {
+                        var typeHint = !string.IsNullOrEmpty(param.Type) ? $", type={param.Type}" : "";
+                        var defaultVal = !string.IsNullOrEmpty(param.DefaultValue) ? $", {param.DefaultValue}" : "";
+                        builder.AppendLine($"        {param.Name} = request.args.get('{param.Name}'{defaultVal}{typeHint})");
+                    }
+                }
+
                 if (!string.IsNullOrEmpty(route.Body))
                 {
                     foreach (var line in route.Body.Split(Environment.NewLine))

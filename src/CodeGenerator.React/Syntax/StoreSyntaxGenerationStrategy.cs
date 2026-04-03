@@ -56,12 +56,20 @@ public class StoreSyntaxGenerationStrategy : ISyntaxGenerationStrategy<StoreMode
             }
             else if (model.ActionImplementations.TryGetValue(action, out var impl))
             {
-                builder.AppendLine($"{actionName}: (...args: any[]) => void;".Indent(1, 2));
+                var isAsync = impl.Contains("await ") || impl.TrimStart().StartsWith("async ");
+                var returnType = isAsync ? "Promise<void>" : "void";
+                builder.AppendLine($"{actionName}: (...args: any[]) => {returnType};".Indent(1, 2));
             }
             else
             {
                 builder.AppendLine($"{actionName}: () => void;".Indent(1, 2));
             }
+        }
+
+        if (model.IncludeAsyncState)
+        {
+            builder.AppendLine("isLoading: boolean;".Indent(1, 2));
+            builder.AppendLine("error: string | null;".Indent(1, 2));
         }
 
         builder.AppendLine("}");
@@ -74,6 +82,12 @@ public class StoreSyntaxGenerationStrategy : ISyntaxGenerationStrategy<StoreMode
             var propertyName = namingConventionConverter.Convert(NamingConvention.CamelCase, property.Name);
             var defaultValue = GetDefaultValue(property.Type.Name);
             builder.AppendLine($"{propertyName}: {defaultValue},".Indent(1, 2));
+        }
+
+        if (model.IncludeAsyncState)
+        {
+            builder.AppendLine("isLoading: false,".Indent(1, 2));
+            builder.AppendLine("error: null,".Indent(1, 2));
         }
 
         foreach (var action in model.Actions)

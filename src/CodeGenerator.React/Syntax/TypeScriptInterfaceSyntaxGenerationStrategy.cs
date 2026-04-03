@@ -31,14 +31,19 @@ public class TypeScriptInterfaceSyntaxGenerationStrategy : ISyntaxGenerationStra
             ? $" extends {string.Join(", ", model.Extends)}"
             : string.Empty;
 
-        builder.AppendLine($"export interface {namingConventionConverter.Convert(NamingConvention.PascalCase, model.Name)}{extendsClause}" + " {");
+        var typeParams = model.TypeParameters.Count > 0 ? $"<{string.Join(", ", model.TypeParameters)}>" : "";
+
+        builder.AppendLine($"export interface {namingConventionConverter.Convert(NamingConvention.PascalCase, model.Name)}{typeParams}{extendsClause}" + " {");
 
         foreach (var property in model.Properties)
         {
             var propName = namingConventionConverter.Convert(NamingConvention.CamelCase, property.Name);
-            var typeName = property.Type.Name;
+            var typeName = property.IsArray && !string.IsNullOrEmpty(property.ArrayElementType)
+                ? $"{property.ArrayElementType}[]"
+                : property.Type.Name;
             var optionalMarker = property.IsOptional ? "?" : "";
-            builder.AppendLine($"{propName}{optionalMarker}: {typeName};".Indent(1, 2));
+            var readonlyPrefix = property.IsReadonly ? "readonly " : "";
+            builder.AppendLine($"{readonlyPrefix}{propName}{optionalMarker}: {typeName};".Indent(1, 2));
         }
 
         builder.AppendLine("}");
@@ -51,14 +56,19 @@ public class TypeScriptInterfaceSyntaxGenerationStrategy : ISyntaxGenerationStra
                 ? $" extends {string.Join(", ", sub.Extends)}"
                 : string.Empty;
 
-            builder.AppendLine($"export interface {namingConventionConverter.Convert(NamingConvention.PascalCase, sub.Name)}{subExtendsClause}" + " {");
+            var subTypeParams = sub.TypeParameters.Count > 0 ? $"<{string.Join(", ", sub.TypeParameters)}>" : "";
+
+            builder.AppendLine($"export interface {namingConventionConverter.Convert(NamingConvention.PascalCase, sub.Name)}{subTypeParams}{subExtendsClause}" + " {");
 
             foreach (var property in sub.Properties)
             {
                 var propName = namingConventionConverter.Convert(NamingConvention.CamelCase, property.Name);
-                var typeName = property.Type.Name;
+                var typeName = property.IsArray && !string.IsNullOrEmpty(property.ArrayElementType)
+                    ? $"{property.ArrayElementType}[]"
+                    : property.Type.Name;
                 var optionalMarker = property.IsOptional ? "?" : "";
-                builder.AppendLine($"{propName}{optionalMarker}: {typeName};".Indent(1, 2));
+                var readonlyPrefix = property.IsReadonly ? "readonly " : "";
+                builder.AppendLine($"{readonlyPrefix}{propName}{optionalMarker}: {typeName};".Indent(1, 2));
             }
 
             builder.AppendLine("}");

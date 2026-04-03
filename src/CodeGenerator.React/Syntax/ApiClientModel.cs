@@ -32,6 +32,12 @@ public class ApiClientModel : SyntaxModel
     /// Export style: "functions" (default, current behavior) or "object" (export const userApi = { ... }).
     /// </summary>
     public string ExportStyle { get; set; } = "functions";
+
+    public bool WrapInTryCatch { get; set; } = true;
+
+    public bool IncludeAuthInterceptor { get; set; }
+
+    public string AuthTokenStorageKey { get; set; } = "authToken";
 }
 
 public class ApiClientMethodModel
@@ -45,4 +51,15 @@ public class ApiClientMethodModel
     public string ResponseType { get; set; } = "any";
 
     public string? RequestBodyType { get; set; }
+
+    public List<ApiClientQueryParameter> QueryParameters { get; set; } = [];
+}
+
+public class ApiClientQueryParameter
+{
+    public string Name { get; set; } = string.Empty;
+
+    public string Type { get; set; } = "string";
+
+    public bool IsOptional { get; set; } = true;
 }

@@ -48,7 +48,7 @@ public class ComponentSyntaxGenerationStrategy : ISyntaxGenerationStrategy<Compo
             builder.AppendLine();
         }
 
-        if (model.Props.Count > 0)
+        if (model.Props.Count > 0 || model.IncludeChildren)
         {
             builder.AppendLine($"export interface {componentName}Props" + " {");
 
@@ -57,11 +57,25 @@ public class ComponentSyntaxGenerationStrategy : ISyntaxGenerationStrategy<Compo
                 builder.AppendLine($"{namingConventionConverter.Convert(NamingConvention.CamelCase, prop.Name)}?: {prop.Type.Name};".Indent(1, 2));
             }
 
+            if (model.IncludeChildren)
+            {
+                builder.AppendLine("children?: React.ReactNode;".Indent(1, 2));
+            }
+
             builder.AppendLine("}");
             builder.AppendLine();
         }
 
-        var propsDestructure = model.Props.Count > 0 ? "props" : "";
+        string propsDestructure;
+        if (model.SpreadProps && model.Props.Count > 0)
+        {
+            var propNames = string.Join(", ", model.Props.Select(p => namingConventionConverter.Convert(NamingConvention.CamelCase, p.Name)));
+            propsDestructure = $"{{ {propNames}, ...rest }}";
+        }
+        else
+        {
+            propsDestructure = model.Props.Count > 0 ? "props" : "";
+        }
 
         if (model.ComponentStyle == "fc")
         {
@@ -100,7 +114,11 @@ public class ComponentSyntaxGenerationStrategy : ISyntaxGenerationStrategy<Compo
             builder.AppendLine("};");
             builder.AppendLine();
 
-            if (model.ExportDefault)
+            if (model.UseMemo && model.ExportDefault)
+            {
+                builder.AppendLine($"export default React.memo({componentName});");
+            }
+            else if (model.ExportDefault)
             {
                 builder.AppendLine($"export default {componentName};");
             }
@@ -112,7 +130,7 @@ public class ComponentSyntaxGenerationStrategy : ISyntaxGenerationStrategy<Compo
         else if (model.ComponentStyle == "arrow")
         {
             // Bare arrow function
-            var exportPrefix = model.ExportDefault ? "default " : "";
+            var exportPrefix = (model.ExportDefault && !model.UseMemo) ? "default " : "";
             builder.AppendLine($"export {exportPrefix}const {componentName} = ({propsDestructure}) => " + "{");
 
             foreach (var hook in model.Hooks)
@@ -143,14 +161,29 @@ public class ComponentSyntaxGenerationStrategy : ISyntaxGenerationStrategy<Compo
             }
 
             builder.AppendLine("};");
+
+            if (model.UseMemo && model.ExportDefault)
+            {
+                builder.AppendLine();
+                builder.AppendLine($"export default React.memo({componentName});");
+            }
         }
         else
         {
             // Default: forwardRef (existing behavior)
             var propsType = model.Props.Count > 0 ? $"{componentName}Props" : "object";
-            var propsParam = model.Props.Count > 0 ? $"props: {componentName}Props" : "_props";
+            string propsParam;
+            if (model.SpreadProps && model.Props.Count > 0)
+            {
+                var propNames = string.Join(", ", model.Props.Select(p => namingConventionConverter.Convert(NamingConvention.CamelCase, p.Name)));
+                propsParam = $"{{ {propNames}, ...rest }}";
+            }
+            else
+            {
+                propsParam = model.Props.Count > 0 ? $"props: {componentName}Props" : "_props";
+            }
 
-            builder.AppendLine($"export const {componentName} = React.forwardRef<HTMLDivElement, {propsType}>(({propsParam}, ref) => " + "{");
+            builder.AppendLine($"export const {componentName} = React.forwardRef<{model.RefElementType}, {propsType}>(({propsParam}, ref) => " + "{");
 
             foreach (var hook in model.Hooks)
             {
@@ -172,6 +205,12 @@ public class ComponentSyntaxGenerationStrategy : ISyntaxGenerationStrategy<Compo
             builder.AppendLine("});");
             builder.AppendLine();
             builder.AppendLine($"{componentName}.displayName = \"{componentName}\";");
+
+            if (model.UseMemo && model.ExportDefault)
+            {
+                builder.AppendLine();
+                builder.AppendLine($"export default React.memo({componentName});");
+            }
         }
 
         return StringBuilderCache.GetStringAndRelease(builder);

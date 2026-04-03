@@ -30,4 +30,6 @@ public class StoreModel : SyntaxModel
     public Dictionary<string, string> ActionSignatures { get; set; }
 
     public string? EntityName { get; set; }
+
+    public bool IncludeAsyncState { get; set; } = true;
 }

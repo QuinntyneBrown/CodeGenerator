@@ -145,18 +145,36 @@ public class BaseRepositorySyntaxGenerationStrategy : ISyntaxGenerationStrategy<
         // delete
         builder.AppendLine();
 
-        if (model.UseTypeHints)
+        if (model.UseSoftDelete)
         {
-            builder.AppendLine("    def delete(self, entity: Model) -> None:");
+            if (model.UseTypeHints)
+            {
+                builder.AppendLine("    def delete(self, entity: Model) -> None:");
+            }
+            else
+            {
+                builder.AppendLine("    def delete(self, entity):");
+            }
+
+            builder.AppendLine($"        \"\"\"Soft-delete by setting {model.SoftDeleteColumn} flag.\"\"\"");
+            builder.AppendLine($"        entity.{model.SoftDeleteColumn} = True");
+            builder.AppendLine("        db.session.commit()");
         }
         else
         {
-            builder.AppendLine("    def delete(self, entity):");
-        }
+            if (model.UseTypeHints)
+            {
+                builder.AppendLine("    def delete(self, entity: Model) -> None:");
+            }
+            else
+            {
+                builder.AppendLine("    def delete(self, entity):");
+            }
 
-        builder.AppendLine("        \"\"\"Remove an entity from the database.\"\"\"");
-        builder.AppendLine("        db.session.delete(entity)");
-        builder.AppendLine("        db.session.commit()");
+            builder.AppendLine("        \"\"\"Remove an entity from the database.\"\"\"");
+            builder.AppendLine("        db.session.delete(entity)");
+            builder.AppendLine("        db.session.commit()");
+        }
 
         // count
         builder.AppendLine();
@@ -187,6 +205,18 @@ public class BaseRepositorySyntaxGenerationStrategy : ISyntaxGenerationStrategy<
 
         builder.AppendLine("        \"\"\"Check if an entity exists by ID.\"\"\"");
         builder.AppendLine("        return self.model.query.get(entity_id) is not None");
+
+        if (model.IncludeFilterMethods)
+        {
+            builder.AppendLine();
+            builder.AppendLine("    def filter_by(self, **kwargs):");
+            builder.AppendLine("        \"\"\"Filter entities by keyword arguments.\"\"\"");
+            builder.AppendLine("        return self.model.query.filter_by(**kwargs).all()");
+            builder.AppendLine();
+            builder.AppendLine("    def find_first(self, **kwargs):");
+            builder.AppendLine("        \"\"\"Find first entity matching filters.\"\"\"");
+            builder.AppendLine("        return self.model.query.filter_by(**kwargs).first()");
+        }
 
         // Custom methods
         foreach (var method in model.Methods)

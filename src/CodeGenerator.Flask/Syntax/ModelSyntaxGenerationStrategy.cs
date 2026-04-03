@@ -108,7 +108,13 @@ public class ModelSyntaxGenerationStrategy : ISyntaxGenerationStrategy<ModelMode
             foreach (var column in model.Columns)
             {
                 var colName = namingConventionConverter.Convert(NamingConvention.KebobCase, column.Name);
-                var colDef = $"db.Column(db.{column.ColumnType}";
+                var columnTypeStr = column.ColumnType;
+                if (column.Length.HasValue)
+                {
+                    columnTypeStr += $"({column.Length})";
+                }
+
+                var colDef = $"db.Column(db.{columnTypeStr}";
 
                 if (column.Constraints.Count > 0)
                 {
@@ -116,6 +122,11 @@ public class ModelSyntaxGenerationStrategy : ISyntaxGenerationStrategy<ModelMode
                     {
                         colDef += $", db.{constraint}";
                     }
+                }
+
+                if (!string.IsNullOrEmpty(column.CheckConstraint))
+                {
+                    colDef += $", db.CheckConstraint('{column.CheckConstraint}')";
                 }
 
                 if (!string.IsNullOrEmpty(column.ForeignKey))
@@ -148,9 +159,19 @@ public class ModelSyntaxGenerationStrategy : ISyntaxGenerationStrategy<ModelMode
                     colDef += ", nullable=False";
                 }
 
+                if (!string.IsNullOrEmpty(column.Comment))
+                {
+                    colDef += $", comment='{column.Comment}'";
+                }
+
                 if (column.DefaultValue != null)
                 {
                     colDef += $", default={column.DefaultValue}";
+                }
+
+                if (column.ServerDefault != null)
+                {
+                    colDef += $", server_default={column.ServerDefault}";
                 }
 
                 if (column.OnUpdate != null)

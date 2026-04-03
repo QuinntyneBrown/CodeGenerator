@@ -14,4 +14,8 @@ public class ConfigModel : SyntaxModel
     public Dictionary<string, string> Settings { get; set; }
 
     public List<ImportModel> Imports { get; set; }
+
+    public bool IncludeJsonSettings { get; set; }
+
+    public bool IncludeLogging { get; set; }
 }

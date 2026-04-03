@@ -1,0 +1,27 @@
+@startuml
+!theme plain
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title C4 Component — CodeGenerator.Flask Internals
+
+Container_Boundary(syntax, "Syntax Engine") {
+    Component(appfactory_gen, "AppFactorySyntaxGen", "ISyntaxGenerationStrategy<AppFactoryModel>", "Renders create_app(), config loading, extension init, blueprint registration")
+    Component(controller_gen, "ControllerSyntaxGen", "ISyntaxGenerationStrategy<ControllerModel>", "Generates Blueprint, route decorators, handler functions with try/catch")
+    Component(model_gen, "ModelSyntaxGen", "ISyntaxGenerationStrategy<ModelModel>", "Generates db.Model class with columns, relationships, mixins, __repr__")
+    Component(repo_gen, "RepositorySyntaxGen", "ISyntaxGenerationStrategy<RepositoryModel>", "Generates BaseRepository subclass with custom query methods")
+    Component(service_gen, "ServiceSyntaxGen", "ISyntaxGenerationStrategy<ServiceModel>", "Generates service with __init__ injection and business methods")
+    Component(schema_gen, "SchemaSyntaxGen", "ISyntaxGenerationStrategy<SchemaModel>", "Generates ma.Schema / SQLAlchemyAutoSchema with field definitions")
+    Component(middleware_gen, "MiddlewareSyntaxGen", "ISyntaxGenerationStrategy<MiddlewareModel>", "Generates @wraps(f) decorator function pattern")
+    Component(config_gen, "ConfigSyntaxGen", "ISyntaxGenerationStrategy<ConfigModel>", "Renders Config/DevelopmentConfig/ProductionConfig/TestingConfig classes")
+}
+
+Container_Boundary(artifacts, "Artifact Engine") {
+    Component(project_gen, "ProjectGenerationStrategy", "IArtifactGenerationStrategy<ProjectModel>", "Creates dirs, app_factory, config, extensions, wsgi, requirements, venv, pip install")
+}
+
+Rel(controller_gen, middleware_gen, "references auth decorators")
+Rel(model_gen, config_gen, "references db extensions")
+Rel(project_gen, appfactory_gen, "generates app factory content")
+Rel(project_gen, config_gen, "generates config content")
+
+@enduml

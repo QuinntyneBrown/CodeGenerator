@@ -1,0 +1,62 @@
+@startuml
+!theme plain
+
+title Sequence — Flask Project Scaffolding
+
+participant "Caller" as caller
+participant "IArtifactGenerator" as gen
+participant "ProjectGenerationStrategy" as strategy
+participant "IFileSystem" as fs
+participant "ICommandService" as cmd
+
+caller -> gen : GenerateAsync(projectModel)
+activate gen
+gen -> strategy : GenerateAsync(projectModel)
+activate strategy
+
+== Directory Creation ==
+
+strategy -> fs : Directory.CreateDirectory(project dir)
+strategy -> fs : Directory.CreateDirectory(app dir)
+
+loop each subdirectory (controllers, models, repositories,\nservices, schemas, middleware, errors, jobs, tests)
+    strategy -> fs : Directory.CreateDirectory(subdir)
+    strategy -> fs : File.WriteAllText("__init__.py", "")
+end
+
+== Core File Generation ==
+
+strategy -> strategy : GenerateAppFactoryContent(model)
+strategy -> fs : File.WriteAllText("app/__init__.py", appFactory)
+
+strategy -> strategy : GenerateConfigContent(model)
+strategy -> fs : File.WriteAllText("app/config.py", config)
+
+strategy -> strategy : GenerateExtensionsContent(model)
+strategy -> fs : File.WriteAllText("app/extensions.py", extensions)
+
+strategy -> fs : File.WriteAllText("wsgi.py", wsgiContent)
+
+== Requirements & Virtual Environment ==
+
+strategy -> strategy : GenerateRequirementsContent(model)
+strategy -> fs : File.WriteAllText("requirements.txt", packages)
+
+strategy -> cmd : Start("python -m venv .venv")
+cmd --> strategy : exit code
+
+strategy -> cmd : Start(".venv/bin/pip install Flask SQLAlchemy ...")
+note right of cmd
+    Feature-based packages:
+    auth → PyJWT
+    cors → Flask-CORS
+    celery → celery redis
+end note
+cmd --> strategy : exit code
+
+strategy --> gen : done
+deactivate strategy
+gen --> caller : done
+deactivate gen
+
+@enduml

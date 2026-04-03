@@ -102,6 +102,28 @@ public class AppFactorySyntaxGenerationStrategy : ISyntaxGenerationStrategy<AppF
         }
 
         builder.AppendLine();
+
+        if (model.ErrorHandlers.Count > 0)
+        {
+            foreach (var handler in model.ErrorHandlers)
+            {
+                builder.AppendLine($"    @app.errorhandler({handler.StatusCode})");
+                builder.AppendLine($"    def handle_{handler.StatusCode}(e):");
+                if (!string.IsNullOrEmpty(handler.Body))
+                {
+                    foreach (var line in handler.Body.Split(Environment.NewLine))
+                    {
+                        builder.AppendLine($"        {line}");
+                    }
+                }
+                else
+                {
+                    builder.AppendLine($"        return jsonify({{'error': str(e)}}), {handler.StatusCode}");
+                }
+                builder.AppendLine();
+            }
+        }
+
         builder.AppendLine("    return app");
 
         return StringBuilderCache.GetStringAndRelease(builder);

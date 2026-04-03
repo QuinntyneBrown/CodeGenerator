@@ -75,4 +75,13 @@ public class ControllerRouteModel
     public bool RequiresAuth { get; set; }
 
     public bool WrapInTryCatch { get; set; }
+
+    public List<ControllerRouteQueryParameter> QueryParameters { get; set; } = [];
+}
+
+public class ControllerRouteQueryParameter
+{
+    public string Name { get; set; } = string.Empty;
+    public string? DefaultValue { get; set; }
+    public string? Type { get; set; }
 }

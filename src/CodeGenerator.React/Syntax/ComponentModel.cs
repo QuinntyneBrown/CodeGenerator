@@ -40,4 +40,12 @@ public class ComponentModel : SyntaxModel
     /// Whether to use `export default ComponentName` at the end. Default false (uses named export).
     /// </summary>
     public bool ExportDefault { get; set; }
+
+    public bool IncludeChildren { get; set; } = true;
+
+    public string RefElementType { get; set; } = "HTMLDivElement";
+
+    public bool UseMemo { get; set; }
+
+    public bool SpreadProps { get; set; }
 }

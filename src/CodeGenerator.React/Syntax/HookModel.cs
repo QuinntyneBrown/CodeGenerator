@@ -12,6 +12,8 @@ public class HookModel : SyntaxModel
         Imports = [];
         Body = string.Empty;
         ReturnType = string.Empty;
+        Effects = [];
+        TypeParameters = [];
     }
 
     public string Name { get; set; }
@@ -23,4 +25,15 @@ public class HookModel : SyntaxModel
     public string Body { get; set; }
 
     public List<ImportModel> Imports { get; set; }
+
+    public List<EffectDefinition> Effects { get; set; }
+
+    public List<string> TypeParameters { get; set; }
+
+    public class EffectDefinition
+    {
+        public string Body { get; set; } = string.Empty;
+
+        public List<string> Dependencies { get; set; } = [];
+    }
 }

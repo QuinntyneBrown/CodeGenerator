@@ -66,18 +66,35 @@ public class ConfigSyntaxGenerationStrategy : ISyntaxGenerationStrategy<ConfigMo
             builder.AppendLine("    SQLALCHEMY_TRACK_MODIFICATIONS = False");
         }
 
+        if (model.IncludeJsonSettings)
+        {
+            builder.AppendLine("    JSON_SORT_KEYS = False");
+            builder.AppendLine("    PROPAGATE_EXCEPTIONS = True");
+        }
+
         builder.AppendLine();
         builder.AppendLine();
 
         // DevelopmentConfig
         builder.AppendLine("class DevelopmentConfig(Config):");
         builder.AppendLine("    DEBUG = True");
+
+        if (model.IncludeLogging)
+        {
+            builder.AppendLine("    LOG_LEVEL = 'DEBUG'");
+        }
+
         builder.AppendLine();
         builder.AppendLine();
 
         // ProductionConfig
         builder.AppendLine("class ProductionConfig(Config):");
         builder.AppendLine("    DEBUG = False");
+
+        if (model.IncludeLogging)
+        {
+            builder.AppendLine("    LOG_LEVEL = 'INFO'");
+        }
         builder.AppendLine();
         builder.AppendLine();
 

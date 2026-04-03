@@ -45,6 +45,19 @@ public class ApiClientSyntaxGenerationStrategy : ISyntaxGenerationStrategy<ApiCl
             builder.AppendLine();
         }
 
+        if (model.IncludeAuthInterceptor)
+        {
+            builder.AppendLine();
+            var interceptorClient = model.UseSharedInstance ? "apiClient" : "axios";
+            builder.AppendLine($"{interceptorClient}.interceptors.request.use((config) => {{");
+            builder.AppendLine($"  const token = localStorage.getItem('{model.AuthTokenStorageKey}');");
+            builder.AppendLine("  if (token) {");
+            builder.AppendLine("    config.headers.Authorization = `Bearer ${token}`;");
+            builder.AppendLine("  }");
+            builder.AppendLine("  return config;");
+            builder.AppendLine("});");
+        }
+
         if (model.ExportStyle == "object")
         {
             builder.AppendLine($"export const {clientName} = " + "{");
@@ -71,6 +84,12 @@ public class ApiClientSyntaxGenerationStrategy : ISyntaxGenerationStrategy<ApiCl
                     allParams.Add($"data: {bodyType}");
                 }
 
+                foreach (var qp in method.QueryParameters)
+                {
+                    var opt = qp.IsOptional ? "?" : "";
+                    allParams.Add($"{qp.Name}{opt}: {qp.Type}");
+                }
+
                 var routeStr = model.UseSharedInstance ? $"'{method.Route}'" : $"`${{baseUrl}}{method.Route}`";
                 // If route has template vars, always use backtick
                 if (method.Route.Contains("${"))
@@ -82,23 +101,46 @@ public class ApiClientSyntaxGenerationStrategy : ISyntaxGenerationStrategy<ApiCl
 
                 builder.AppendLine($"  {methodName}: async ({string.Join(", ", allParams)}): Promise<{method.ResponseType}> => " + "{");
 
+                if (model.WrapInTryCatch)
+                {
+                    builder.AppendLine("    try {");
+                }
+
+                var objBodyIndent = model.WrapInTryCatch ? "      " : "    ";
+
                 switch (httpMethod)
                 {
                     case "get":
-                        builder.AppendLine($"    const response = await {axiosClient}.get<{method.ResponseType}>({routeStr});");
-                        builder.AppendLine("    return response.data;");
+                        if (method.QueryParameters.Count > 0)
+                        {
+                            var qpNames = string.Join(", ", method.QueryParameters.Select(p => p.Name));
+                            builder.AppendLine($"{objBodyIndent}const response = await {axiosClient}.get<{method.ResponseType}>({routeStr}, {{ params: {{ {qpNames} }} }});");
+                        }
+                        else
+                        {
+                            builder.AppendLine($"{objBodyIndent}const response = await {axiosClient}.get<{method.ResponseType}>({routeStr});");
+                        }
+                        builder.AppendLine($"{objBodyIndent}return response.data;");
                         break;
                     case "post":
-                        builder.AppendLine($"    const response = await {axiosClient}.post<{method.ResponseType}>({routeStr}, data);");
-                        builder.AppendLine("    return response.data;");
+                        builder.AppendLine($"{objBodyIndent}const response = await {axiosClient}.post<{method.ResponseType}>({routeStr}, data);");
+                        builder.AppendLine($"{objBodyIndent}return response.data;");
                         break;
                     case "put":
-                        builder.AppendLine($"    const response = await {axiosClient}.put<{method.ResponseType}>({routeStr}, data);");
-                        builder.AppendLine("    return response.data;");
+                        builder.AppendLine($"{objBodyIndent}const response = await {axiosClient}.put<{method.ResponseType}>({routeStr}, data);");
+                        builder.AppendLine($"{objBodyIndent}return response.data;");
                         break;
                     case "delete":
-                        builder.AppendLine($"    await {axiosClient}.delete({routeStr});");
+                        builder.AppendLine($"{objBodyIndent}await {axiosClient}.delete({routeStr});");
                         break;
+                }
+
+                if (model.WrapInTryCatch)
+                {
+                    builder.AppendLine("    } catch (error) {");
+                    builder.AppendLine("      console.error('API error:', error);");
+                    builder.AppendLine("      throw error;");
+                    builder.AppendLine("    }");
                 }
 
                 builder.AppendLine("  },");
@@ -129,39 +171,113 @@ public class ApiClientSyntaxGenerationStrategy : ISyntaxGenerationStrategy<ApiCl
                     allParams.Add($"{param}: string");
                 }
 
+                foreach (var qp in method.QueryParameters)
+                {
+                    var opt = qp.IsOptional ? "?" : "";
+                    allParams.Add($"{qp.Name}{opt}: {qp.Type}");
+                }
+
                 switch (httpMethod)
                 {
                     case "get":
+                    {
                         builder.AppendLine($"export async function {methodName}({string.Join(", ", allParams)}): Promise<{method.ResponseType}>" + " {");
-                        builder.AppendLine($"const {{ data }} = await axios.get<{method.ResponseType}>(`${{baseUrl}}{method.Route}`);".Indent(1, 2));
-                        builder.AppendLine("return data;".Indent(1, 2));
+                        var ind = 1;
+                        if (model.WrapInTryCatch)
+                        {
+                            builder.AppendLine("try {".Indent(1, 2));
+                            ind = 2;
+                        }
+                        if (method.QueryParameters.Count > 0)
+                        {
+                            var qpNames = string.Join(", ", method.QueryParameters.Select(p => p.Name));
+                            builder.AppendLine($"const {{ data }} = await axios.get<{method.ResponseType}>(`${{baseUrl}}{method.Route}`, {{ params: {{ {qpNames} }} }});".Indent(ind, 2));
+                        }
+                        else
+                        {
+                            builder.AppendLine($"const {{ data }} = await axios.get<{method.ResponseType}>(`${{baseUrl}}{method.Route}`);".Indent(ind, 2));
+                        }
+                        builder.AppendLine("return data;".Indent(ind, 2));
+                        if (model.WrapInTryCatch)
+                        {
+                            builder.AppendLine("} catch (error) {".Indent(1, 2));
+                            builder.AppendLine("console.error('API error:', error);".Indent(2, 2));
+                            builder.AppendLine("throw error;".Indent(2, 2));
+                            builder.AppendLine("}".Indent(1, 2));
+                        }
                         builder.AppendLine("}");
                         break;
+                    }
 
                     case "post":
+                    {
                         var bodyType = method.RequestBodyType ?? "unknown";
                         var postParams = new List<string>(allParams) { $"body: {bodyType}" };
                         builder.AppendLine($"export async function {methodName}({string.Join(", ", postParams)}): Promise<{method.ResponseType}>" + " {");
-                        builder.AppendLine($"const {{ data }} = await axios.post<{method.ResponseType}>(`${{baseUrl}}{method.Route}`, body);".Indent(1, 2));
-                        builder.AppendLine("return data;".Indent(1, 2));
+                        var ind = 1;
+                        if (model.WrapInTryCatch)
+                        {
+                            builder.AppendLine("try {".Indent(1, 2));
+                            ind = 2;
+                        }
+                        builder.AppendLine($"const {{ data }} = await axios.post<{method.ResponseType}>(`${{baseUrl}}{method.Route}`, body);".Indent(ind, 2));
+                        builder.AppendLine("return data;".Indent(ind, 2));
+                        if (model.WrapInTryCatch)
+                        {
+                            builder.AppendLine("} catch (error) {".Indent(1, 2));
+                            builder.AppendLine("console.error('API error:', error);".Indent(2, 2));
+                            builder.AppendLine("throw error;".Indent(2, 2));
+                            builder.AppendLine("}".Indent(1, 2));
+                        }
                         builder.AppendLine("}");
                         break;
+                    }
 
                     case "put":
+                    {
                         var putBodyType = method.RequestBodyType ?? "unknown";
                         var putParams = new List<string>(allParams) { $"body: {putBodyType}" };
                         builder.AppendLine($"export async function {methodName}({string.Join(", ", putParams)}): Promise<{method.ResponseType}>" + " {");
-                        builder.AppendLine($"const {{ data }} = await axios.put<{method.ResponseType}>(`${{baseUrl}}{method.Route}`, body);".Indent(1, 2));
-                        builder.AppendLine("return data;".Indent(1, 2));
+                        var ind = 1;
+                        if (model.WrapInTryCatch)
+                        {
+                            builder.AppendLine("try {".Indent(1, 2));
+                            ind = 2;
+                        }
+                        builder.AppendLine($"const {{ data }} = await axios.put<{method.ResponseType}>(`${{baseUrl}}{method.Route}`, body);".Indent(ind, 2));
+                        builder.AppendLine("return data;".Indent(ind, 2));
+                        if (model.WrapInTryCatch)
+                        {
+                            builder.AppendLine("} catch (error) {".Indent(1, 2));
+                            builder.AppendLine("console.error('API error:', error);".Indent(2, 2));
+                            builder.AppendLine("throw error;".Indent(2, 2));
+                            builder.AppendLine("}".Indent(1, 2));
+                        }
                         builder.AppendLine("}");
                         break;
+                    }
 
                     case "delete":
+                    {
                         builder.AppendLine($"export async function {methodName}({string.Join(", ", allParams)}): Promise<{method.ResponseType}>" + " {");
-                        builder.AppendLine($"const {{ data }} = await axios.delete<{method.ResponseType}>(`${{baseUrl}}{method.Route}`);".Indent(1, 2));
-                        builder.AppendLine("return data;".Indent(1, 2));
+                        var ind = 1;
+                        if (model.WrapInTryCatch)
+                        {
+                            builder.AppendLine("try {".Indent(1, 2));
+                            ind = 2;
+                        }
+                        builder.AppendLine($"const {{ data }} = await axios.delete<{method.ResponseType}>(`${{baseUrl}}{method.Route}`);".Indent(ind, 2));
+                        builder.AppendLine("return data;".Indent(ind, 2));
+                        if (model.WrapInTryCatch)
+                        {
+                            builder.AppendLine("} catch (error) {".Indent(1, 2));
+                            builder.AppendLine("console.error('API error:', error);".Indent(2, 2));
+                            builder.AppendLine("throw error;".Indent(2, 2));
+                            builder.AppendLine("}".Indent(1, 2));
+                        }
                         builder.AppendLine("}");
                         break;
+                    }
                 }
 
                 builder.AppendLine();

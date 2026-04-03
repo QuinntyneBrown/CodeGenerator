@@ -1,0 +1,68 @@
+@startuml
+!theme plain
+
+title Artifact Models — CodeGenerator.Flask.Artifacts
+
+abstract class ArtifactModel {
+    + Parent : ArtifactModel?
+    + GetChildren() : IEnumerable<ArtifactModel>
+}
+
+class ProjectModel {
+    + Name : string
+    + Directory : string
+    + RootDirectory : string
+    + AppDirectory : string
+    + Features : List<string>
+}
+
+class BlueprintModel {
+    + Name : string
+    + UrlPrefix : string
+    + Directory : string
+    + Routes : List<RouteModel>
+}
+
+class RouteModel {
+    + Path : string
+    + Methods : List<string>
+    + HandlerName : string
+    + RequiresAuth : bool
+}
+
+note right of ProjectModel
+  Features values:
+  auth | cors | celery | migrations
+
+  Feature → Package mapping:
+  auth → PyJWT
+  cors → Flask-CORS
+  celery → Celery, Redis
+  migrations → Alembic, Flask-Migrate
+end note
+
+ArtifactModel <|-- ProjectModel
+ArtifactModel <|-- BlueprintModel
+
+BlueprintModel "1" *-- "0..*" RouteModel : routes
+
+interface "IProjectFactory" as IPF {
+    + Create(name, directory) : ProjectModel
+    + Create(name, directory, features) : ProjectModel
+}
+
+interface "IFileFactory" as IFF {
+    + CreateInitFiles(directory) : List<FileModel>
+    + CreateInitFile(directory, content?) : FileModel
+}
+
+class ProjectFactory
+class FileFactory
+
+IPF <|.. ProjectFactory
+IFF <|.. FileFactory
+
+ProjectFactory ..> ProjectModel : creates
+FileFactory ..> "FileModel" : creates
+
+@enduml

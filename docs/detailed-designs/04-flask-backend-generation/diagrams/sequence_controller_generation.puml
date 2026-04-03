@@ -1,0 +1,70 @@
+@startuml
+!theme plain
+
+title Sequence — Controller / Blueprint Syntax Generation
+
+participant "Caller" as caller
+participant "ISyntaxGenerator" as gen
+participant "ControllerSyntaxGenerationStrategy" as strategy
+participant "INamingConventionConverter" as naming
+
+caller -> gen : GenerateAsync<ControllerModel>(model)
+activate gen
+gen -> strategy : GenerateAsync(controllerModel, ct)
+activate strategy
+
+== Import Collection & Deduplication ==
+
+strategy -> strategy : importsByModule["flask"] = {Blueprint, request, jsonify}
+
+alt routes require auth
+    strategy -> strategy : importsByModule["app.middleware.auth"] = {require_auth}
+end
+
+loop each import in model.Imports
+    strategy -> strategy : merge into importsByModule
+end
+
+loop each serviceInstance / schemaInstance
+    strategy -> strategy : add class import to importsByModule
+end
+
+loop each module in importsByModule
+    strategy -> strategy : append "from module import a, b"
+end
+
+== Blueprint Creation ==
+
+strategy -> naming : Convert(KebobCase, model.Name)
+naming --> strategy : snake_name
+strategy -> strategy : append "bp = Blueprint('snake_name', __name__, url_prefix='...')"
+
+== Service & Schema Instantiation ==
+
+loop each service/schema instance
+    strategy -> strategy : append "var = ClassName(args)"
+end
+
+== Route Handler Generation ==
+
+loop each route in model.Routes
+    strategy -> strategy : append "@bp.route('path', methods=[...])"
+    alt route.RequiresAuth
+        strategy -> strategy : append "@require_auth"
+    end
+    strategy -> strategy : extract path params from route path
+    strategy -> strategy : append "def handler_name(params):"
+
+    alt route.WrapInTryCatch
+        strategy -> strategy : append try/except body
+    else
+        strategy -> strategy : append handler body
+    end
+end
+
+strategy --> gen : generated controller source
+deactivate strategy
+gen --> caller : Python blueprint string
+deactivate gen
+
+@enduml

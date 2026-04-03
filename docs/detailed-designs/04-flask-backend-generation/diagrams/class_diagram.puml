@@ -1,0 +1,163 @@
+@startuml
+!theme plain
+
+title Syntax Models — CodeGenerator.Flask.Syntax
+
+abstract class SyntaxModel {
+    + Parent : SyntaxModel?
+    + Usings : List<UsingModel>
+    + GetChildren() : IEnumerable<SyntaxModel>
+}
+
+class AppFactoryModel {
+    + Name : string
+    + Blueprints : List<AppFactoryBlueprintReference>
+    + Extensions : List<string>
+    + ConfigClass : string
+    + Imports : List<ImportModel>
+    + ErrorHandlers : List<AppFactoryErrorHandler>
+}
+
+class ConfigModel {
+    + Settings : Dictionary<string, string>
+    + Imports : List<ImportModel>
+    + IncludeJsonSettings : bool
+    + IncludeLogging : bool
+}
+
+class ControllerModel {
+    + Name : string
+    + Routes : List<ControllerRouteModel>
+    + MiddlewareDecorators : List<string>
+    + Imports : List<ImportModel>
+    + UrlPrefix : string?
+    + ServiceInstances : List<ControllerInstanceModel>
+    + SchemaInstances : List<ControllerInstanceModel>
+}
+
+class ModelModel {
+    + Name : string
+    + TableName : string?
+    + Columns : List<ColumnModel>
+    + Relationships : List<RelationshipModel>
+    + Imports : List<ImportModel>
+    + HasUuidMixin : bool
+    + HasTimestampMixin : bool
+}
+
+class RepositoryModel {
+    + Name : string
+    + Entity : string
+    + CustomMethods : List<RepositoryMethodModel>
+    + Imports : List<ImportModel>
+    + UseSuperInit : bool
+}
+
+class ServiceModel {
+    + Name : string
+    + RepositoryReferences : List<string>
+    + Methods : List<ServiceMethodModel>
+    + Imports : List<ImportModel>
+    + SelfInstantiate : bool
+}
+
+class SchemaModel {
+    + Name : string
+    + Fields : List<SchemaFieldModel>
+    + Imports : List<ImportModel>
+    + ModelReference : string?
+    + BaseClass : string
+    + MetaOptions : Dictionary<string, string>
+    + SubSchemas : List<SchemaModel>
+}
+
+class MiddlewareModel {
+    + Name : string
+    + Body : string
+    + Imports : List<ImportModel>
+}
+
+SyntaxModel <|-- AppFactoryModel
+SyntaxModel <|-- ConfigModel
+SyntaxModel <|-- ControllerModel
+SyntaxModel <|-- ModelModel
+SyntaxModel <|-- RepositoryModel
+SyntaxModel <|-- ServiceModel
+SyntaxModel <|-- SchemaModel
+SyntaxModel <|-- MiddlewareModel
+
+class ImportModel {
+    + Module : string
+    + Names : List<string>
+    + Alias : string?
+}
+
+class AppFactoryBlueprintReference {
+    + Name : string
+    + ImportPath : string
+}
+
+class ControllerRouteModel {
+    + Path : string
+    + Methods : List<string>
+    + HandlerName : string
+    + Body : string
+    + RequiresAuth : bool
+    + WrapInTryCatch : bool
+}
+
+class ColumnModel {
+    + Name : string
+    + ColumnType : string
+    + PrimaryKey : bool
+    + Nullable : bool
+    + Unique : bool
+    + Index : bool
+    + DefaultValue : string?
+    + ForeignKey : string?
+}
+
+class RelationshipModel {
+    + Name : string
+    + Target : string
+    + BackRef : string?
+    + Lazy : bool
+    + Uselist : bool
+    + Cascade : string?
+}
+
+class RepositoryMethodModel {
+    + Name : string
+    + Body : string
+    + Params : List<string>
+    + ReturnTypeHint : string?
+}
+
+class ServiceMethodModel {
+    + Name : string
+    + Body : string
+    + Params : List<string>
+    + ReturnTypeHint : string?
+}
+
+class SchemaFieldModel {
+    + Name : string
+    + FieldType : string
+    + Required : bool
+    + DumpOnly : bool
+    + LoadOnly : bool
+    + Validations : List<string>
+}
+
+AppFactoryModel "1" *-- "0..*" AppFactoryBlueprintReference : blueprints
+AppFactoryModel "1" *-- "0..*" ImportModel : imports
+ControllerModel "1" *-- "0..*" ControllerRouteModel : routes
+ControllerModel "1" *-- "0..*" ImportModel : imports
+ModelModel "1" *-- "0..*" ColumnModel : columns
+ModelModel "1" *-- "0..*" RelationshipModel : relationships
+RepositoryModel "1" *-- "0..*" RepositoryMethodModel : customMethods
+ServiceModel "1" *-- "0..*" ServiceMethodModel : methods
+SchemaModel "1" *-- "0..*" SchemaFieldModel : fields
+SchemaModel "1" *-- "0..*" SchemaModel : subSchemas
+
+@enduml

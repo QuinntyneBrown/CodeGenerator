@@ -120,6 +120,11 @@ public class SchemaSyntaxGenerationStrategy : ISyntaxGenerationStrategy<SchemaMo
                     fieldArgs.Add("load_only=True");
                 }
 
+                if (field.AllowNone.HasValue)
+                {
+                    fieldArgs.Add(field.AllowNone.Value ? "allow_none=True" : "allow_none=False");
+                }
+
                 foreach (var validation in field.Validations)
                 {
                     // Ensure validations use the validate. prefix
@@ -188,6 +193,11 @@ public class SchemaSyntaxGenerationStrategy : ISyntaxGenerationStrategy<SchemaMo
                     if (field.LoadOnly)
                     {
                         fieldArgs.Add("load_only=True");
+                    }
+
+                    if (field.AllowNone.HasValue)
+                    {
+                        fieldArgs.Add(field.AllowNone.Value ? "allow_none=True" : "allow_none=False");
                     }
 
                     foreach (var validation in field.Validations)

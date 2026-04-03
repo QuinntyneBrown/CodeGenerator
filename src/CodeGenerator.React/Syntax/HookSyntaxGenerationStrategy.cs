@@ -47,11 +47,25 @@ public class HookSyntaxGenerationStrategy : ISyntaxGenerationStrategy<HookModel>
 
         var returnTypeClause = !string.IsNullOrEmpty(model.ReturnType) ? $": {model.ReturnType}" : string.Empty;
 
-        builder.AppendLine($"export function {hookName}({paramsString}){returnTypeClause}" + " {");
+        var typeParams = model.TypeParameters.Count > 0 ? $"<{string.Join(", ", model.TypeParameters)}>" : "";
+
+        builder.AppendLine($"export function {hookName}{typeParams}({paramsString}){returnTypeClause}" + " {");
 
         foreach (var line in model.Body.Split(Environment.NewLine))
         {
             builder.AppendLine(line.Indent(1, 2));
+        }
+
+        foreach (var effect in model.Effects)
+        {
+            builder.AppendLine();
+            builder.AppendLine("React.useEffect(() => {".Indent(1, 2));
+            foreach (var line in effect.Body.Split(Environment.NewLine))
+            {
+                builder.AppendLine(line.Indent(2, 2));
+            }
+            var deps = string.Join(", ", effect.Dependencies);
+            builder.AppendLine($"}}, [{deps}]);".Indent(1, 2));
         }
 
         builder.AppendLine("}");

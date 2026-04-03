@@ -32,6 +32,8 @@ public class AppFactoryModel : SyntaxModel
     public string ConfigClass { get; set; }
 
     public List<ImportModel> Imports { get; set; }
+
+    public List<AppFactoryErrorHandler> ErrorHandlers { get; set; } = [];
 }
 
 public class AppFactoryBlueprintReference
@@ -51,4 +53,10 @@ public class AppFactoryBlueprintReference
     public string Name { get; set; }
 
     public string ImportPath { get; set; }
+}
+
+public class AppFactoryErrorHandler
+{
+    public int StatusCode { get; set; }
+    public string Body { get; set; } = string.Empty;
 }

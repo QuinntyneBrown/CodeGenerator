@@ -24,6 +24,11 @@ public class BaseRepositoryModel : SyntaxModel
     /// Whether to include Python type hints. Default true.
     /// </summary>
     public bool UseTypeHints { get; set; } = true;
+
+    public bool UseSoftDelete { get; set; }
+    public string SoftDeleteColumn { get; set; } = "is_deleted";
+
+    public bool IncludeFilterMethods { get; set; }
 }
 
 public class BaseRepositoryMethodModel

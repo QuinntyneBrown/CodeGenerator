@@ -73,6 +73,14 @@ public class ColumnModel
     public bool PrimaryKey { get; set; }
 
     public string? ForeignKey { get; set; }
+
+    public int? Length { get; set; }
+
+    public string? CheckConstraint { get; set; }
+
+    public string? ServerDefault { get; set; }
+
+    public string? Comment { get; set; }
 }
 
 public class RelationshipModel

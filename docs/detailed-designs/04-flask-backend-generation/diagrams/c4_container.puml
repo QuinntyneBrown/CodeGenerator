@@ -1,0 +1,25 @@
+@startuml
+!theme plain
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title C4 Container — CodeGenerator.Flask
+
+System_Boundary(flask_pkg, "CodeGenerator.Flask") {
+    Container(syntax_engine, "Syntax Engine", "C# / ISyntaxGenerationStrategy<T>", "Generates Flask Python source from syntax models (app factory, controllers, models, repositories, services, schemas, middleware, config)")
+    Container(artifact_engine, "Artifact Engine", "C# / IArtifactGenerationStrategy<T>", "Scaffolds Flask projects, creates directories, generates boilerplate files, provisions venv")
+    Container(project_factory, "Project Factory", "C# / IProjectFactory", "Creates ProjectModel instances with name, directory, and optional features")
+    Container(file_factory, "File Factory", "C# / IFileFactory", "Creates __init__.py file models for Flask app packages")
+}
+
+System_Ext(core, "CodeGenerator.Core", "Provides ISyntaxGenerator, IArtifactGenerator, INamingConventionConverter, ICommandService")
+System_Ext(file_system, "File System", "Target directory for generated output")
+System_Ext(python_rt, "Python Runtime / pip", "Executes venv and package commands")
+
+Rel(core, syntax_engine, "Dispatches via ISyntaxGenerator")
+Rel(core, artifact_engine, "Dispatches via IArtifactGenerator")
+Rel(artifact_engine, project_factory, "Creates project models")
+Rel(artifact_engine, file_factory, "Creates __init__.py files")
+Rel(artifact_engine, file_system, "Writes files and directories")
+Rel(artifact_engine, python_rt, "Runs CLI commands")
+
+@enduml

@@ -61,4 +61,6 @@ public class SchemaFieldModel
     public bool DumpOnly { get; set; }
 
     public bool LoadOnly { get; set; }
+
+    public bool? AllowNone { get; set; }
 }
