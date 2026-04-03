@@ -1,6 +1,8 @@
 # CodeGenerator
 
-A comprehensive code generation framework for .NET, Python, React, React Native, Flask, Playwright, and Detox. Generate clean architecture solutions, APIs, full-stack applications, mobile apps, and end-to-end tests from models, PlantUML diagrams, or code analysis.
+A model-driven code generation framework that dramatically reduces tokens for coding agents. Instead of writing code line-by-line, agents build lightweight object models and pass them to the generator — producing complete files, projects, solutions, and full-stack applications.
+
+Supports .NET, Python, React, React Native, Angular, Flask, Playwright, and Detox. Generate clean architecture solutions, APIs, full-stack applications, mobile apps, and end-to-end tests from models, PlantUML diagrams, or code analysis.
 
 ## Packages
 
@@ -31,6 +33,42 @@ dotnet add package QuinntyneBrown.CodeGenerator.ReactNative
 dotnet add package QuinntyneBrown.CodeGenerator.Flask
 dotnet add package QuinntyneBrown.CodeGenerator.Playwright
 dotnet add package QuinntyneBrown.CodeGenerator.Detox
+```
+
+## How It Works
+
+Agents build compact models using fluent builders. The generator handles all the file creation, project configuration, and boilerplate:
+
+```csharp
+// ~10 tokens of model code produces a complete C# class file
+var model = ClassBuilder.For("Order")
+    .Public()
+    .WithProperty("Id", "Guid")
+    .WithProperty("CustomerId", "Guid")
+    .WithProperty("Total", "decimal")
+    .WithProperty("Status", "OrderStatus")
+    .Build();
+
+var code = await syntaxGenerator.GenerateAsync(model);
+```
+
+```csharp
+// ~15 tokens produces a full Flask controller with 5 CRUD routes
+var controller = ControllerBuilder
+    .For("Order")
+    .WithCrud("Order")
+    .WithUrlPrefix("/api/orders")
+    .WithService("order_service", "OrderService")
+    .Build();
+```
+
+```csharp
+// ~10 tokens produces a React component with props, hooks, and imports
+var component = ComponentBuilder.For("OrderCard")
+    .WithProp("order", "Order")
+    .WithHook("useEffect")
+    .WithImport("./types", "Order")
+    .Build();
 ```
 
 ## Quick Start
@@ -211,6 +249,16 @@ CodeGenerator/
 | `IPlantUmlParserService` | Parse PlantUML diagrams into solution models |
 | `IDependencyInjectionService` | Generate DI configuration |
 | `ICommandService` | Execute shell commands (npm, dotnet, python, pip) |
+
+## Documentation
+
+| Document | Description |
+|----------|-------------|
+| [Architecture Audit](docs/architecture-audit.md) | Comprehensive review of the codebase architecture, strengths, and improvement areas |
+| [CLI Vision](docs/codegenerator-cli-vision.md) | Roadmap to a 10/10 CLI and AGI-unlocked features for massive token savings |
+| [xregistry/codegen Patterns](docs/xregistry-codegen-patterns.md) | Implementation patterns from [xregistry/codegen](https://github.com/xregistry/codegen) that CodeGenerator could adopt |
+| [Detailed Designs](docs/detailed-designs/) | Feature-by-feature design documentation |
+| [Specifications](docs/specs/) | Requirements specifications |
 
 ## Requirements
 
