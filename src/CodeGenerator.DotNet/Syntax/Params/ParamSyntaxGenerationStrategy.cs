@@ -42,6 +42,11 @@ public class ParamSyntaxGenerationStrategy : ISyntaxGenerationStrategy<ParamMode
 
         builder.Append($"{await _syntaxGenerator.GenerateAsync(model.Type)} {model.Name}");
 
+        if (!string.IsNullOrEmpty(model.DefaultValue))
+        {
+            builder.Append($" = {model.DefaultValue}");
+        }
+
         return StringBuilderCache.GetStringAndRelease(builder);
     }
 }

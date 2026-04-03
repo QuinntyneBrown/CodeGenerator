@@ -1493,4 +1493,518 @@ RuleFor(v => v.Title)
         Assert.Contains("private readonly IApplicationDbContext _context;", result);
         Assert.Contains("public async Task<bool> BeUniqueTitle(string title, CancellationToken cancellationToken)", result);
     }
+
+    // ========================================
+    // ITERATION 3: INFRASTRUCTURE, WEB, AND REMAINING PATTERNS
+    // ========================================
+
+    [Fact]
+    public async Task Application_WeatherForecast_ExpressionBodiedProperty_GeneratesExpectedSyntax()
+    {
+        // Target: Application/WeatherForecasts/Queries/GetWeatherForecasts/WeatherForecast.cs
+
+        var parentClass = new ClassModel("WeatherForecast");
+
+        var classModel = new ClassModel("WeatherForecast")
+        {
+            Properties =
+            [
+                new PropertyModel(parentClass, AccessModifier.Public, new TypeModel("DateTime"), "Date", PropertyAccessorModel.GetInit),
+                new PropertyModel(parentClass, AccessModifier.Public, new TypeModel("int"), "TemperatureC", PropertyAccessorModel.GetInit),
+                new PropertyModel(parentClass, AccessModifier.Public, new TypeModel("int"), "TemperatureF", [])
+                {
+                    Body = new ExpressionModel("32 + (int)(TemperatureC / 0.5556)"),
+                },
+                new PropertyModel(parentClass, AccessModifier.Public, new TypeModel("string"), "Summary", PropertyAccessorModel.GetInit)
+                {
+                    DefaultValue = "string.Empty",
+                },
+            ],
+        };
+
+        var document = new DocumentModel
+        {
+            Name = "WeatherForecast",
+            RootNamespace = "CleanArchitecture",
+            Namespace = "Application.WeatherForecasts.Queries.GetWeatherForecasts",
+            Code = [classModel],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(document);
+        _output.WriteLine(result);
+
+        Assert.Contains("public class WeatherForecast", result);
+        Assert.Contains("public DateTime Date { get; init; }", result);
+        Assert.Contains("public int TemperatureC { get; init; }", result);
+        Assert.Contains("public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);", result);
+        Assert.Contains("public string Summary { get; init; } = string.Empty;", result);
+    }
+
+    [Fact]
+    public async Task Infrastructure_IdentityResultExtensions_StaticExtensionMethod_GeneratesExpectedSyntax()
+    {
+        // Target: Infrastructure/Identity/IdentityResultExtensions.cs
+
+        var classModel = new ClassModel("IdentityResultExtensions")
+        {
+            Static = true,
+            Usings =
+            [
+                new UsingModel("CleanArchitecture.Application.Common.Models"),
+                new UsingModel("Microsoft.AspNetCore.Identity"),
+            ],
+            Methods =
+            [
+                new MethodModel
+                {
+                    AccessModifier = AccessModifier.Public,
+                    Static = true,
+                    ReturnType = new TypeModel("Result"),
+                    Name = "ToApplicationResult",
+                    Params =
+                    [
+                        new ParamModel { Type = new TypeModel("IdentityResult"), Name = "result", ExtensionMethodParam = true },
+                    ],
+                    Body = new ExpressionModel(
+@"return result.Succeeded
+    ? Result.Success()
+    : Result.Failure(result.Errors.Select(e => e.Description));"),
+                },
+            ],
+        };
+
+        var document = new DocumentModel
+        {
+            Name = "IdentityResultExtensions",
+            RootNamespace = "CleanArchitecture",
+            Namespace = "Infrastructure.Identity",
+            Code = [classModel],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(document);
+        _output.WriteLine(result);
+
+        Assert.Contains("using CleanArchitecture.Application.Common.Models;", result);
+        Assert.Contains("public static class IdentityResultExtensions", result);
+        Assert.Contains("public static Result ToApplicationResult(this IdentityResult result)", result);
+    }
+
+    [Fact]
+    public async Task Infrastructure_TodoItemConfiguration_GeneratesExpectedSyntax()
+    {
+        // Target: Infrastructure/Data/Configurations/TodoItemConfiguration.cs
+
+        var classModel = new ClassModel("TodoItemConfiguration")
+        {
+            Usings =
+            [
+                new UsingModel("CleanArchitecture.Domain.Entities"),
+                new UsingModel("Microsoft.EntityFrameworkCore"),
+                new UsingModel("Microsoft.EntityFrameworkCore.Metadata.Builders"),
+            ],
+            Implements = [new TypeModel("IEntityTypeConfiguration") { GenericTypeParameters = [new TypeModel("TodoItem")] }],
+            Methods =
+            [
+                new MethodModel
+                {
+                    AccessModifier = AccessModifier.Public,
+                    ReturnType = new TypeModel("void"),
+                    Name = "Configure",
+                    Params = [new ParamModel { Type = new TypeModel("EntityTypeBuilder") { GenericTypeParameters = [new TypeModel("TodoItem")] }, Name = "builder" }],
+                    Body = new ExpressionModel(
+@"builder.Property(t => t.Title)
+    .HasMaxLength(200)
+    .IsRequired();"),
+                },
+            ],
+        };
+
+        var document = new DocumentModel
+        {
+            Name = "TodoItemConfiguration",
+            RootNamespace = "CleanArchitecture",
+            Namespace = "Infrastructure.Data.Configurations",
+            Code = [classModel],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(document);
+        _output.WriteLine(result);
+
+        Assert.Contains("using CleanArchitecture.Domain.Entities;", result);
+        Assert.Contains("public class TodoItemConfiguration : IEntityTypeConfiguration<TodoItem>", result);
+        Assert.Contains("public void Configure(EntityTypeBuilder<TodoItem> builder)", result);
+        Assert.Contains("HasMaxLength(200)", result);
+    }
+
+    [Fact]
+    public async Task Infrastructure_AuditableEntityInterceptor_OverrideAndMultipleClasses_GeneratesExpectedSyntax()
+    {
+        // Target: Infrastructure/Data/Interceptors/AuditableEntityInterceptor.cs
+
+        var classModel = new ClassModel("AuditableEntityInterceptor")
+        {
+            BaseClass = "SaveChangesInterceptor",
+            Usings =
+            [
+                new UsingModel("CleanArchitecture.Application.Common.Interfaces"),
+                new UsingModel("CleanArchitecture.Domain.Common"),
+                new UsingModel("Microsoft.EntityFrameworkCore"),
+                new UsingModel("Microsoft.EntityFrameworkCore.ChangeTracking"),
+                new UsingModel("Microsoft.EntityFrameworkCore.Diagnostics"),
+            ],
+            Fields =
+            [
+                new FieldModel { AccessModifier = AccessModifier.Private, ReadOnly = true, Type = new TypeModel("IUser"), Name = "_user" },
+                new FieldModel { AccessModifier = AccessModifier.Private, ReadOnly = true, Type = new TypeModel("TimeProvider"), Name = "_dateTime" },
+            ],
+            Constructors =
+            [
+                new ConstructorModel
+                {
+                    Name = "AuditableEntityInterceptor",
+                    AccessModifier = AccessModifier.Public,
+                    Params =
+                    [
+                        new ParamModel { Type = new TypeModel("IUser"), Name = "user" },
+                        new ParamModel { Type = new TypeModel("TimeProvider"), Name = "dateTime" },
+                    ],
+                    Body = new ExpressionModel("_user = user;\n_dateTime = dateTime;"),
+                },
+            ],
+            Methods =
+            [
+                new MethodModel
+                {
+                    AccessModifier = AccessModifier.Public,
+                    Override = true,
+                    ReturnType = new TypeModel("InterceptionResult") { GenericTypeParameters = [new TypeModel("int")] },
+                    Name = "SavingChanges",
+                    Params =
+                    [
+                        new ParamModel { Type = new TypeModel("DbContextEventData"), Name = "eventData" },
+                        new ParamModel { Type = new TypeModel("InterceptionResult") { GenericTypeParameters = [new TypeModel("int")] }, Name = "result" },
+                    ],
+                    Body = new ExpressionModel("UpdateEntities(eventData.Context);\n\nreturn base.SavingChanges(eventData, result);"),
+                },
+                new MethodModel
+                {
+                    AccessModifier = AccessModifier.Public,
+                    Override = true,
+                    ReturnType = new TypeModel("ValueTask") { GenericTypeParameters = [new TypeModel("InterceptionResult") { GenericTypeParameters = [new TypeModel("int")] }] },
+                    Name = "SavingChangesAsync",
+                    Params =
+                    [
+                        new ParamModel { Type = new TypeModel("DbContextEventData"), Name = "eventData" },
+                        new ParamModel { Type = new TypeModel("InterceptionResult") { GenericTypeParameters = [new TypeModel("int")] }, Name = "result" },
+                        new ParamModel { Type = new TypeModel("CancellationToken"), Name = "cancellationToken", DefaultValue = "default" },
+                    ],
+                    Body = new ExpressionModel("UpdateEntities(eventData.Context);\n\nreturn base.SavingChangesAsync(eventData, result, cancellationToken);"),
+                },
+                new MethodModel
+                {
+                    AccessModifier = AccessModifier.Public,
+                    ReturnType = new TypeModel("void"),
+                    Name = "UpdateEntities",
+                    Params = [new ParamModel { Type = new TypeModel("DbContext") { Nullable = true }, Name = "context" }],
+                    Body = new ExpressionModel(
+@"if (context == null) return;
+
+foreach (var entry in context.ChangeTracker.Entries<BaseAuditableEntity>())
+{
+    if (entry.State is EntityState.Added or EntityState.Modified || entry.HasChangedOwnedEntities())
+    {
+        var utcNow = _dateTime.GetUtcNow();
+        if (entry.State == EntityState.Added)
+        {
+            entry.Entity.CreatedBy = _user.Id;
+            entry.Entity.Created = utcNow;
+        }
+        entry.Entity.LastModifiedBy = _user.Id;
+        entry.Entity.LastModified = utcNow;
+    }
+}"),
+                },
+            ],
+        };
+
+        var extensionsClass = new ClassModel("Extensions")
+        {
+            Static = true,
+            Methods =
+            [
+                new MethodModel
+                {
+                    AccessModifier = AccessModifier.Public,
+                    Static = true,
+                    ReturnType = new TypeModel("bool"),
+                    Name = "HasChangedOwnedEntities",
+                    Params = [new ParamModel { Type = new TypeModel("EntityEntry"), Name = "entry", ExtensionMethodParam = true }],
+                    ExpressionBody = true,
+                    Body = new ExpressionModel(
+@"entry.References.Any(r =>
+    r.TargetEntry != null &&
+    r.TargetEntry.Metadata.IsOwned() &&
+    (r.TargetEntry.State == EntityState.Added || r.TargetEntry.State == EntityState.Modified))"),
+                },
+            ],
+        };
+
+        var document = new DocumentModel
+        {
+            Name = "AuditableEntityInterceptor",
+            RootNamespace = "CleanArchitecture",
+            Namespace = "Infrastructure.Data.Interceptors",
+            Code = [classModel, extensionsClass],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(document);
+        _output.WriteLine(result);
+
+        Assert.Contains("public class AuditableEntityInterceptor : SaveChangesInterceptor", result);
+        Assert.Contains("public override InterceptionResult<int> SavingChanges(DbContextEventData eventData, InterceptionResult<int> result)", result);
+        Assert.Contains("CancellationToken cancellationToken = default", result);
+        Assert.Contains("public void UpdateEntities(DbContext? context)", result);
+        Assert.Contains("public static class Extensions", result);
+        Assert.Contains("public static bool HasChangedOwnedEntities(this EntityEntry entry)", result);
+    }
+
+    [Fact]
+    public async Task Web_CurrentUser_ExpressionBodiedMembers_GeneratesExpectedSyntax()
+    {
+        // Target: Web/Services/CurrentUser.cs
+
+        var parentClass = new ClassModel("CurrentUser");
+
+        var classModel = new ClassModel("CurrentUser")
+        {
+            Usings =
+            [
+                new UsingModel("System.Security.Claims"),
+                new UsingModel("CleanArchitecture.Application.Common.Interfaces"),
+            ],
+            Implements = [new TypeModel("IUser")],
+            Fields =
+            [
+                new FieldModel
+                {
+                    AccessModifier = AccessModifier.Private,
+                    ReadOnly = true,
+                    Type = new TypeModel("IHttpContextAccessor"),
+                    Name = "_httpContextAccessor",
+                },
+            ],
+            Constructors =
+            [
+                new ConstructorModel
+                {
+                    Name = "CurrentUser",
+                    AccessModifier = AccessModifier.Public,
+                    Params = [new ParamModel { Type = new TypeModel("IHttpContextAccessor"), Name = "httpContextAccessor" }],
+                    Body = new ExpressionModel("_httpContextAccessor = httpContextAccessor;"),
+                },
+            ],
+            Properties =
+            [
+                new PropertyModel(parentClass, AccessModifier.Public, new TypeModel("string") { Nullable = true }, "Id", [])
+                {
+                    Body = new ExpressionModel("_httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier)"),
+                },
+                new PropertyModel(parentClass, AccessModifier.Public, new TypeModel("List") { GenericTypeParameters = [new TypeModel("string")], Nullable = true }, "Roles", [])
+                {
+                    Body = new ExpressionModel("_httpContextAccessor.HttpContext?.User?.FindAll(ClaimTypes.Role).Select(x => x.Value).ToList()"),
+                },
+            ],
+        };
+
+        var document = new DocumentModel
+        {
+            Name = "CurrentUser",
+            RootNamespace = "CleanArchitecture",
+            Namespace = "Web.Services",
+            Code = [classModel],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(document);
+        _output.WriteLine(result);
+
+        Assert.Contains("using System.Security.Claims;", result);
+        Assert.Contains("public class CurrentUser : IUser", result);
+        Assert.Contains("private readonly IHttpContextAccessor _httpContextAccessor;", result);
+        Assert.Contains("public string? Id => _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);", result);
+        Assert.Contains("public List<string>? Roles => _httpContextAccessor.HttpContext?.User?.FindAll(ClaimTypes.Role).Select(x => x.Value).ToList();", result);
+    }
+
+    [Fact]
+    public async Task Shared_Services_StaticClassWithConsts_GeneratesExpectedSyntax()
+    {
+        // Target: Shared/Services.cs
+
+        var classModel = new ClassModel("Services")
+        {
+            Static = true,
+            Fields =
+            [
+                new FieldModel { AccessModifier = AccessModifier.Public, Const = true, ReadOnly = false, Type = new TypeModel("string"), Name = "WebFrontend", DefaultValue = "\"webfrontend\"" },
+                new FieldModel { AccessModifier = AccessModifier.Public, Const = true, ReadOnly = false, Type = new TypeModel("string"), Name = "WebApi", DefaultValue = "\"webapi\"" },
+                new FieldModel { AccessModifier = AccessModifier.Public, Const = true, ReadOnly = false, Type = new TypeModel("string"), Name = "DatabaseServer", DefaultValue = "\"dbserver\"" },
+                new FieldModel { AccessModifier = AccessModifier.Public, Const = true, ReadOnly = false, Type = new TypeModel("string"), Name = "Database", DefaultValue = "\"CleanArchitectureDb\"" },
+            ],
+        };
+
+        var document = new DocumentModel
+        {
+            Name = "Services",
+            RootNamespace = "CleanArchitecture",
+            Namespace = "Shared",
+            Code = [classModel],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(document);
+        _output.WriteLine(result);
+
+        Assert.Contains("namespace CleanArchitecture.Shared;", result);
+        Assert.Contains("public static class Services", result);
+        Assert.Contains("public const string WebFrontend = \"webfrontend\";", result);
+        Assert.Contains("public const string WebApi = \"webapi\";", result);
+        Assert.Contains("public const string Database = \"CleanArchitectureDb\";", result);
+    }
+
+    [Fact]
+    public async Task Infrastructure_ApplicationDbContext_GeneratesExpectedSyntax()
+    {
+        // Target: Infrastructure/Data/ApplicationDbContext.cs
+
+        var parentClass = new ClassModel("ApplicationDbContext");
+
+        var classModel = new ClassModel("ApplicationDbContext")
+        {
+            BaseClass = "IdentityDbContext<ApplicationUser>",
+            Usings =
+            [
+                new UsingModel("System.Reflection"),
+                new UsingModel("CleanArchitecture.Application.Common.Interfaces"),
+                new UsingModel("CleanArchitecture.Domain.Entities"),
+                new UsingModel("CleanArchitecture.Infrastructure.Identity"),
+                new UsingModel("Microsoft.AspNetCore.Identity.EntityFrameworkCore"),
+                new UsingModel("Microsoft.EntityFrameworkCore"),
+            ],
+            Implements = [new TypeModel("IApplicationDbContext")],
+            Constructors =
+            [
+                new ConstructorModel
+                {
+                    Name = "ApplicationDbContext",
+                    AccessModifier = AccessModifier.Public,
+                    Params = [new ParamModel { Type = new TypeModel("DbContextOptions") { GenericTypeParameters = [new TypeModel("ApplicationDbContext")] }, Name = "options" }],
+                    BaseParams = ["options"],
+                    Body = null,
+                },
+            ],
+            Properties =
+            [
+                new PropertyModel(parentClass, AccessModifier.Public, new TypeModel("DbSet") { GenericTypeParameters = [new TypeModel("TodoList")] }, "TodoLists", [])
+                {
+                    Body = new ExpressionModel("Set<TodoList>()"),
+                },
+                new PropertyModel(parentClass, AccessModifier.Public, new TypeModel("DbSet") { GenericTypeParameters = [new TypeModel("TodoItem")] }, "TodoItems", [])
+                {
+                    Body = new ExpressionModel("Set<TodoItem>()"),
+                },
+            ],
+            Methods =
+            [
+                new MethodModel
+                {
+                    AccessModifier = AccessModifier.Protected,
+                    Override = true,
+                    ReturnType = new TypeModel("void"),
+                    Name = "OnModelCreating",
+                    Params = [new ParamModel { Type = new TypeModel("ModelBuilder"), Name = "builder" }],
+                    Body = new ExpressionModel("base.OnModelCreating(builder);\nbuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());"),
+                },
+            ],
+        };
+
+        var document = new DocumentModel
+        {
+            Name = "ApplicationDbContext",
+            RootNamespace = "CleanArchitecture",
+            Namespace = "Infrastructure.Data",
+            Code = [classModel],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(document);
+        _output.WriteLine(result);
+
+        Assert.Contains("using System.Reflection;", result);
+        Assert.Contains("public class ApplicationDbContext : IdentityDbContext<ApplicationUser>, IApplicationDbContext", result);
+        Assert.Contains("public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)", result);
+        Assert.Contains(": base(options)", result);
+        Assert.Contains("public DbSet<TodoList> TodoLists => Set<TodoList>();", result);
+        Assert.Contains("public DbSet<TodoItem> TodoItems => Set<TodoItem>();", result);
+        Assert.Contains("protected override void OnModelCreating(ModelBuilder builder)", result);
+    }
+
+    [Fact]
+    public async Task Web_WeatherForecasts_EndpointWithAttributes_GeneratesExpectedSyntax()
+    {
+        // Target: Web/Endpoints/WeatherForecasts.cs
+
+        var classModel = new ClassModel("WeatherForecasts")
+        {
+            Usings =
+            [
+                new UsingModel("CleanArchitecture.Application.WeatherForecasts.Queries.GetWeatherForecasts"),
+                new UsingModel("Microsoft.AspNetCore.Http.HttpResults"),
+            ],
+            Implements = [new TypeModel("IEndpointGroup")],
+            Methods =
+            [
+                new MethodModel
+                {
+                    AccessModifier = AccessModifier.Public,
+                    Static = true,
+                    ReturnType = new TypeModel("void"),
+                    Name = "Map",
+                    Params = [new ParamModel { Type = new TypeModel("RouteGroupBuilder"), Name = "groupBuilder" }],
+                    Body = new ExpressionModel("groupBuilder.RequireAuthorization();\n\ngroupBuilder.MapGet(GetWeatherForecasts);"),
+                },
+                new MethodModel
+                {
+                    AccessModifier = AccessModifier.Public,
+                    Static = true,
+                    Async = true,
+                    ReturnType = new TypeModel("Task") { GenericTypeParameters = [new TypeModel("Ok") { GenericTypeParameters = [new TypeModel("IEnumerable") { GenericTypeParameters = [new TypeModel("WeatherForecast")] }] }] },
+                    Name = "GetWeatherForecasts",
+                    Params = [new ParamModel { Type = new TypeModel("ISender"), Name = "sender" }],
+                    Attributes =
+                    [
+                        new AttributeModel { Name = "EndpointSummary", Template = "\"Get Weather Forecasts\"" },
+                        new AttributeModel { Name = "EndpointDescription", Template = "\"Retrieves a list of weather forecasts for the next few days.\"" },
+                    ],
+                    Body = new ExpressionModel(
+@"var forecasts = await sender.Send(new GetWeatherForecastsQuery());
+
+return TypedResults.Ok(forecasts);"),
+                },
+            ],
+        };
+
+        var document = new DocumentModel
+        {
+            Name = "WeatherForecasts",
+            RootNamespace = "CleanArchitecture",
+            Namespace = "Web.Endpoints",
+            Code = [classModel],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(document);
+        _output.WriteLine(result);
+
+        Assert.Contains("public class WeatherForecasts : IEndpointGroup", result);
+        Assert.Contains("public static void Map(RouteGroupBuilder groupBuilder)", result);
+        Assert.Contains("[EndpointSummary(\"Get Weather Forecasts\")]", result);
+        Assert.Contains("[EndpointDescription(\"Retrieves a list of weather forecasts for the next few days.\")]", result);
+        Assert.Contains("public static async Task<Ok<IEnumerable<WeatherForecast>>> GetWeatherForecasts(ISender sender)", result);
+    }
 }

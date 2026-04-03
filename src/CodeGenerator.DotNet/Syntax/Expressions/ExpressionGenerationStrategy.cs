@@ -22,7 +22,7 @@ public class ExpressionGenerationStrategy : ISyntaxGenerationStrategy<Expression
 
         var sb = StringBuilderCache.Acquire();
 
-        sb.AppendLine(model.Body);
+        sb.Append(model.Body);
 
         return StringBuilderCache.GetStringAndRelease(sb);
     }
