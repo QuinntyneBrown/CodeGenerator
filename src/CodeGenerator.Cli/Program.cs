@@ -4,6 +4,7 @@
 using CodeGenerator.Cli.Commands;
 using CodeGenerator.Core;
 using CodeGenerator.Core.Diagnostics;
+using CodeGenerator.Core.Errors;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -32,4 +33,47 @@ var serviceProvider = services.BuildServiceProvider();
 
 var rootCommand = new CreateCodeGeneratorCommand(serviceProvider);
 
-return await rootCommand.InvokeAsync(args);
+try
+{
+    return await rootCommand.InvokeAsync(args);
+}
+catch (CliAggregateException ex)
+{
+    foreach (var inner in ex.InnerExceptions)
+    {
+        Console.Error.WriteLine(inner.Message);
+    }
+
+    return ex.ExitCode;
+}
+catch (CliValidationException ex)
+{
+    if (ex.ValidationResult != null)
+    {
+        foreach (var error in ex.ValidationResult.Errors)
+        {
+            Console.Error.WriteLine($"{error.PropertyName}: {error.ErrorMessage}");
+        }
+    }
+    else
+    {
+        Console.Error.WriteLine(ex.Message);
+    }
+
+    return ex.ExitCode;
+}
+catch (CliException ex)
+{
+    Console.Error.WriteLine(ex.Message);
+    return ex.ExitCode;
+}
+catch (OperationCanceledException)
+{
+    Console.Error.WriteLine("Operation cancelled.");
+    return 8;
+}
+catch (Exception)
+{
+    Console.Error.WriteLine("An unexpected error occurred.");
+    return 99;
+}

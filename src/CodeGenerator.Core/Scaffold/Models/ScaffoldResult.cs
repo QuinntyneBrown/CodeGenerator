@@ -1,6 +1,7 @@
 // Copyright (c) Quinntyne Brown. All Rights Reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
+using CodeGenerator.Abstractions.Results;
 using CodeGenerator.Core.Validation;
 
 namespace CodeGenerator.Core.Scaffold.Models;
@@ -16,6 +17,14 @@ public class ScaffoldResult
     public ValidationResult ValidationResult { get; set; } = new();
 
     public List<PostCommandResult> PostCommandResults { get; set; } = [];
+
+    public List<ErrorInfo> Errors { get; set; } = [];
+
+    public List<string> RolledBackFiles { get; set; } = [];
+
+    public TimeSpan Duration { get; set; }
+
+    public string? CorrelationId { get; set; }
 }
 
 public class PlannedFile
