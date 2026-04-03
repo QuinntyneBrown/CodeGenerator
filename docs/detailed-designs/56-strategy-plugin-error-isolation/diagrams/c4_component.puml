@@ -1,0 +1,25 @@
+@startuml c4_component
+!theme plain
+!include <C4/C4_Component>
+
+title C4 Component - Strategy Error Isolation (CodeGenerator.Core)
+
+Container_Boundary(core, "CodeGenerator.Core") {
+    Component(executor, "StrategyExecutor<TModel>", "C# Class", "Wraps strategy calls in try-catch, returns Result<T>")
+    Component(artGen, "ArtifactGenerator", "C# Class", "Validates model, dispatches to strategy wrapper")
+    Component(synGen, "SyntaxGenerator", "C# Class", "Validates model, dispatches to syntax strategy wrapper")
+    Component(artWrapper, "ArtifactStrategyWrapper<T>", "C# Class", "Resolves and invokes artifact strategies via executor")
+    Component(synWrapper, "SyntaxStrategyWrapper<T>", "C# Class", "Resolves and invokes syntax strategies via executor")
+    Component(configSvc, "ConfigureServices", "C# Static Class", "Resilient assembly scanning with SafeGetTypes")
+    Component(discovery, "StrategyDiscoveryResult", "C# Record", "Summary of loaded vs failed strategy types")
+    Component(diagCtx, "DiagnosticContext", "C# Class", "AsyncLocal context with strategy name, model type, phase")
+}
+
+Rel(artGen, artWrapper, "Delegates to")
+Rel(synGen, synWrapper, "Delegates to")
+Rel(artWrapper, executor, "Calls ExecuteArtifactStrategyAsync")
+Rel(synWrapper, executor, "Calls ExecuteSyntaxStrategyAsync")
+Rel(executor, diagCtx, "Sets CurrentStrategy, ModelType, Phase")
+Rel(configSvc, discovery, "Returns")
+
+@enduml

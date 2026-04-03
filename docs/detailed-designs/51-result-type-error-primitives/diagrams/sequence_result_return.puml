@@ -1,0 +1,27 @@
+@startuml sequence_result_return
+!theme plain
+
+title Returning a Result from a Service Method
+
+participant "ScaffoldEngine" as engine
+participant "YamlConfigParser" as parser
+participant "ConfigValidator" as validator
+participant "Result<ScaffoldConfig>" as result
+
+engine -> parser : Parse(yaml)
+alt parse succeeds
+    parser --> engine : ScaffoldConfiguration
+    engine -> validator : Validate(config)
+    alt valid
+        validator --> engine : ValidationResult (IsValid=true)
+        engine -> result : Result<ScaffoldConfig>.Success(config)
+    else invalid
+        validator --> engine : ValidationResult (IsValid=false)
+        engine -> result : Result<ScaffoldConfig>.Failure(\n  ErrorInfo(VALIDATION_MISSING_REQUIRED))
+    end
+else parse fails
+    parser --> engine : ScaffoldParseException
+    engine -> result : Result<ScaffoldConfig>.Failure(\n  ErrorInfo(SCAFFOLD_PARSE_FAILED))
+end
+
+@enduml

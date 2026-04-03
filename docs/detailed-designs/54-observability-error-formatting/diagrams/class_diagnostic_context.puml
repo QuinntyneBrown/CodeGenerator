@@ -1,0 +1,51 @@
+@startuml class_diagnostic_context
+!theme plain
+
+title Diagnostic Context - Class Diagram
+
+class DiagnosticContext {
+    -{static} _current: AsyncLocal<DiagnosticContext>
+    +{static} Current: DiagnosticContext
+    +CorrelationId: string
+    +CurrentFile: string?
+    +CurrentStrategy: string?
+    +CurrentPhase: DiagnosticPhase
+    +ModelType: string?
+    +Properties: Dictionary<string, object>
+    +SetProperty(key: string, value: object): void
+    +ToDetailsDictionary(): Dictionary<string, object>
+    +Reset(): void
+}
+
+enum DiagnosticPhase {
+    Parse
+    Validate
+    Generate
+    PostCommand
+}
+
+class ErrorInfo {
+    +ErrorCode: string
+    +Message: string
+    +Severity: ValidationSeverity
+    +PropertyPath: string?
+    +Details: Dictionary<string, object>
+    +Exception: Exception?
+    +Timestamp: DateTimeOffset
+    +CorrelationId: string?
+}
+
+class ScaffoldResult {
+    +Success: bool
+    +CorrelationId: string?
+    +PlannedFiles: List<PlannedFile>
+    +Conflicts: List<string>
+    +ValidationResult: ValidationResult
+    +PostCommandResults: List<PostCommandResult>
+}
+
+DiagnosticContext --> DiagnosticPhase : uses
+DiagnosticContext ..> ErrorInfo : enriches Details
+DiagnosticContext ..> ScaffoldResult : provides CorrelationId
+
+@enduml

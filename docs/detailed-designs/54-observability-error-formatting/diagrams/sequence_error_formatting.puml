@@ -1,0 +1,42 @@
+@startuml sequence_error_formatting
+!theme plain
+
+title Error Formatting Pipeline Sequence
+
+participant "Generation Engine" as engine
+participant "Global Exception Handler" as handler
+participant "DiagnosticContext" as ctx
+participant "ErrorInfo" as info
+participant "IErrorFormatter" as formatter
+participant "Console / stdout" as output
+
+engine -> handler : throws CliException
+activate handler
+
+handler -> ctx : Read Current context
+ctx --> handler : phase, file, strategy, correlationId
+
+handler -> info : Create ErrorInfo
+note right of info
+    ErrorCode = exception.ErrorCode
+    Message = exception.Message
+    Details = ctx.ToDetailsDictionary()
+    CorrelationId = ctx.CorrelationId
+end note
+
+handler -> formatter : FormatError(errorInfo)
+activate formatter
+
+alt ConsoleErrorFormatter
+    formatter --> handler : ANSI-colored string with hints
+else JsonErrorFormatter
+    formatter --> handler : JSON object string
+else MarkdownErrorFormatter
+    formatter --> handler : Markdown report string
+end
+deactivate formatter
+
+handler -> output : Write formatted string
+deactivate handler
+
+@enduml

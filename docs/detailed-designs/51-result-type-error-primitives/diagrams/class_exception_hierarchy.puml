@@ -1,0 +1,63 @@
+@startuml class_exception_hierarchy
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 12
+
+title CliException Hierarchy -- Class Diagram
+
+abstract class CliException {
+    +ExitCode : int
+    +Message : string
+    #CliException(message, exitCode)
+    #CliException(message, exitCode, innerException)
+}
+
+class CliValidationException {
+    +ValidationResult : ValidationResult?
+    ExitCode = 1
+}
+
+class CliIOException {
+    ExitCode = 2
+}
+
+class CliProcessException {
+    ExitCode = 3
+}
+
+class CliTemplateException {
+    ExitCode = 4
+}
+
+class CliConfigurationException {
+    ExitCode = 5
+}
+
+class CliPluginException {
+    ExitCode = 6
+}
+
+class CliSchemaException {
+    ExitCode = 7
+}
+
+class CliCancelledException {
+    ExitCode = 8
+}
+
+class CliAggregateException {
+    +InnerExceptions : IReadOnlyList<CliException>
+    +ExitCode : int {highest inner}
+}
+
+CliException <|-- CliValidationException
+CliException <|-- CliIOException
+CliException <|-- CliProcessException
+CliException <|-- CliTemplateException
+CliException <|-- CliConfigurationException
+CliException <|-- CliPluginException
+CliException <|-- CliSchemaException
+CliException <|-- CliCancelledException
+CliException <|-- CliAggregateException
+
+@enduml

@@ -1,0 +1,58 @@
+@startuml class_error_formatting
+!theme plain
+
+title Error Formatting - Class Diagram
+
+interface IErrorFormatter {
+    +FormatError(error: ErrorInfo): string
+    +FormatValidationResult(result: ValidationResult): string
+    +FormatArtifactResult(result: ArtifactGenerationResult): string
+    +FormatScaffoldResult(result: ScaffoldResult): string
+    +FormatException(exception: CliException, verbose: bool): string
+}
+
+class ConsoleErrorFormatter {
+    -_renderer: IConsoleRenderer
+    +FormatError(error: ErrorInfo): string
+    +FormatValidationResult(result: ValidationResult): string
+    +FormatArtifactResult(result: ArtifactGenerationResult): string
+    +FormatScaffoldResult(result: ScaffoldResult): string
+    +FormatException(exception: CliException, verbose: bool): string
+}
+
+class JsonErrorFormatter {
+    -_serializerOptions: JsonSerializerOptions
+    +FormatError(error: ErrorInfo): string
+    +FormatValidationResult(result: ValidationResult): string
+    +FormatArtifactResult(result: ArtifactGenerationResult): string
+    +FormatScaffoldResult(result: ScaffoldResult): string
+    +FormatException(exception: CliException, verbose: bool): string
+}
+
+class MarkdownErrorFormatter {
+    +FormatError(error: ErrorInfo): string
+    +FormatValidationResult(result: ValidationResult): string
+    +FormatArtifactResult(result: ArtifactGenerationResult): string
+    +FormatScaffoldResult(result: ScaffoldResult): string
+    +FormatException(exception: CliException, verbose: bool): string
+}
+
+class ErrorInfo {
+    +ErrorCode: string
+    +Message: string
+    +Severity: ValidationSeverity
+    +PropertyPath: string?
+    +Details: Dictionary<string, object>
+    +Exception: Exception?
+    +Timestamp: DateTimeOffset
+    +CorrelationId: string?
+}
+
+IErrorFormatter <|.. ConsoleErrorFormatter
+IErrorFormatter <|.. JsonErrorFormatter
+IErrorFormatter <|.. MarkdownErrorFormatter
+ConsoleErrorFormatter --> ErrorInfo : reads
+JsonErrorFormatter --> ErrorInfo : reads
+MarkdownErrorFormatter --> ErrorInfo : reads
+
+@enduml

@@ -1,0 +1,59 @@
+@startuml class_error_info
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 12
+
+title ErrorInfo, ErrorCategory, and ErrorSeverity -- Class Diagram
+
+class ErrorInfo <<record>> {
+    +Code : string
+    +Message : string
+    +Category : ErrorCategory
+    +Severity : ErrorSeverity
+    +Details : IReadOnlyDictionary<string, object>?
+    +InnerError : ErrorInfo?
+    +StackTrace : string?
+    --
+    +{static} FromException(ex: Exception) : ErrorInfo
+    +{static} FromException(ex: Exception, category: ErrorCategory) : ErrorInfo
+    +ToCliException() : CliException
+    +WithDetails(key: string, value: object) : ErrorInfo
+}
+
+enum ErrorCategory {
+    Validation
+    IO
+    Process
+    Template
+    Configuration
+    Schema
+    Scaffold
+    Plugin
+    Internal
+}
+
+enum ErrorSeverity {
+    Error
+    Warning
+    Info
+}
+
+class ErrorCodes <<static>> {
+    +{static} VALIDATION_INVALID_IDENTIFIER : string
+    +{static} VALIDATION_MISSING_REQUIRED : string
+    +{static} IO_FILE_NOT_FOUND : string
+    +{static} IO_ACCESS_DENIED : string
+    +{static} TEMPLATE_NOT_FOUND : string
+    +{static} SCAFFOLD_PARSE_FAILED : string
+    +{static} PROCESS_NON_ZERO_EXIT : string
+    +{static} PLUGIN_LOAD_FAILED : string
+    +{static} SCHEMA_INVALID : string
+    +{static} INTERNAL_UNEXPECTED : string
+}
+
+ErrorInfo --> ErrorCategory
+ErrorInfo --> ErrorSeverity
+ErrorInfo --> "0..1" ErrorInfo : innerError
+ErrorCodes ..> ErrorInfo : provides Code values
+
+@enduml

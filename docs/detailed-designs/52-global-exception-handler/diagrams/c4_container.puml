@@ -1,0 +1,22 @@
+@startuml c4_container
+!theme plain
+!include <C4/C4_Container>
+
+title Global Exception Handler -- Container Diagram
+
+System_Boundary(cg, "CodeGenerator") {
+    Container(cli, "CodeGenerator.Cli", "Console App", "Program.cs global handler, --verbose flag, exit code mapping")
+    Container(core_artifacts, "Core / Artifacts", "C# Library", "ArtifactGenerator with error aggregation, ArtifactGenerationResult")
+    Container(core_scaffold, "Core / Scaffold", "C# Library", "ScaffoldEngine with per-step error enrichment, rollback integration")
+    Container(core_errors, "Core / Errors", "C# Library", "CliException hierarchy, CliAggregateException, CliExitCodes")
+    Container(abstractions, "Abstractions / Results", "C# Library", "Result<T>, ErrorInfo")
+}
+
+Rel(cli, core_errors, "Catches exceptions from")
+Rel(cli, core_artifacts, "Calls GenerateAsync")
+Rel(cli, core_scaffold, "Calls ScaffoldAsync")
+Rel(core_artifacts, abstractions, "Returns ArtifactGenerationResult with ErrorInfo")
+Rel(core_scaffold, abstractions, "Populates ScaffoldResult.Errors with ErrorInfo")
+Rel(core_scaffold, core_errors, "Triggers rollback via IGenerationRollbackService")
+
+@enduml

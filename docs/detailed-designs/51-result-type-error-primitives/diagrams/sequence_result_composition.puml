@@ -1,0 +1,43 @@
+@startuml sequence_result_composition
+!theme plain
+
+title Composing Results with Bind and Map
+
+participant "Caller" as caller
+participant "ParseConfig()" as parse
+participant "ValidateConfig()" as validate
+participant "PlanFiles()" as plan
+
+caller -> parse : Invoke
+parse --> caller : Result<ScaffoldConfig>
+
+caller -> caller : result.Bind(ValidateConfig)
+note right
+  If parse failed, Bind
+  short-circuits and
+  propagates the error
+end note
+
+alt parse succeeded
+    caller -> validate : ValidateConfig(config)
+    validate --> caller : Result<ScaffoldConfig>
+
+    caller -> caller : result.Bind(PlanFiles)
+    alt validation succeeded
+        caller -> plan : PlanFiles(config)
+        plan --> caller : Result<List<PlannedFile>>
+
+        caller -> caller : result.Map(files => files.Count)
+        note right
+          Map transforms the
+          value inside a success
+        end note
+        caller --> caller : Result<int> (file count)
+    else validation failed
+        caller --> caller : Result<int> (failure propagated)
+    end
+else parse failed
+    caller --> caller : Result<int> (failure propagated)
+end
+
+@enduml

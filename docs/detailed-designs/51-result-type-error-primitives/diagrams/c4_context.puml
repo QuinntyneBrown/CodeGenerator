@@ -1,0 +1,22 @@
+@startuml c4_context
+!theme plain
+!include <C4/C4_Context>
+
+title Error Primitives -- System Context
+
+Person(strategyAuthor, "Strategy Author", "Implements generation strategies returning Result<T>")
+Person(cliUser, "CLI User", "Runs code generation commands")
+
+System(core, "CodeGenerator.Core", "Core generation engine with error primitives, exception hierarchy, and error codes")
+System(abstractions, "CodeGenerator.Abstractions", "Result<T>, ErrorInfo, ErrorCategory, ResultExtensions")
+
+System_Ext(cli, "CodeGenerator.Cli", "CLI entry point that maps Result failures to exit codes")
+System_Ext(fs, "File System", "Target directory for generated files")
+
+Rel(strategyAuthor, core, "Implements strategies using")
+Rel(cliUser, cli, "Invokes commands")
+Rel(cli, core, "Calls generation engine")
+Rel(core, abstractions, "Uses Result<T> and ErrorInfo")
+Rel(core, fs, "Writes generated files")
+
+@enduml

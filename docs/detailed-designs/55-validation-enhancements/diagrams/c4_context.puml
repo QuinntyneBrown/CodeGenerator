@@ -1,0 +1,20 @@
+@startuml c4_context
+!theme plain
+!include <C4/C4_Context>
+
+title Validation Enhancements - System Context
+
+Person(developer, "Developer", "Declares validation rules using fluent Validator<T>")
+Person(cliUser, "CLI User", "Receives validation error messages in formatted output")
+
+System(codegen, "CodeGenerator", "Code generation tool with fluent validation, common rules, and enhanced validation results")
+
+System_Ext(fs, "File System", "Input files validated for path safety and writability")
+System_Ext(terminal, "Terminal", "Displays formatted validation results")
+
+Rel(developer, codegen, "Defines validation rules via Validator<T>")
+Rel(cliUser, codegen, "Runs commands, receives validation feedback")
+Rel(codegen, fs, "Validates paths and directory writability")
+Rel(codegen, terminal, "Renders ValidationResult output")
+
+@enduml

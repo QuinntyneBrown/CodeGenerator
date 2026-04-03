@@ -1,0 +1,27 @@
+@startuml c4_component
+!theme plain
+!include <C4/C4_Component>
+
+title Global Exception Handler -- Component Diagram
+
+Container_Boundary(cli, "CodeGenerator.Cli") {
+    Component(program, "Program.cs", "Entry Point", "Global try-catch, exit code mapping, --verbose flag")
+    Component(rootCmd, "RootCommand", "System.CommandLine", "Command tree with global options")
+}
+
+Container_Boundary(core, "CodeGenerator.Core") {
+    Component(artifactGen, "ArtifactGenerator", "Class", "Per-strategy error isolation, aggregation into ArtifactGenerationResult")
+    Component(artifactResult, "ArtifactGenerationResult", "Class", "Succeeded, Failed, Warnings lists")
+    Component(scaffoldEngine, "ScaffoldEngine", "Class", "Per-step error enrichment, rollback triggering")
+    Component(scaffoldResult, "ScaffoldResult", "Class", "Errors, RolledBackFiles, Duration, CorrelationId")
+    Component(rollback, "GenerationRollbackService", "Class", "File/dir rollback on pipeline failure")
+}
+
+Rel(program, rootCmd, "Wraps InvokeAsync in try-catch")
+Rel(rootCmd, artifactGen, "Commands invoke")
+Rel(rootCmd, scaffoldEngine, "Scaffold command invokes")
+Rel(artifactGen, artifactResult, "Produces")
+Rel(scaffoldEngine, scaffoldResult, "Produces")
+Rel(scaffoldEngine, rollback, "Triggers on failure")
+
+@enduml

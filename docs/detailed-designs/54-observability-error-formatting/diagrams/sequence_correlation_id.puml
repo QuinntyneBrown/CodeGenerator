@@ -1,0 +1,36 @@
+@startuml sequence_correlation_id
+!theme plain
+
+title Correlation ID Propagation Sequence
+
+participant "Command Handler" as handler
+participant "ILogger" as logger
+participant "DiagnosticContext" as ctx
+participant "Generation Engine" as engine
+participant "ScaffoldResult" as result
+
+handler -> handler : correlationId = Guid.NewGuid()
+activate handler
+
+handler -> logger : BeginScope({ CorrelationId })
+activate logger
+
+handler -> ctx : Current.CorrelationId = correlationId
+activate ctx
+
+handler -> engine : Execute generation
+activate engine
+
+engine -> logger : LogInformation("Processing...")
+note right of logger : Log entry includes\nCorrelationId in scope
+
+engine --> handler : generation complete
+deactivate engine
+
+handler -> result : CorrelationId = correlationId
+
+deactivate ctx
+deactivate logger
+deactivate handler
+
+@enduml

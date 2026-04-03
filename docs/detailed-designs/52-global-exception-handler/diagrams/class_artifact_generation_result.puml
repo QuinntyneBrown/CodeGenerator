@@ -1,0 +1,45 @@
+@startuml class_artifact_generation_result
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 12
+
+title ArtifactGenerationResult -- Class Diagram
+
+class ArtifactGenerationResult {
+    +Succeeded : List<GeneratedArtifact>
+    +Failed : List<ArtifactError>
+    +Warnings : List<ArtifactWarning>
+    +HasErrors : bool
+    +IsFullSuccess : bool
+    +MergedValidation : ValidationResult
+    +TotalCount : int
+    --
+    +ToSummary() : string
+}
+
+class GeneratedArtifact {
+    +FilePath : string
+    +StrategyName : string
+    +SizeBytes : long
+    +Duration : TimeSpan
+}
+
+class ArtifactError {
+    +StrategyName : string
+    +ModelType : string
+    +Error : ErrorInfo
+    +AttemptedFilePath : string?
+}
+
+class ArtifactWarning {
+    +StrategyName : string
+    +Message : string
+    +Severity : ErrorSeverity
+}
+
+ArtifactGenerationResult --> "*" GeneratedArtifact : succeeded
+ArtifactGenerationResult --> "*" ArtifactError : failed
+ArtifactGenerationResult --> "*" ArtifactWarning : warnings
+ArtifactError --> ErrorInfo : error details
+
+@enduml

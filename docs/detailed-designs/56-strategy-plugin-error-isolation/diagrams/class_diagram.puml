@@ -1,0 +1,71 @@
+@startuml class_diagram
+!theme plain
+
+title Class Diagram - Strategy Error Isolation
+
+class "StrategyExecutor<TModel>" as Executor {
+    - _logger : ILogger
+    + ExecuteSyntaxStrategyAsync(strategy, model, context, ct) : Task<Result<string>>
+    + ExecuteArtifactStrategyAsync(strategy, model, context, ct) : Task<Result<Unit>>
+}
+
+class DiagnosticContext {
+    + CurrentFile : string?
+    + CurrentStrategy : string?
+    + CurrentPhase : string?
+    + ModelType : string?
+    + Properties : Dictionary<string, object>
+}
+
+record StrategyDiscoveryResult {
+    + TotalTypesScanned : int
+    + StrategiesRegistered : int
+    + FailedToLoad : int
+    + LoadErrors : IReadOnlyList<StrategyLoadError>
+    + HasErrors : bool
+    + ToSummary() : string
+}
+
+record StrategyLoadError {
+    + TypeName : string
+    + AssemblyName : string
+    + ErrorMessage : string
+    + Exception : Exception?
+}
+
+class "Result<T>" as Result {
+    + IsSuccess : bool
+    + IsFailure : bool
+    + Value : T
+    + Error : ErrorInfo
+    {static} + Success(value) : Result<T>
+    {static} + Failure(error) : Result<T>
+}
+
+class ErrorInfo {
+    + Code : string
+    + Message : string
+    + Category : ErrorCategory
+    + Severity : ErrorSeverity
+    + Details : IReadOnlyDictionary<string, object>?
+    + InnerError : ErrorInfo?
+}
+
+interface "ISyntaxGenerationStrategy<T>" as ISyntax {
+    + GenerateAsync(target, ct) : Task<string>
+    + GetPriority() : int
+}
+
+interface "IArtifactGenerationStrategy<T>" as IArtifact {
+    + GenerateAsync(target) : Task
+    + GetPriority() : int
+}
+
+Executor --> DiagnosticContext : sets context
+Executor --> Result : returns
+Executor ..> ISyntax : executes
+Executor ..> IArtifact : executes
+Result --> ErrorInfo : on failure
+StrategyDiscoveryResult --> StrategyLoadError : contains
+
+@enduml

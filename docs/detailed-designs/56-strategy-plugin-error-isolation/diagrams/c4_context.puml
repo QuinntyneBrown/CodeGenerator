@@ -1,0 +1,20 @@
+@startuml c4_context
+!theme plain
+!include <C4/C4_Context>
+
+title C4 Context - Strategy and Plugin Error Isolation
+
+Person(user, "CLI User", "Runs code generation commands")
+Person(author, "Strategy Author", "Writes custom generation strategies")
+
+System(codegen, "CodeGenerator CLI", "Generates code artifacts from models with isolated strategy error handling")
+System_Ext(filesystem, "File System", "Target project directory")
+System_Ext(plugins, "Plugin Assemblies", "External strategy assemblies")
+
+Rel(user, codegen, "Runs generation commands")
+Rel(author, plugins, "Publishes strategy assemblies")
+Rel(codegen, filesystem, "Writes generated files")
+Rel(codegen, plugins, "Discovers and loads strategies")
+Rel(codegen, user, "Returns aggregated success/failure results")
+
+@enduml

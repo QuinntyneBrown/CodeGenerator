@@ -1,0 +1,36 @@
+@startuml sequence_exception_to_result
+!theme plain
+
+title Converting Between Exceptions and Results
+
+participant "New Code\n(Result-based)" as newCode
+participant "Legacy Code\n(Exception-based)" as legacy
+participant "ErrorInfo" as errorInfo
+
+== New code calling legacy code ==
+
+newCode -> newCode : Result.TryCatch(() => ...)
+newCode -> legacy : legacyService.DoWork()
+alt success
+    legacy --> newCode : value
+    newCode --> newCode : Result<T>.Success(value)
+else throws exception
+    legacy --> newCode : CliIOException
+    newCode -> errorInfo : ErrorInfo.FromException(ex)
+    errorInfo --> newCode : ErrorInfo(IO_ACCESS_DENIED, ...)
+    newCode --> newCode : Result<T>.Failure(errorInfo)
+end
+
+== Legacy code calling new code ==
+
+legacy -> newCode : newService.Process()
+newCode --> legacy : Result<T>
+alt result.IsSuccess
+    legacy -> legacy : use result.Value
+else result.IsFailure
+    legacy -> errorInfo : result.Error.ToCliException()
+    errorInfo --> legacy : CliIOException
+    legacy -> legacy : throw cliException
+end
+
+@enduml

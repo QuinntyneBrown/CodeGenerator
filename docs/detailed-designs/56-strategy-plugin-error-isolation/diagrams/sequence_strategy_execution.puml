@@ -1,0 +1,47 @@
+@startuml sequence_strategy_execution
+!theme plain
+
+title Sequence - Strategy Execution with Error Isolation
+
+participant "ArtifactGenerator" as AG
+participant "StrategyWrapper<T>" as SW
+participant "StrategyExecutor<T>" as SE
+participant "DiagnosticContext" as DC
+participant "ISyntaxGenerationStrategy<T>" as Strategy
+
+AG -> SW : GenerateAsync(target, sp, ct)
+activate SW
+
+SW -> SE : ExecuteSyntaxStrategyAsync(strategy, model, context, ct)
+activate SE
+
+SE -> DC : CurrentStrategy = strategy.Name
+SE -> DC : ModelType = typeof(T).Name
+SE -> DC : CurrentPhase = "syntax-generation"
+
+SE -> Strategy : GenerateAsync(model, ct)
+activate Strategy
+
+alt Success
+    Strategy --> SE : output string
+    SE --> SW : Result<string>.Success(output)
+else SkipFileException
+    Strategy --> SE : throws SkipFileException
+    SE --> SW : Result<string>.Success("")
+    note right: Intentional skip,\nnot an error
+else Other Exception
+    Strategy --> SE : throws Exception
+    SE --> SW : Result<string>.Failure(ErrorInfo)
+    note right: ErrorInfo contains\nstrategy name, model type,\nphase, exception details
+else OperationCanceledException
+    Strategy --> SE : throws OperationCanceledException
+    SE --> SW : re-throws (not caught)
+end
+
+deactivate Strategy
+deactivate SE
+
+SW --> AG : result
+deactivate SW
+
+@enduml

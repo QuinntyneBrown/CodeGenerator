@@ -1,0 +1,22 @@
+@startuml c4_context
+!theme plain
+!include <C4/C4_Context>
+
+title Global Exception Handler -- System Context
+
+Person(user, "CLI User", "Runs code generation commands and sees formatted errors")
+Person(cicd, "CI/CD Pipeline", "Reads exit codes and optional JSON output")
+
+System(cli, "CodeGenerator.Cli", "CLI application with global exception handler boundary")
+System(core, "CodeGenerator.Core", "Generation engine with error aggregation")
+
+System_Ext(fs, "File System", "Generated files, rollback targets")
+System_Ext(shell, "OS Shell", "Post-scaffold command execution")
+
+Rel(user, cli, "Invokes commands, receives formatted errors")
+Rel(cicd, cli, "Reads exit code and stderr")
+Rel(cli, core, "Calls generation/scaffold engines")
+Rel(core, fs, "Writes/rolls back files")
+Rel(core, shell, "Executes post-commands")
+
+@enduml

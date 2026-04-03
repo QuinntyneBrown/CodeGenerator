@@ -1,0 +1,53 @@
+@startuml class_result_type
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 12
+
+title Result<T> and Result -- Class Diagram
+
+class "Result<T>" as ResultT {
+    -_value : T?
+    -_error : ErrorInfo?
+    +IsSuccess : bool
+    +IsFailure : bool
+    +Value : T
+    +Error : ErrorInfo
+    --
+    +{static} Success(value: T) : Result<T>
+    +{static} Failure(error: ErrorInfo) : Result<T>
+    +Map<U>(Func<T, U>) : Result<U>
+    +Bind<U>(Func<T, Result<U>>) : Result<U>
+    +Match<U>(onSuccess, onFailure) : U
+    +{static} implicit operator(T) : Result<T>
+    +{static} implicit operator(ErrorInfo) : Result<T>
+}
+
+class Result {
+    -_error : ErrorInfo?
+    +IsSuccess : bool
+    +IsFailure : bool
+    +Error : ErrorInfo
+    --
+    +{static} Ok() : Result
+    +{static} Fail(error: ErrorInfo) : Result
+    +Bind<U>(Func<Result<U>>) : Result<U>
+    +Match<U>(onSuccess, onFailure) : U
+}
+
+class ResultExtensions <<static>> {
+    +Select<T, U>(Result<T>, Func<T, U>) : Result<U>
+    +SelectMany<T, U>(Result<T>, Func<T, Result<U>>) : Result<U>
+    +Where<T>(Result<T>, Func<T, bool>, ErrorInfo) : Result<T>
+    +Combine(params Result[]) : Result
+    +Combine<T>(IEnumerable<Result<T>>) : Result<IReadOnlyList<T>>
+    +ToResult<T>(T?, ErrorInfo) : Result<T>
+    +OnSuccess<T>(Result<T>, Action<T>) : Result<T>
+    +OnFailure<T>(Result<T>, Action<ErrorInfo>) : Result<T>
+}
+
+ResultT --> "0..1" ErrorInfo : error
+Result --> "0..1" ErrorInfo : error
+ResultExtensions ..> ResultT : extends
+ResultExtensions ..> Result : extends
+
+@enduml

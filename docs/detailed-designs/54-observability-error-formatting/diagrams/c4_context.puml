@@ -1,0 +1,20 @@
+@startuml c4_context
+!theme plain
+!include <C4/C4_Context>
+
+title Observability and Error Formatting - System Context
+
+Person(cliUser, "CLI User", "Runs CodeGenerator commands interactively")
+Person(cicd, "CI/CD Pipeline", "Invokes CodeGenerator with --output json")
+
+System(codegen, "CodeGenerator CLI", "Code generation tool with structured logging, correlation IDs, and pluggable error formatting")
+
+System_Ext(fs, "File System", "Generated files, log files, markdown reports")
+System_Ext(terminal, "Terminal", "Console output with ANSI colors or plain text")
+
+Rel(cliUser, codegen, "Runs commands, reads colored output")
+Rel(cicd, codegen, "Runs with --output json, parses results")
+Rel(codegen, fs, "Writes generated files and log reports")
+Rel(codegen, terminal, "Renders formatted errors and logs")
+
+@enduml

@@ -1,0 +1,25 @@
+@startuml c4_container
+!theme plain
+!include <C4/C4_Container>
+
+title C4 Container - Strategy and Plugin Error Isolation
+
+Person(user, "CLI User", "Runs code generation")
+
+System_Boundary(codegen, "CodeGenerator") {
+    Container(cli, "CodeGenerator.Cli", "C# Console App", "Entry point, command routing, error formatting")
+    Container(core, "CodeGenerator.Core", "C# Library", "Generation pipeline, strategy execution, plugin discovery")
+    Container(abstractions, "CodeGenerator.Abstractions", "C# Library", "Interfaces, Result<T>, ErrorInfo, error primitives")
+}
+
+System_Ext(plugins, "Plugin Assemblies", "DotNet, Angular, React, etc.")
+System_Ext(fs, "File System", "Generated output")
+
+Rel(user, cli, "Invokes commands")
+Rel(cli, core, "Calls generation pipeline")
+Rel(core, abstractions, "Uses Result<T>, ErrorInfo, strategy interfaces")
+Rel(core, plugins, "Scans for strategies via reflection")
+Rel(core, fs, "Writes generated artifacts")
+Rel(cli, user, "Returns structured error report")
+
+@enduml

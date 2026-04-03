@@ -1,0 +1,17 @@
+@startuml c4_container
+!theme plain
+!include <C4/C4_Container>
+
+title Error Primitives -- Container Diagram
+
+System_Boundary(cg, "CodeGenerator") {
+    Container(abstractions, "CodeGenerator.Abstractions", "C# Library", "Result<T>, Result, ErrorInfo, ErrorCategory, ErrorSeverity, ResultExtensions")
+    Container(core, "CodeGenerator.Core", "C# Library", "ErrorCodes registry, CliException hierarchy, CliExitCodes, boundary adapters")
+    Container(cli, "CodeGenerator.Cli", "Console App", "Maps Result failures to formatted output and exit codes")
+}
+
+Rel(cli, core, "References")
+Rel(core, abstractions, "References")
+Rel(cli, abstractions, "References")
+
+@enduml

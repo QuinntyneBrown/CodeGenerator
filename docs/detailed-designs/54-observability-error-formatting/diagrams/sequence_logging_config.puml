@@ -1,0 +1,35 @@
+@startuml sequence_logging_config
+!theme plain
+
+title Structured Logging Configuration Sequence
+
+participant "CLI Args Parser" as args
+participant "Program.cs" as program
+participant "ILoggingBuilder" as logging
+participant "DI Container" as di
+
+args -> program : Parse --output, --verbose flags
+activate program
+
+alt --output json
+    program -> logging : AddJsonConsole(options)
+    note right of logging
+        IncludeScopes = true
+        TimestampFormat = "yyyy-MM-ddTHH:mm:ssZ"
+    end note
+else default (console)
+    program -> logging : AddSimpleConsole()
+end
+
+alt --verbose / -v
+    program -> logging : SetMinimumLevel(Debug)
+else default
+    program -> logging : SetMinimumLevel(Information)
+end
+
+program -> di : Build logging pipeline
+di --> program : ILogger<T> instances available
+
+deactivate program
+
+@enduml

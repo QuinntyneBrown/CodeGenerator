@@ -1,0 +1,43 @@
+@startuml sequence_batch_generation
+!theme plain
+
+title Sequence - Batch Artifact Generation with Partial Failure
+
+participant "Caller" as C
+participant "ArtifactGenerator" as AG
+participant "StrategyExecutor<T>" as SE
+participant "Strategy A" as SA
+participant "Strategy B" as SB
+participant "Strategy C" as SC
+
+C -> AG : GenerateAsync(models[])
+activate AG
+
+AG -> AG : Validate models
+
+AG -> SE : ExecuteArtifactStrategyAsync(strategyA, modelA, ctx)
+activate SE
+SE -> SA : GenerateAsync(modelA)
+SA --> SE : success
+SE --> AG : Result.Success(Unit)
+deactivate SE
+
+AG -> SE : ExecuteArtifactStrategyAsync(strategyB, modelB, ctx)
+activate SE
+SE -> SB : GenerateAsync(modelB)
+SB --> SE : throws NullReferenceException
+SE --> AG : Result.Failure(ErrorInfo)
+deactivate SE
+note right of AG: Strategy B failed.\nContinue with remaining strategies.
+
+AG -> SE : ExecuteArtifactStrategyAsync(strategyC, modelC, ctx)
+activate SE
+SE -> SC : GenerateAsync(modelC)
+SC --> SE : success
+SE --> AG : Result.Success(Unit)
+deactivate SE
+
+AG --> C : ArtifactGenerationResult\n(2 succeeded, 1 failed)
+deactivate AG
+
+@enduml

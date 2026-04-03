@@ -1,0 +1,30 @@
+@startuml c4_component
+!theme plain
+!include <C4/C4_Component>
+
+title Error Primitives -- Component Diagram
+
+Container_Boundary(abs, "CodeGenerator.Abstractions/Results") {
+    Component(resultT, "Result<T>", "Class", "Generic success/failure with Map, Bind, Match")
+    Component(result, "Result", "Class", "Non-generic success/failure for void ops")
+    Component(errorInfo, "ErrorInfo", "Record", "Structured error descriptor with Code, Message, Category")
+    Component(errorCat, "ErrorCategory", "Enum", "Validation, IO, Process, Template, Config, Schema, Scaffold, Plugin, Internal")
+    Component(errorSev, "ErrorSeverity", "Enum", "Error, Warning, Info")
+    Component(extensions, "ResultExtensions", "Static Class", "Select, SelectMany, Where, Combine, ToResult")
+}
+
+Container_Boundary(coreErr, "CodeGenerator.Core/Errors") {
+    Component(errorCodes, "ErrorCodes", "Static Class", "String constants for all known error codes")
+    Component(exceptions, "CliException Hierarchy", "Classes", "CliValidation, CliIO, CliProcess, CliTemplate, CliConfig, CliPlugin, CliSchema, CliCancelled, CliAggregate")
+    Component(exitCodes, "CliExitCodes", "Static Class", "Integer constants 0-8, 99")
+}
+
+Rel(resultT, errorInfo, "Carries on failure")
+Rel(result, errorInfo, "Carries on failure")
+Rel(errorInfo, errorCat, "Classifies by")
+Rel(errorInfo, errorSev, "Severity from")
+Rel(extensions, resultT, "Extends")
+Rel(exceptions, exitCodes, "Maps to")
+Rel(errorCodes, errorInfo, "Provides Code values for")
+
+@enduml

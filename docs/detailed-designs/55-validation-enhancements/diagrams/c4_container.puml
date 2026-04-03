@@ -1,0 +1,23 @@
+@startuml c4_container
+!theme plain
+!include <C4/C4_Container>
+
+title Validation Enhancements - Container Diagram
+
+Person(user, "Developer / CLI User", "Declares rules or receives validation output")
+
+System_Boundary(codegen, "CodeGenerator") {
+    Container(abstractions, "CodeGenerator.Abstractions", "C# Library", "ValidationResult, ValidationError, ValidationSeverity (enhanced)")
+    Container(core, "CodeGenerator.Core", "C# Library", "Validator<T>, CommonRules, FileSystemRules, IValidationRule<T>")
+    Container(cli, "CodeGenerator.Cli", "C# Console App", "GenerationOptionsValidator (refactored to use Validator<T>)")
+    Container(scaffold, "Scaffold Services", "C# Library", "ConfigValidator (refactored to use Validator<T>)")
+}
+
+System_Ext(formatting, "Error Formatting Layer", "Consumes enhanced ValidationResult for display")
+
+Rel(cli, core, "Uses Validator<T> and CommonRules")
+Rel(scaffold, core, "Uses Validator<T> and CommonRules")
+Rel(core, abstractions, "Returns ValidationResult")
+Rel(formatting, abstractions, "Reads ValidationResult.GroupByProperty(), ToFormattedString()")
+
+@enduml

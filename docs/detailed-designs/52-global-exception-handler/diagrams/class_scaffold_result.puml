@@ -1,0 +1,50 @@
+@startuml class_scaffold_result
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 12
+
+title Enhanced ScaffoldResult -- Class Diagram
+
+class ScaffoldResult {
+    +Success : bool
+    +PlannedFiles : List<PlannedFile>
+    +Conflicts : List<string>
+    +ValidationResult : ValidationResult
+    +PostCommandResults : List<PostCommandResult>
+    __ new properties __
+    +Errors : List<ErrorInfo>
+    +RolledBackFiles : List<string>
+    +Duration : TimeSpan
+    +CorrelationId : string?
+}
+
+class PlannedFile {
+    +Path : string
+    +Action : PlannedFileAction
+}
+
+class PostCommandResult {
+    +Command : string
+    +ExitCode : int
+    +Success : bool
+    +Error : string?
+}
+
+class ErrorInfo <<record>> {
+    +Code : string
+    +Message : string
+    +Category : ErrorCategory
+}
+
+class ValidationResult {
+    +Errors : List<ValidationError>
+    +Warnings : List<ValidationError>
+    +IsValid : bool
+}
+
+ScaffoldResult --> "*" PlannedFile
+ScaffoldResult --> "*" PostCommandResult
+ScaffoldResult --> "*" ErrorInfo : errors
+ScaffoldResult --> ValidationResult
+
+@enduml

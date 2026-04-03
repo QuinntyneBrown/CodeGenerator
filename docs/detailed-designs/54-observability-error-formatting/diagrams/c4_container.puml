@@ -1,0 +1,27 @@
+@startuml c4_container
+!theme plain
+!include <C4/C4_Container>
+
+title Observability and Error Formatting - Container Diagram
+
+Person(user, "CLI User / CI Pipeline", "Invokes CodeGenerator commands")
+
+System_Boundary(codegen, "CodeGenerator") {
+    Container(cli, "CodeGenerator.Cli", "C# / System.CommandLine", "CLI entry point, logging config, output flag handling")
+    Container(formatting, "Formatting Layer", "C# / Cli Namespace", "IErrorFormatter implementations: Console, JSON, Markdown")
+    Container(core, "CodeGenerator.Core", "C# Library", "DiagnosticContext, ErrorInfo, CorrelationId propagation")
+    Container(logging, "Logging Pipeline", "Microsoft.Extensions.Logging", "Structured logging with JSON or simple console output")
+}
+
+System_Ext(terminal, "Terminal / stdout", "Receives formatted output")
+System_Ext(logFile, "Log File", "Receives markdown reports")
+
+Rel(user, cli, "Passes --output, --verbose flags")
+Rel(cli, logging, "Configures logging pipeline")
+Rel(cli, formatting, "Resolves IErrorFormatter")
+Rel(formatting, core, "Reads DiagnosticContext, ErrorInfo")
+Rel(core, logging, "Writes structured log entries with CorrelationId")
+Rel(formatting, terminal, "Writes formatted output")
+Rel(formatting, logFile, "Writes markdown reports")
+
+@enduml

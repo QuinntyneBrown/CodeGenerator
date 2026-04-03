@@ -1,0 +1,42 @@
+@startuml sequence_plugin_discovery
+!theme plain
+
+title Sequence - Resilient Plugin Discovery
+
+participant "ConfigureServices" as CS
+participant "Assembly" as Asm
+participant "ILogger" as Log
+participant "IServiceCollection" as DI
+participant "StrategyDiscoveryResult" as Result
+
+CS -> Asm : GetTypes()
+activate Asm
+
+alt All types load successfully
+    Asm --> CS : Type[]
+    CS -> CS : Filter for IArtifactGenerationStrategy<>
+    loop each matching implementation
+        CS -> DI : AddSingleton(interface, implementation)
+    end
+    CS -> Result : Create(total, registered, 0, [])
+
+else ReflectionTypeLoadException
+    Asm --> CS : throws ReflectionTypeLoadException
+    CS -> CS : Extract ex.Types (non-null entries)
+    loop each LoaderException
+        CS -> Log : LogWarning("Failed to load type: {Error}")
+        CS -> CS : Collect StrategyLoadError
+    end
+    CS -> CS : Filter loadable types for strategies
+    loop each matching implementation
+        CS -> DI : AddSingleton(interface, implementation)
+    end
+    CS -> Result : Create(total, registered, failCount, errors)
+end
+
+deactivate Asm
+
+CS -> Log : LogInformation(Result.ToSummary())
+CS --> CS : return StrategyDiscoveryResult
+
+@enduml

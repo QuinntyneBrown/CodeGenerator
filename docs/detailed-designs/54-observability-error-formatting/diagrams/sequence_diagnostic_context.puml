@@ -1,0 +1,46 @@
+@startuml sequence_diagnostic_context
+!theme plain
+
+title Diagnostic Context Lifecycle Sequence
+
+participant "Command Handler" as handler
+participant "DiagnosticContext" as ctx
+participant "Parser" as parser
+participant "Validator" as validator
+participant "Generator" as generator
+participant "Post-Command Runner" as postcmd
+
+handler -> ctx : Create, set CorrelationId
+activate ctx
+
+handler -> ctx : CurrentPhase = Parse
+handler -> parser : Parse input file
+activate parser
+handler -> ctx : CurrentFile = "scaffold.yaml"
+parser --> handler : parsed model
+deactivate parser
+
+handler -> ctx : CurrentPhase = Validate
+handler -> validator : Validate(model)
+activate validator
+validator --> handler : ValidationResult
+deactivate validator
+
+handler -> ctx : CurrentPhase = Generate
+handler -> generator : Generate(model)
+activate generator
+handler -> ctx : CurrentStrategy = "DotNetProjectStrategy"
+handler -> ctx : ModelType = "ProjectModel"
+generator --> handler : artifacts
+deactivate generator
+
+handler -> ctx : CurrentPhase = PostCommand
+handler -> postcmd : Execute post-commands
+activate postcmd
+postcmd --> handler : results
+deactivate postcmd
+
+handler -> ctx : Reset()
+deactivate ctx
+
+@enduml

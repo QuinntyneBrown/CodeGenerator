@@ -1,0 +1,31 @@
+@startuml c4_component
+!theme plain
+!include <C4/C4_Component>
+
+title Observability and Error Formatting - Component Diagram
+
+Container_Boundary(cli, "CodeGenerator.Cli") {
+    Component(program, "Program.cs", "Entry Point", "Configures logging based on --output and --verbose flags")
+    Component(iFormatter, "IErrorFormatter", "Interface", "FormatError, FormatValidationResult, FormatScaffoldResult, FormatException")
+    Component(consoleFmt, "ConsoleErrorFormatter", "Formatter", "ANSI-colored terminal output with error codes and hints")
+    Component(jsonFmt, "JsonErrorFormatter", "Formatter", "Machine-readable JSON output for CI/CD")
+    Component(mdFmt, "MarkdownErrorFormatter", "Formatter", "GitHub-Flavored Markdown reports for file logging")
+}
+
+Container_Boundary(core, "CodeGenerator.Core") {
+    Component(diagCtx, "DiagnosticContext", "AsyncLocal", "Ambient context: phase, file, strategy, properties")
+    Component(errorInfo, "ErrorInfo", "DTO", "Unified error data with code, message, severity, details")
+    Component(diagPhase, "DiagnosticPhase", "Enum", "Parse, Validate, Generate, PostCommand")
+}
+
+Rel(program, iFormatter, "Resolves based on --output flag")
+Rel(consoleFmt, iFormatter, "Implements")
+Rel(jsonFmt, iFormatter, "Implements")
+Rel(mdFmt, iFormatter, "Implements")
+Rel(consoleFmt, errorInfo, "Reads")
+Rel(jsonFmt, errorInfo, "Reads")
+Rel(jsonFmt, diagCtx, "Reads CorrelationId")
+Rel(diagCtx, diagPhase, "Uses")
+Rel(errorInfo, diagCtx, "Enriched from")
+
+@enduml
