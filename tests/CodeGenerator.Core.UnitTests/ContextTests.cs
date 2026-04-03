@@ -12,7 +12,7 @@ public class ContextExtendedTests : IDisposable
 {
     private readonly Context _context;
 
-    public ContextTests()
+    public ContextExtendedTests()
     {
         var logger = NullLoggerFactory.Instance.CreateLogger<Context>();
         _context = new Context(logger);

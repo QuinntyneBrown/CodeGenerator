@@ -7,7 +7,7 @@ namespace CodeGenerator.Core.UnitTests;
 
 public class DomainEventsExtendedTests : IDisposable
 {
-    public DomainEventsTests()
+    public DomainEventsExtendedTests()
     {
         DomainEvents.ClearCallbacks();
     }

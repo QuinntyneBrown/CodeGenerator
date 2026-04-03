@@ -7,6 +7,9 @@ namespace CodeGenerator.Core.UnitTests;
 
 public class StringBuilderCacheTests
 {
+    // MaxBuilderSize is internal (360), so we use the literal value
+    private const int MaxBuilderSize = 360;
+
     [Fact]
     public void Acquire_DefaultCapacity_ReturnsStringBuilder()
     {
@@ -36,8 +39,8 @@ public class StringBuilderCacheTests
         var sbSmall = StringBuilderCache.Acquire(16);
         StringBuilderCache.Release(sbSmall);
 
-        // Request capacity larger than MaxBuilderSize
-        var sbLarge = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize + 1);
+        // Request capacity larger than MaxBuilderSize (361)
+        var sbLarge = StringBuilderCache.Acquire(MaxBuilderSize + 1);
         Assert.NotNull(sbLarge);
         Assert.NotSame(sbSmall, sbLarge);
     }
@@ -51,9 +54,9 @@ public class StringBuilderCacheTests
 
         // Request a much larger capacity that is still within MaxBuilderSize
         // but larger than the cached instance's capacity
-        var sb2 = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+        var sb2 = StringBuilderCache.Acquire(MaxBuilderSize);
         // If the cached sb can't serve the requested capacity, a new one is created
-        if (sb1.Capacity < StringBuilderCache.MaxBuilderSize)
+        if (sb1.Capacity < MaxBuilderSize)
         {
             Assert.NotSame(sb1, sb2);
         }
@@ -72,7 +75,7 @@ public class StringBuilderCacheTests
     [Fact]
     public void Release_LargeBuilder_DoesNotCacheIt()
     {
-        var sb = new StringBuilder(StringBuilderCache.MaxBuilderSize + 1);
+        var sb = new StringBuilder(MaxBuilderSize + 1);
         StringBuilderCache.Release(sb);
 
         var sb2 = StringBuilderCache.Acquire(16);
@@ -106,12 +109,6 @@ public class StringBuilderCacheTests
     }
 
     [Fact]
-    public void MaxBuilderSize_Is360()
-    {
-        Assert.Equal(360, StringBuilderCache.MaxBuilderSize);
-    }
-
-    [Fact]
     public void Acquire_WhenNoCachedInstance_ReturnsNewBuilder()
     {
         // Ensure cache is empty by acquiring without releasing
@@ -123,5 +120,26 @@ public class StringBuilderCacheTests
 
         // Clean up
         StringBuilderCache.Release(sb1);
+    }
+
+    [Fact]
+    public void GetStringAndRelease_EmptyBuilder_ReturnsEmptyString()
+    {
+        var sb = StringBuilderCache.Acquire();
+        var result = StringBuilderCache.GetStringAndRelease(sb);
+        Assert.Equal(string.Empty, result);
+    }
+
+    [Fact]
+    public void Release_OverwritesPreviouslyCached()
+    {
+        var sb1 = new StringBuilder(16);
+        var sb2 = new StringBuilder(32);
+
+        StringBuilderCache.Release(sb1);
+        StringBuilderCache.Release(sb2); // Overwrites sb1
+
+        var acquired = StringBuilderCache.Acquire(16);
+        Assert.Same(sb2, acquired);
     }
 }

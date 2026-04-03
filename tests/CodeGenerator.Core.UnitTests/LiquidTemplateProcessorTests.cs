@@ -7,7 +7,7 @@ namespace CodeGenerator.Core.UnitTests;
 
 public class LiquidTemplateProcessorTests
 {
-    private readonly LiquidTemplateProcessor processor = new();
+    private readonly LiquidTemplateProcessor processor = new(new SharedTemplateFileSystem(Array.Empty<System.Reflection.Assembly>()));
 
     [Fact]
     public void Process_WithTokens_RendersTemplate()
