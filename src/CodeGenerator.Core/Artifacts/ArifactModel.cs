@@ -24,7 +24,7 @@ public class ArtifactModel
 
         children.Add(root);
 
-        foreach (var child in children)
+        foreach (var child in root.GetChildren())
         {
             if (child != null)
             {

@@ -109,17 +109,18 @@ public class LiquidTemplateProcessor : ITemplateProcessor
 
     public Task<string> ProcessAsync(string template, IDictionary<string, object> tokens, string[] ignoreTokens = null)
     {
-        throw new NotImplementedException();
+        return Task.FromResult(Process(template, tokens, ignoreTokens));
     }
 
     public Task<string> ProcessAsync(string template, IDictionary<string, object> tokens)
     {
-        throw new NotImplementedException();
+        return Task.FromResult(Process(template, tokens));
     }
 
     public Task<string> ProcessAsync(string template, dynamic model)
     {
-        throw new NotImplementedException();
+        string result = Process(template, model);
+        return Task.FromResult(result);
     }
 
     private static Dictionary<string, object> ConvertObjectToDictionary(object o)
