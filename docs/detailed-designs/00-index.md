@@ -82,7 +82,7 @@
 |---|---------|--------|------------|-------------|
 | 51 | [Result&lt;T&gt; Type and Error Primitives](51-result-type-error-primitives/README.md) | Implemented | Phase 1 | Result monad, ErrorInfo, ErrorCategory, ErrorCodes registry, expanded exceptions |
 | 52 | [Global Exception Handler and Pipeline Aggregation](52-global-exception-handler/README.md) | Implemented | Phase 2 | Program.cs try-catch, ArtifactGenerationResult, ScaffoldResult enrichment |
-| 53 | [Resilience Patterns](53-resilience-patterns/README.md) | Draft | Phase 3 | Retry with backoff, CancellationToken propagation, expanded rollback |
+| 53 | [Resilience Patterns](53-resilience-patterns/README.md) | Implemented | Phase 3 | Retry with backoff, CancellationToken propagation, expanded rollback |
 | 54 | [Observability and Error Formatting](54-observability-error-formatting/README.md) | Draft | Phase 4 | Structured logging, correlation IDs, IErrorFormatter, DiagnosticContext |
 | 55 | [Validation Enhancements](55-validation-enhancements/README.md) | Draft | Phase 5 | Fluent Validator&lt;T&gt;, CommonRules, ValidationResult enhancements |
 | 56 | [Strategy and Plugin Error Isolation](56-strategy-plugin-error-isolation/README.md) | Draft | Phase 6 | StrategyExecutor boundary, plugin discovery error handling |
