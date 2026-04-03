@@ -2,7 +2,7 @@
 
 **Feature:** 04-flask-backend-generation
 **Requirements:** [L2-PythonFlask.md](../../specs/L2-PythonFlask.md) — FR-05
-**Status:** Approved
+**Status:** Implemented
 **Date:** 2026-04-03
 
 ---

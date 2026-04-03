@@ -1,5 +1,7 @@
 # Angular Generation — Detailed Design
 
+**Status:** Implemented
+
 ## 1. Overview
 
 The **CodeGenerator.Angular** package generates fully configured Angular workspaces and projects from model descriptions. It automates the scaffolding of Angular CLI workspaces with Jest testing (replacing Karma), standalone components, NGRx state management, TypeScript type definitions, exported functions, and barrel index files.

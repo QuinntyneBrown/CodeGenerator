@@ -1,5 +1,7 @@
 # CLI Tool (`create-code-cli`) — Detailed Design
 
+**Status:** Implemented
+
 ## 1. Overview
 
 The CodeGenerator CLI tool (`create-code-cli`) is a .NET global tool that scaffolds new code generator projects. When invoked, it creates a complete solution with a DI-configured program, sample commands demonstrating the CodeGenerator framework, install scripts for global tool deployment, and an optional Claude skill documentation file.

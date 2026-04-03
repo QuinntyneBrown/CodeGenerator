@@ -1,5 +1,7 @@
 # Playwright Test Generation — Detailed Design
 
+**Status:** Implemented
+
 ## 1. Overview
 
 The **CodeGenerator.Playwright** package generates complete Playwright end-to-end test projects from C# models. It produces TypeScript page objects (with four locator strategies), test specs using the Arrange-Act-Assert pattern, custom fixtures via `base.extend<T>()`, multi-browser configuration, and an abstract `BasePage` class — all scaffolded into a ready-to-run project structure.

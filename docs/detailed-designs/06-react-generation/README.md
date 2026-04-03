@@ -2,7 +2,7 @@
 
 **Feature:** CodeGenerator.React
 **Requirement:** FR-07 (React Generation) — [L2-Frontend.md](../../specs/L2-Frontend.md)
-**Status:** Approved
+**Status:** Implemented
 **Date:** 2026-04-03
 
 ---

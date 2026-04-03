@@ -1,7 +1,7 @@
 # Model Validation — Detailed Design
 
 **Feature:** 12-model-validation (Priority Action #2)
-**Status:** Draft
+**Status:** Implemented
 **Context:** Architecture Audit — all models are plain POCOs with no constraints; invalid models produce garbage output with no error feedback to agents.
 
 ---

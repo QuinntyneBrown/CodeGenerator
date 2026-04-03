@@ -1,7 +1,7 @@
 # Builder / Fluent APIs — Detailed Design
 
 **Feature:** 13-builder-fluent-apis
-**Status:** Draft
+**Status:** Implemented
 **Priority Action:** #3 from Architecture Audit
 **Impact:** Token savings, Agent usability
 

@@ -1,5 +1,7 @@
 # Detox Test Generation — Detailed Design
 
+**Status:** Implemented
+
 ## 1. Overview
 
 The **CodeGenerator.Detox** package generates complete Detox end-to-end mobile test projects from C# models. It produces TypeScript page objects with `testID`-based selectors, Jest test specs with `describe()`/`it()` blocks, `.detoxrc.js` configuration for iOS and Android platforms, Jest configuration with `ts-jest`, and an abstract `BasePage` class with mobile interaction helpers — all scaffolded into a ready-to-run project structure targeting React Native applications.

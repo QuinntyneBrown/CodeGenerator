@@ -1,7 +1,7 @@
 # Detailed Design — .NET Code Generation
 
 **Parent:** [L2-DotNet.md](../../specs/L2-DotNet.md) — FR-02, FR-03, FR-11, FR-12, FR-16, FR-17
-**Status:** Reverse-engineered from source code
+**Status:** Implemented
 **Date:** 2026-04-03
 
 ---

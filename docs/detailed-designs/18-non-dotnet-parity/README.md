@@ -1,7 +1,7 @@
 # Bring Non-DotNet Modules to Parity — Detailed Design
 
 **Feature:** 18-non-dotnet-parity (Priority Action #8)
-**Status:** Draft
+**Status:** Implemented
 **Date:** 2026-04-03
 
 ---

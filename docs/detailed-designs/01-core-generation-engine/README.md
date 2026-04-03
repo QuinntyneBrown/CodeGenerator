@@ -1,7 +1,7 @@
 # Core Generation Engine — Detailed Design
 
 **Feature:** 01-core-generation-engine
-**Status:** Draft
+**Status:** Implemented
 **Requirements:** [L2-CoreEngine.md](../../specs/L2-CoreEngine.md) — FR-01, FR-13, FR-14, FR-18, NFR-01, NFR-02
 
 ---

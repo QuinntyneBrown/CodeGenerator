@@ -1,7 +1,7 @@
 # Incremental Generation — Detailed Design
 
 **Feature:** 15-incremental-generation
-**Status:** Draft
+**Status:** Implemented
 **Requirements:** Architecture Audit Priority Action #5 — "Add incremental generation"
 **Prerequisites:** None (can be implemented on current Core; benefits from #1 Extract Abstractions if done first)
 

@@ -2,7 +2,7 @@
 
 **Feature:** 03-python-code-generation
 **Requirements:** [L2-PythonFlask.md](../../specs/L2-PythonFlask.md) — FR-04
-**Status:** Approved
+**Status:** Implemented
 **Date:** 2026-04-03
 
 ---

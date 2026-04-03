@@ -2,7 +2,7 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | Proposed |
+| **Status** | Implemented |
 | **Priority** | 10 of 10 |
 | **Effort** | Medium (3-5 days) |
 | **Target Frameworks** | net8.0, net9.0 |
