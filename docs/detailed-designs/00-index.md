@@ -84,7 +84,7 @@
 | 52 | [Global Exception Handler and Pipeline Aggregation](52-global-exception-handler/README.md) | Implemented | Phase 2 | Program.cs try-catch, ArtifactGenerationResult, ScaffoldResult enrichment |
 | 53 | [Resilience Patterns](53-resilience-patterns/README.md) | Implemented | Phase 3 | Retry with backoff, CancellationToken propagation, expanded rollback |
 | 54 | [Observability and Error Formatting](54-observability-error-formatting/README.md) | Implemented | Phase 4 | Structured logging, correlation IDs, IErrorFormatter, DiagnosticContext |
-| 55 | [Validation Enhancements](55-validation-enhancements/README.md) | Draft | Phase 5 | Fluent Validator&lt;T&gt;, CommonRules, ValidationResult enhancements |
+| 55 | [Validation Enhancements](55-validation-enhancements/README.md) | Implemented | Phase 5 | Fluent Validator&lt;T&gt;, CommonRules, ValidationResult enhancements |
 | 56 | [Strategy and Plugin Error Isolation](56-strategy-plugin-error-isolation/README.md) | Draft | Phase 6 | StrategyExecutor boundary, plugin discovery error handling |
 | 57 | [Error Handling Test Infrastructure](57-error-handling-test-infrastructure/README.md) | Draft | Phase 7 | ResultAssertions, FaultInjectionOptions, fault-injecting decorators |
 
