@@ -11,11 +11,13 @@ public class WorkspaceGenerationStrategy : IArtifactGenerationStrategy<Workspace
 {
     private readonly ILogger<WorkspaceGenerationStrategy> logger;
     private readonly ICommandService commandService;
+    private readonly IArtifactGenerator artifactGenerator;
 
-    public WorkspaceGenerationStrategy(ILogger<WorkspaceGenerationStrategy> logger, ICommandService commandService)
+    public WorkspaceGenerationStrategy(ILogger<WorkspaceGenerationStrategy> logger, ICommandService commandService, IArtifactGenerator artifactGenerator)
     {
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         this.commandService = commandService ?? throw new ArgumentNullException(nameof(commandService));
+        this.artifactGenerator = artifactGenerator ?? throw new ArgumentNullException(nameof(artifactGenerator));
     }
 
     public async Task GenerateAsync(WorkspaceModel model)
@@ -37,5 +39,10 @@ public class WorkspaceGenerationStrategy : IArtifactGenerationStrategy<Workspace
         commandService.Start($"npm install --registry=https://registry.npmjs.org/ tailwindcss --force", workspaceDirectory);
 
         commandService.Start($"npm install --registry=https://registry.npmjs.org/ vitest --save-dev --force", workspaceDirectory);
+
+        foreach (var project in model.Projects)
+        {
+            await artifactGenerator.GenerateAsync(project);
+        }
     }
 }

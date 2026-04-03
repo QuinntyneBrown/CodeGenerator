@@ -40,6 +40,13 @@ public class NavigationSyntaxGenerationStrategy : ISyntaxGenerationStrategy<Navi
         };
 
         builder.AppendLine(navigatorImport);
+
+        foreach (var screen in model.Screens)
+        {
+            var screenName = namingConventionConverter.Convert(NamingConvention.PascalCase, screen);
+            builder.AppendLine($"import {{ {screenName} }} from \"../screens/{screenName}\";");
+        }
+
         builder.AppendLine();
 
         builder.AppendLine($"export type {navigatorName}ParamList" + " = {");

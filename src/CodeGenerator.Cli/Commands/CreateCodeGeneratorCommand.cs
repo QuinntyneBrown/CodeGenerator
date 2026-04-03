@@ -232,6 +232,10 @@ services.AddDotNetServices();
 services.AddAngularServices();
 services.AddReactServices();
 services.AddFlaskServices();
+services.AddPythonServices();
+services.AddPlaywrightServices();
+services.AddDetoxServices();
+services.AddReactNativeServices();
 
 var serviceProvider = services.BuildServiceProvider();
 
@@ -432,6 +436,10 @@ endlocal
     <PackageReference Include=""QuinntyneBrown.CodeGenerator.Angular"" Version=""1.2.0"" />
     <PackageReference Include=""QuinntyneBrown.CodeGenerator.React"" Version=""1.2.2"" />
     <PackageReference Include=""QuinntyneBrown.CodeGenerator.Flask"" Version=""1.2.2"" />
+    <PackageReference Include=""QuinntyneBrown.CodeGenerator.Python"" Version=""1.2.1"" />
+    <PackageReference Include=""QuinntyneBrown.CodeGenerator.Playwright"" Version=""1.2.5"" />
+    <PackageReference Include=""QuinntyneBrown.CodeGenerator.Detox"" Version=""1.2.1"" />
+    <PackageReference Include=""QuinntyneBrown.CodeGenerator.ReactNative"" Version=""1.2.1"" />
   </ItemGroup>";
 
     private static string GetProjectReferences(string localSourceRoot, string projectDirectory)
@@ -443,6 +451,10 @@ endlocal
             "CodeGenerator.Angular",
             "CodeGenerator.React",
             "CodeGenerator.Flask",
+            "CodeGenerator.Python",
+            "CodeGenerator.Playwright",
+            "CodeGenerator.Detox",
+            "CodeGenerator.ReactNative",
         };
 
         var builder = new StringBuilder();

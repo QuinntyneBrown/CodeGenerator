@@ -2,7 +2,7 @@
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
-using Microsoft.Build.Framework;
+using Microsoft.Extensions.Logging;
 
 namespace CodeGenerator.Core.Internal;
 
