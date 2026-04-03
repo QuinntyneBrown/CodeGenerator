@@ -1,0 +1,151 @@
+@startuml class_diagram
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 11
+skinparam packageFontSize 12
+
+title Builder / Fluent APIs — Class Diagram
+
+package "CodeGenerator.Core.Builders" {
+    interface "IBuilder<T>" as IB {
+        +Build() : T
+    }
+
+    abstract class "BuilderBase<TModel, TBuilder>" as BB {
+        #_model : TModel
+        +Build() : TModel
+        #{abstract} ApplyDefaults() : void
+        #{abstract} CreateModel() : TModel
+    }
+
+    BB ..|> IB
+}
+
+package "CodeGenerator.DotNet.Builders" {
+    class ClassBuilder {
+        +{static} For(name) : ClassBuilder
+        +Public() / Internal() / Sealed() / Static()
+        +WithProperty(name, type) : ClassBuilder
+        +WithMethod(name, returnType, params) : ClassBuilder
+        +WithField(name, type) : ClassBuilder
+        +WithBaseClass(name) : ClassBuilder
+        +WithAttribute(name) : ClassBuilder
+        +Implements(name) : ClassBuilder
+        +Build() : ClassModel
+    }
+
+    class ControllerBuilder {
+        +{static} For(entityName) : ControllerBuilder
+        +WithCrud() : ControllerBuilder
+        +WithRoute(type) : ControllerBuilder
+        +Build() : ControllerModel
+    }
+
+    class EntityBuilder {
+        +{static} For(name) : EntityBuilder
+        +WithProperty(name, type) : EntityBuilder
+        +WithKey(name, type) : EntityBuilder
+        +WithTimestamps() : EntityBuilder
+        +Build() : EntityModel
+    }
+
+    ClassBuilder --|> BB
+    ControllerBuilder --|> BB
+    EntityBuilder --|> BB
+}
+
+package "CodeGenerator.Flask.Builders" {
+    class "Flask.ControllerBuilder" as FCB {
+        +{static} For(name) : ControllerBuilder
+        +WithCrud(modelName) : ControllerBuilder
+        +WithRoute(path, method, handler) : ControllerBuilder
+        +WithMiddleware(decorator) : ControllerBuilder
+        +WithService(varName, className) : ControllerBuilder
+        +Build() : ControllerModel
+    }
+
+    class ModelBuilder {
+        +{static} For(name) : ModelBuilder
+        +WithColumn(name, type) : ModelBuilder
+        +WithRelationship(name, target) : ModelBuilder
+        +WithUuid() / WithTimestamps()
+        +Build() : ModelModel
+    }
+
+    FCB --|> BB
+    ModelBuilder --|> BB
+}
+
+package "CodeGenerator.React.Builders" {
+    class ComponentBuilder {
+        +{static} For(name) : ComponentBuilder
+        +WithProp(name, type) : ComponentBuilder
+        +WithHook(hookExpr) : ComponentBuilder
+        +AsClient() / AsDefault()
+        +WithChildren() : ComponentBuilder
+        +Build() : ComponentModel
+    }
+
+    class StoreBuilder {
+        +{static} For(name) : StoreBuilder
+        +WithState(name, type, default) : StoreBuilder
+        +WithAction(name) : StoreBuilder
+        +ForEntity(name) : StoreBuilder
+        +Build() : StoreModel
+    }
+
+    class ApiClientBuilder {
+        +{static} For(name) : ApiClientBuilder
+        +WithBaseUrl(url) : ApiClientBuilder
+        +WithMethod(name, verb, route) : ApiClientBuilder
+        +ForEntity(name) : ApiClientBuilder
+        +WithAuth() : ApiClientBuilder
+        +Build() : ApiClientModel
+    }
+
+    ComponentBuilder --|> BB
+    StoreBuilder --|> BB
+    ApiClientBuilder --|> BB
+}
+
+package "CodeGenerator.Playwright.Builders" {
+    class PageObjectBuilder {
+        +{static} For(name, path) : PageObjectBuilder
+        +WithLocator(name, selector) : PageObjectBuilder
+        +WithAction(name, params, body) : PageObjectBuilder
+        +WithQuery(name, returnType, body) : PageObjectBuilder
+        +Build() : PageObjectModel
+    }
+
+    class "PW.TestSpecBuilder" as PTSB {
+        +{static} For(name, pageObject) : TestSpecBuilder
+        +WithTest(desc, arrange, act, assert) : TestSpecBuilder
+        +WithSetup(action) : TestSpecBuilder
+        +Build() : TestSpecModel
+    }
+
+    PageObjectBuilder --|> BB
+    PTSB --|> BB
+}
+
+package "CodeGenerator.ReactNative.Builders" {
+    class ScreenBuilder {
+        +{static} For(name) : ScreenBuilder
+        +WithProp(name, type) : ScreenBuilder
+        +WithHook(hookExpr) : ScreenBuilder
+        +WithNavParam(name, type) : ScreenBuilder
+        +Build() : ScreenModel
+    }
+
+    class NavigationBuilder {
+        +{static} For(name) : NavigationBuilder
+        +WithScreen(name) : NavigationBuilder
+        +AsStack() / AsTab() / AsDrawer()
+        +Build() : NavigationModel
+    }
+
+    ScreenBuilder --|> BB
+    NavigationBuilder --|> BB
+}
+
+@enduml

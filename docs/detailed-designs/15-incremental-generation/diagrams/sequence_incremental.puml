@@ -1,0 +1,60 @@
+@startuml sequence_incremental
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Add-to-Existing Workflow (Incremental Generation)
+
+participant "Agent" as A
+participant "IArtifactGenerator\n(ArtifactGenerator)" as AG
+participant "AddFileStrategy\n<AddFileModel>" as S
+participant "IProjectContextFactory" as PCF
+participant "IProjectContext" as PC
+participant "IConflictResolver" as CR
+participant "IFileSystem" as FS
+
+A -> AG : GenerateAsync(addFileModel)
+AG -> AG : Resolve strategy by\nmodel type (AddFileModel)
+AG -> S : GenerateAsync(addFileModel)
+
+S -> PCF : Create(model.ProjectDirectory)
+PCF -> PC ** : new ProjectContext(directory)
+PCF --> S : projectContext
+
+S -> PC : FileExists(model.RelativePath)
+
+alt File does NOT exist
+    PC --> S : false
+    S -> FS : WriteAllText(fullPath, content)
+    FS --> S : done
+else File EXISTS
+    PC --> S : true
+    S -> PC : ReadFile(model.RelativePath)
+    PC --> S : existingContent
+
+    alt OnConflict == Skip
+        S -> S : return (no-op)
+    else OnConflict == Overwrite
+        S -> FS : WriteAllText(fullPath, content)
+        FS --> S : done
+    else OnConflict == Error
+        S -> S : throw ConflictException
+    end
+end
+
+== Optional: Post-Generation Hooks ==
+
+S -> PC : Type
+PC --> S : DotNet
+
+opt DotNet + UpdateConfigureServices
+    S -> AG : GenerateAsync(\nUpdateDiRegistrationModel)
+end
+
+opt Flask + RegisterBlueprint
+    S -> AG : GenerateAsync(\nUpdateBlueprintRegistrationModel)
+end
+
+S --> AG : done
+AG --> A : done
+
+@enduml

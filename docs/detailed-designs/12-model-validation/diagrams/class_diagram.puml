@@ -1,0 +1,96 @@
+@startuml class_diagram
+!theme plain
+
+title Model Validation — Class Diagram
+
+enum ValidationSeverity {
+    Error
+    Warning
+}
+
+class ValidationError {
+    + PropertyName : string
+    + ErrorMessage : string
+    + Severity : ValidationSeverity
+}
+
+class ValidationResult {
+    + IsValid : bool
+    + Errors : List<ValidationError>
+    + Warnings : List<ValidationError>
+    --
+    + AddError(propertyName, message) : void
+    + AddWarning(propertyName, message) : void
+    + Merge(other : ValidationResult) : void
+    + {static} Success() : ValidationResult
+}
+
+interface IValidatable {
+    + Validate() : ValidationResult
+}
+
+class ModelValidationException <<Exception>> {
+    + ValidationResult : ValidationResult
+    + ModelType : Type
+    + Message : string
+}
+
+abstract class SyntaxModel {
+    + Parent : SyntaxModel?
+    + Usings : List<UsingModel>
+    --
+    + {virtual} Validate() : ValidationResult
+}
+
+abstract class ArtifactModel {
+    + Parent : ArtifactModel
+    --
+    + {virtual} Validate() : ValidationResult
+}
+
+class "DotNet.ClassModel" as DotNetClass {
+    + Name : string
+    + Methods : List<MethodModel>
+    + Properties : List<PropertyModel>
+    --
+    + Validate() : ValidationResult
+}
+
+class "DotNet.ControllerModel" as DotNetController {
+    + Validate() : ValidationResult
+}
+
+class "DotNet.EntityModel" as DotNetEntity {
+    + Validate() : ValidationResult
+}
+
+class "Flask.ControllerModel" as FlaskController {
+    + Validate() : ValidationResult
+}
+
+class "React.ComponentModel" as ReactComponent {
+    + Validate() : ValidationResult
+}
+
+class "FileModel" as FileModel {
+    + Name : string
+    + Directory : string
+    + Extension : string
+    --
+    + Validate() : ValidationResult
+}
+
+IValidatable <|.. SyntaxModel
+IValidatable <|.. ArtifactModel
+SyntaxModel <|-- DotNetClass
+DotNetClass <|-- DotNetController
+DotNetClass <|-- DotNetEntity
+SyntaxModel <|-- FlaskController
+SyntaxModel <|-- ReactComponent
+ArtifactModel <|-- FileModel
+
+ValidationResult o-- "0..*" ValidationError
+ValidationError --> ValidationSeverity
+ModelValidationException --> ValidationResult
+
+@enduml

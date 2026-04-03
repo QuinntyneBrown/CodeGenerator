@@ -1,0 +1,53 @@
+@startuml sequence_migration
+!theme plain
+
+title Migration Workflow: Core to Abstractions (Non-Breaking)
+
+actor Developer as dev
+participant "CodeGenerator.Abstractions\n(new project)" as abs
+participant "CodeGenerator.Core\n(existing)" as core
+participant "Framework Modules\n(Flask, Python, etc.)" as fw
+participant "CodeGenerator.DotNet" as dotnet
+participant "NuGet" as nuget
+
+== Phase 1: Create Abstractions Project ==
+dev -> abs : Create CodeGenerator.Abstractions.csproj\nwith minimal deps
+dev -> abs : Move interfaces, base models,\nenums from Core
+dev -> core : Add ProjectReference to Abstractions
+dev -> core : Add [TypeForwardedTo] attributes\nfor all moved types
+
+note right of core
+  TypeForwardedTo ensures that any
+  assembly compiled against the OLD
+  Core namespace still resolves types
+  at runtime from Abstractions.
+end note
+
+== Phase 2: Update Namespace Strategy ==
+dev -> abs : Keep original namespaces\n(CodeGenerator.Core.Syntax, etc.)
+note right of abs
+  Option A: Keep old namespaces (zero breaking changes)
+  Option B: New namespaces + type forwarding
+  Recommendation: Option A for v1
+end note
+
+== Phase 3: Update Framework Modules ==
+dev -> fw : Replace Core ProjectReference\nwith Abstractions ProjectReference
+dev -> fw : Verify build (no code changes needed\nif namespaces preserved)
+
+== Phase 4: Move Heavy Deps to DotNet ==
+dev -> core : Remove Roslyn, LibGit2Sharp,\nMediatR, AutoMapper, Octokit,\nEnvDTE, TextCopy packages
+dev -> dotnet : Verify DotNet has its own\nheavy dependencies
+dev -> core : Keep DotLiquid, Humanizer,\nSerilog, Newtonsoft.Json
+
+== Phase 5: Publish ==
+dev -> nuget : Publish CodeGenerator.Abstractions\n(v1.0.0)
+dev -> nuget : Publish CodeGenerator.Core\n(v1.3.0 - with Abstractions dep)
+dev -> nuget : Publish updated framework modules
+
+== Phase 6: Verify ==
+dev -> fw : Run integration tests\nacross all 8 framework modules
+dev -> dotnet : Run DotNet generation tests
+dev -> core : Run Core unit tests
+
+@enduml

@@ -1,0 +1,16 @@
+@startuml c4_context
+!theme plain
+!include <C4/C4_Context>
+
+title Incremental Generation — System Context Diagram
+
+Person(agent, "Coding Agent", "AI agent that builds models and invokes code generation")
+System(codegen, "CodeGenerator Framework", "Model-driven code generation with incremental file addition")
+System_Ext(existing, "Existing Project", "On-disk project structure (DotNet, Flask, React, Playwright, etc.)")
+System_Ext(vcs, "Version Control", "Git repository tracking project changes")
+
+Rel(agent, codegen, "Builds model, calls GenerateAsync()")
+Rel(codegen, existing, "Detects structure, adds/updates files")
+Rel(existing, vcs, "Tracked by")
+
+@enduml

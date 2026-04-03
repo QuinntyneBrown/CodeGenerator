@@ -1,0 +1,35 @@
+@startuml c4_component
+!theme plain
+!include <C4/C4_Component>
+
+title Incremental Generation — Component Diagram
+
+Container_Boundary(core, "CodeGenerator.Core") {
+    Component(iag, "IArtifactGenerator", "Interface", "GenerateAsync(object model) — unchanged entry point")
+    Component(ag, "ArtifactGenerator", "Class", "Dispatches to strategies by model type")
+    Component(ipc, "IProjectContext", "Interface", "Detects project type, locates key files, reads structure")
+    Component(pcf, "ProjectContextFactory", "Class", "Creates IProjectContext from a directory path")
+    Component(icr, "IConflictResolver", "Interface", "Skip, Overwrite, Merge, Error — handles existing files")
+}
+
+Container_Boundary(incr, "Incremental Strategies (per framework)") {
+    Component(afs, "AddFileStrategy<AddFileModel>", "Class", "Writes a single file with conflict check")
+    Component(aes, "AddEntityStrategy<AddEntityModel>", "Class", "Adds entity + migration + DI registration (DotNet)")
+    Component(ars, "AddRouteStrategy<AddRouteModel>", "Class", "Adds route/endpoint to existing app (Flask/DotNet)")
+    Component(acs, "AddComponentStrategy<AddComponentModel>", "Class", "Adds component + barrel export (React/Angular)")
+}
+
+Rel(iag, ag, "implemented by")
+Rel(ag, afs, "dispatches AddFileModel")
+Rel(ag, aes, "dispatches AddEntityModel")
+Rel(ag, ars, "dispatches AddRouteModel")
+Rel(ag, acs, "dispatches AddComponentModel")
+Rel(afs, ipc, "reads project structure")
+Rel(aes, ipc, "reads project structure")
+Rel(ars, ipc, "reads project structure")
+Rel(acs, ipc, "reads project structure")
+Rel(afs, icr, "resolves file conflicts")
+Rel(aes, icr, "resolves file conflicts")
+Rel(pcf, ipc, "creates")
+
+@enduml

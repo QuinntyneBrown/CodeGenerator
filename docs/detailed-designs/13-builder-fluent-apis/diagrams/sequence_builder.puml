@@ -1,0 +1,46 @@
+@startuml sequence_builder
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Builder Construction -> Model -> Generation Flow
+
+participant "AI Agent" as Agent
+participant "ControllerBuilder" as Builder
+participant "BuilderBase" as Base
+participant "ControllerModel" as Model
+participant "ISyntaxGenerator" as SyntaxGen
+participant "Strategy" as Strategy
+
+Agent -> Builder : For("User")
+activate Builder
+Builder --> Agent : builder instance
+
+Agent -> Builder : WithCrud()
+Builder -> Builder : Add GET, POST, PUT, DELETE routes\nwith convention defaults
+
+Agent -> Builder : Build()
+Builder -> Base : ApplyDefaults()
+activate Base
+Base -> Base : Set naming conventions,\nimports, url prefix
+Base --> Builder
+deactivate Base
+
+Builder -> Model : new ControllerModel()
+activate Model
+Builder -> Model : Set all properties\nfrom builder state
+Model --> Builder : populated model
+deactivate Model
+
+Builder --> Agent : ControllerModel
+deactivate Builder
+
+Agent -> SyntaxGen : GenerateAsync(model)
+activate SyntaxGen
+SyntaxGen -> Strategy : Resolve + invoke
+activate Strategy
+Strategy --> SyntaxGen : generated code string
+deactivate Strategy
+SyntaxGen --> Agent : code string
+deactivate SyntaxGen
+
+@enduml

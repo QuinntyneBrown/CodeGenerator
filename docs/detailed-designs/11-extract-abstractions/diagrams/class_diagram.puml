@@ -1,0 +1,108 @@
+@startuml class_diagram
+!theme plain
+skinparam linetype ortho
+
+title Class Diagram: CodeGenerator.Abstractions
+
+package "CodeGenerator.Abstractions.Artifacts" {
+    interface IArtifactGenerator {
+        +GenerateAsync(model: object): Task
+    }
+
+    interface "IArtifactGenerationStrategy<T>" as IArtifactGenStrat {
+        +CanHandle(model: object): bool
+        +GetPriority(): int
+        +GenerateAsync(target: T): Task
+    }
+
+    abstract class ArtifactGenerationStrategyBase {
+        +{abstract} GenerateAsync(sp: IServiceProvider, target: object, ct: CancellationToken): Task
+    }
+
+    class ArtifactModel {
+        +Parent: ArtifactModel
+        +GetChildren(): IEnumerable<ArtifactModel>
+        +GetDescendants(): List<ArtifactModel>
+    }
+
+    class FileModel {
+        +Name: string
+        +Directory: string
+        +Extension: string
+        +Path: string
+        +Body: string
+    }
+}
+
+package "CodeGenerator.Abstractions.Syntax" {
+    interface ISyntaxGenerator {
+        +GenerateAsync<T>(model: T): Task<string>
+    }
+
+    interface "ISyntaxGenerationStrategy<T>" as ISyntaxGenStrat {
+        +CanHandle(target: object): bool
+        +GetPriority(): int
+        +GenerateAsync(target: T, ct: CancellationToken): Task<string>
+    }
+
+    abstract class SyntaxGenerationStrategyBase {
+        +{abstract} GenerateAsync(sp: IServiceProvider, target: object, ct: CancellationToken): Task<string>
+    }
+
+    class SyntaxModel {
+        +Parent: SyntaxModel
+        +Imports: List<ImportModel>
+        +GetChildren(): IEnumerable<SyntaxModel>
+        +GetDescendants(): List<SyntaxModel>
+    }
+
+    class ImportModel {
+        +Name: string
+    }
+}
+
+package "CodeGenerator.Abstractions.Services" {
+    interface ITemplateProcessor {
+        +Process(template: string, tokens: IDictionary): string
+        +ProcessAsync(template: string, tokens: IDictionary): Task<string>
+    }
+
+    interface ITemplateLocator {
+        +Get(filename: string): string
+    }
+
+    interface INamingConventionConverter {
+        +Convert(from: NamingConvention, to: NamingConvention, value: string): string
+    }
+
+    interface ICommandService {
+        +Start(command: string, workingDirectory: string): int
+    }
+
+    interface IContext {
+        +Set<T>(item: T): void
+        +Get<T>(): T
+    }
+
+    interface IFileProvider {
+        +Get(searchPattern: string, directory: string): string
+    }
+
+    enum NamingConvention {
+        PascalCase
+        CamelCase
+        SnakeCase
+        TitleCase
+        AllCaps
+        KebobCase
+        None
+    }
+}
+
+FileModel --|> ArtifactModel
+SyntaxModel --> "*" ImportModel : Imports
+IArtifactGenStrat ..> ArtifactModel : uses
+ISyntaxGenStrat ..> SyntaxModel : uses
+INamingConventionConverter ..> NamingConvention : uses
+
+@enduml

@@ -1,0 +1,41 @@
+@startuml c4_component
+!theme plain
+!include <C4/C4_Component>
+
+title Expand SKILL.md — Component Diagram (Document Structure)
+
+Container_Boundary(skill, "SKILL.md Sections") {
+    Component(header, "YAML Front Matter", "Metadata", "name, description, user-invocable flag")
+    Component(overview, "Overview & Setup", "Section", "Package references, service registration for all 8 modules")
+    Component(core, "Core Abstractions", "Section", "IArtifactGenerator, ISyntaxGenerator, ITemplateProcessor, ICommandService")
+    Component(dotnet, "DotNet Models", "Section", "SolutionModel, ProjectModel, ClassModel, EntityModel, ControllerModel, factories")
+    Component(python, "Python Models", "Section", "ClassModel, FunctionModel, ModuleModel, DecoratorModel, TypeHintModel")
+    Component(flask, "Flask Models", "Section", "ControllerModel, ModelModel, RepositoryModel, ServiceModel, SchemaModel")
+    Component(angular, "Angular Models", "Section", "WorkspaceModel, ProjectModel, FunctionModel, ImportModel")
+    Component(react, "React Models", "Section", "ComponentModel, HookModel, StoreModel, ApiClientModel, TypeScriptInterfaceModel")
+    Component(reactnative, "ReactNative Models", "Section", "ScreenModel, ComponentModel, NavigationModel, StoreModel, StyleModel")
+    Component(playwright, "Playwright Models", "Section", "PageObjectModel, TestSpecModel, FixtureModel, ConfigModel, BasePageModel")
+    Component(detox, "Detox Models", "Section", "PageObjectModel, TestSpecModel, DetoxConfigModel, JestConfigModel, BasePageModel")
+    Component(patterns, "Generation Patterns", "Section", "End-to-end examples for each module")
+}
+
+Container_Boundary(pipeline, "Generation Pipeline") {
+    Component(installcmd, "InstallCommand", "C# Command", "CLI handler that writes skill file to disk")
+    Component(embedded, "SkillContent Constant", "C# const string", "Complete SKILL.md content embedded in InstallCommand.cs")
+}
+
+Rel(installcmd, embedded, "Reads content from")
+Rel(embedded, header, "Contains")
+Rel(header, overview, "Followed by")
+Rel(overview, core, "Followed by")
+Rel(core, dotnet, "Followed by")
+Rel(dotnet, python, "Followed by")
+Rel(python, flask, "Followed by")
+Rel(flask, angular, "Followed by")
+Rel(angular, react, "Followed by")
+Rel(react, reactnative, "Followed by")
+Rel(reactnative, playwright, "Followed by")
+Rel(playwright, detox, "Followed by")
+Rel(detox, patterns, "Followed by")
+
+@enduml

@@ -1,0 +1,39 @@
+@startuml c4_container
+!theme plain
+!include <C4/C4_Container>
+
+title Expand SKILL.md — Container Diagram
+
+Person(agent, "AI Agent", "Discovers and uses CodeGenerator capabilities")
+
+System_Boundary(cli, "CodeGenerator CLI") {
+    Container(install, "InstallCommand", "C#", "Writes SKILL.md to .claude/skills/code-generator/")
+    Container(skillcontent, "SkillContent", "Embedded String", "Complete skill documentation covering all 8 modules")
+}
+
+System_Boundary(framework, "CodeGenerator Framework") {
+    Container(dotnet, "CodeGenerator.DotNet", ".NET", "97 registrations: classes, entities, solutions, CQRS, factories")
+    Container(python, "CodeGenerator.Python", ".NET", "2 registrations: classes, functions, modules, decorators")
+    Container(flask, "CodeGenerator.Flask", ".NET", "2 registrations: controllers, models, repositories, schemas")
+    Container(angular, "CodeGenerator.Angular", ".NET", "1 registration: workspaces, projects, functions")
+    Container(react, "CodeGenerator.React", ".NET", "1 registration: components, hooks, stores, API clients")
+    Container(reactnative, "CodeGenerator.ReactNative", ".NET", "1 registration: screens, components, navigation, stores")
+    Container(playwright, "CodeGenerator.Playwright", ".NET", "1 registration: page objects, test specs, fixtures")
+    Container(detox, "CodeGenerator.Detox", ".NET", "1 registration: page objects, test specs, configs")
+}
+
+Container(skillfile, "SKILL.md", "Markdown", "Installed at .claude/skills/code-generator/SKILL.md")
+
+Rel(install, skillfile, "Writes")
+Rel(skillcontent, skillfile, "Content source")
+Rel(agent, skillfile, "Reads at session start")
+Rel(skillfile, dotnet, "Documents models for")
+Rel(skillfile, python, "Documents models for")
+Rel(skillfile, flask, "Documents models for")
+Rel(skillfile, angular, "Documents models for")
+Rel(skillfile, react, "Documents models for")
+Rel(skillfile, reactnative, "Documents models for")
+Rel(skillfile, playwright, "Documents models for")
+Rel(skillfile, detox, "Documents models for")
+
+@enduml

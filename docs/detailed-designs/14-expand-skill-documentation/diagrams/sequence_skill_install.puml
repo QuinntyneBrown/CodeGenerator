@@ -1,0 +1,41 @@
+@startuml sequence_skill_install
+!theme plain
+
+title Skill Installation and Agent Discovery Flow
+
+actor Developer
+participant "create-code-cli" as CLI
+participant "InstallCommand" as Cmd
+participant "File System" as FS
+actor "AI Agent" as Agent
+participant "CodeGenerator\nFramework" as CG
+
+== Installation ==
+
+Developer -> CLI: create-code-cli install -o /project
+CLI -> Cmd: HandleAsync(outputDirectory)
+Cmd -> Cmd: Read SkillContent constant
+Cmd -> FS: Directory.CreateDirectory(\n.claude/skills/code-generator/)
+Cmd -> FS: File.WriteAllTextAsync(\nSKILL.md, SkillContent)
+FS --> Cmd: Written
+Cmd --> Developer: "Installed Claude skill: {path}"
+
+== Agent Discovery ==
+
+Developer -> Agent: "Generate a Flask REST API\nwith User model"
+Agent -> FS: Read .claude/skills/\ncode-generator/SKILL.md
+FS --> Agent: Skill documentation\n(all 8 modules)
+
+Agent -> Agent: Parse Flask section:\nControllerModel, ModelModel,\nRepositoryModel, ServiceModel,\nSchemaModel, AppFactoryModel
+
+Agent -> Agent: Build generation plan:\n1. Register services\n2. Create models\n3. Call GenerateAsync
+
+Agent -> CG: services.AddFlaskServices()
+Agent -> CG: new ControllerModel("User")
+Agent -> CG: new ModelModel("User")
+Agent -> CG: artifactGenerator.GenerateAsync(model)
+CG --> Agent: Generated Flask files
+
+Agent --> Developer: Flask API with User model
+
+@enduml

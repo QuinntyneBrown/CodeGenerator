@@ -1,0 +1,48 @@
+@startuml c4_component
+!theme plain
+!include <C4/C4_Component>
+
+title Builder / Fluent APIs — Component Diagram
+
+Container_Boundary(core, "CodeGenerator.Core — Builder Base") {
+    Component(ibuilder, "IBuilder<T>", "Interface", "Build() : T")
+    Component(base, "BuilderBase<TModel, TBuilder>", "Abstract", "Stores model, returns TBuilder for chaining, applies defaults on Build()")
+    Component(defaults, "DefaultsEngine", "Static", "Convention-based defaults: naming, access modifiers, common patterns")
+}
+
+Container_Boundary(dotnet, "CodeGenerator.DotNet — Builders") {
+    Component(class_b, "ClassBuilder", "", "WithProperty(), WithMethod(), WithField(), WithAttribute(), Sealed(), Static()")
+    Component(ctrl_b, "ControllerBuilder", "", "WithCrud(), WithRoute(), ForEntity()")
+    Component(entity_b, "EntityBuilder", "", "WithProperty(), WithKey(), WithTimestamps()")
+}
+
+Container_Boundary(flask, "CodeGenerator.Flask — Builders") {
+    Component(fctrl_b, "ControllerBuilder", "", "WithCrud(), WithRoute(), WithMiddleware(), WithService()")
+    Component(fmodel_b, "ModelBuilder", "", "WithColumn(), WithRelationship(), WithTimestamps(), WithUuid()")
+}
+
+Container_Boundary(react, "CodeGenerator.React — Builders") {
+    Component(comp_b, "ComponentBuilder", "", "WithProp(), WithHook(), WithChildren(), AsClient()")
+    Component(store_b, "StoreBuilder", "", "WithState(), WithAction(), ForEntity()")
+    Component(api_b, "ApiClientBuilder", "", "WithMethod(), ForEntity(), WithAuth()")
+}
+
+Container_Boundary(testing, "Playwright / Detox — Builders") {
+    Component(po_b, "PageObjectBuilder", "", "WithLocator(), WithAction(), WithQuery()")
+    Component(ts_b, "TestSpecBuilder", "", "WithTest(), WithSetup(), ForPageObject()")
+}
+
+Rel(class_b, base, "Extends")
+Rel(ctrl_b, base, "Extends")
+Rel(entity_b, base, "Extends")
+Rel(fctrl_b, base, "Extends")
+Rel(fmodel_b, base, "Extends")
+Rel(comp_b, base, "Extends")
+Rel(store_b, base, "Extends")
+Rel(api_b, base, "Extends")
+Rel(po_b, base, "Extends")
+Rel(ts_b, base, "Extends")
+Rel(base, ibuilder, "Implements")
+Rel(base, defaults, "Uses")
+
+@enduml

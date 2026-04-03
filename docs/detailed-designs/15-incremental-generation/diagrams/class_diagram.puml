@@ -1,0 +1,131 @@
+@startuml class_diagram
+!theme plain
+
+title Incremental Generation — Class Diagram
+
+package "CodeGenerator.Core.Artifacts" {
+    class ArtifactModel {
+    }
+
+    class FileModel {
+        +string Name
+        +string Directory
+        +string Extension
+        +string Path
+        +string Body
+    }
+
+    ArtifactModel <|-- FileModel
+}
+
+package "CodeGenerator.Core.Incremental" {
+    interface IProjectContext {
+        +string ProjectDirectory
+        +ProjectType Type
+        +bool FileExists(string relativePath)
+        +string[] FindFiles(string pattern)
+        +string ReadFile(string relativePath)
+    }
+
+    interface IProjectContextFactory {
+        +IProjectContext Create(string directory)
+    }
+
+    interface IConflictResolver {
+        +ConflictAction Resolve(string path, string existingContent, string newContent)
+    }
+
+    enum ProjectType {
+        DotNet
+        Flask
+        React
+        Angular
+        ReactNative
+        Playwright
+        Detox
+        Unknown
+    }
+
+    enum ConflictAction {
+        Skip
+        Overwrite
+        Merge
+        Error
+    }
+
+    class ProjectContext {
+        -IFileSystem fileSystem
+        +string ProjectDirectory
+        +ProjectType Type
+    }
+
+    IProjectContext <|.. ProjectContext
+    IProjectContextFactory ..> IProjectContext : creates
+    IConflictResolver ..> ConflictAction : returns
+    IProjectContext ..> ProjectType : exposes
+}
+
+package "CodeGenerator.Core.Incremental.Models" {
+    class AddFileModel {
+        +string ProjectDirectory
+        +string RelativePath
+        +string Content
+        +ConflictBehavior OnConflict
+    }
+
+    class IncrementalProjectModel {
+        +string ProjectDirectory
+        +List<AddFileModel> Files
+    }
+
+    enum ConflictBehavior {
+        Skip
+        Overwrite
+        Error
+    }
+
+    FileModel <|-- AddFileModel
+    AddFileModel --o IncrementalProjectModel
+    AddFileModel ..> ConflictBehavior : uses
+}
+
+package "CodeGenerator.DotNet.Incremental.Models" {
+    class AddEntityModel {
+        +string SolutionDirectory
+        +string EntityName
+        +List<PropertyModel> Properties
+        +bool GenerateMigration
+        +bool UpdateDbContext
+        +bool UpdateConfigureServices
+    }
+
+    class AddControllerModel {
+        +string ProjectDirectory
+        +string EntityName
+        +bool UseMinimalApi
+        +List<EndpointModel> Endpoints
+    }
+
+    AddFileModel <|-- AddEntityModel
+    AddFileModel <|-- AddControllerModel
+}
+
+package "CodeGenerator.Flask.Incremental.Models" {
+    class AddRouteModel {
+        +string AppDirectory
+        +string BlueprintName
+        +List<RouteDefinition> Routes
+        +bool RegisterBlueprint
+    }
+}
+
+package "CodeGenerator.React.Incremental.Models" {
+    class AddComponentModel {
+        +string ProjectDirectory
+        +string ComponentName
+        +string ComponentDirectory
+        +bool UpdateBarrelExport
+    }
+}
+
+@enduml

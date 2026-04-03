@@ -1,0 +1,115 @@
+@startuml class_diagram
+!theme plain
+
+title SKILL.md — Documented Model Surface per Module
+
+package "CodeGenerator.DotNet" {
+    class SolutionModel {
+        +Name: string
+        +SolutionDirectory: string
+        +Projects: List<ProjectModel>
+    }
+    class ProjectModel {
+        +Name: string
+        +DotNetProjectType: enum
+        +Files: List<FileModel>
+        +Packages: List<PackageModel>
+    }
+    class ClassModel {
+        +Name: string
+        +Properties: List<PropertyModel>
+        +Methods: List<MethodModel>
+        +Constructors: List<ConstructorModel>
+    }
+    class EntityModel {
+        +AggregateRootName: string
+        +CreateDto(): ClassModel
+    }
+    class InterfaceModel {
+        +Name: string
+        +Implements: List<TypeModel>
+    }
+    note "Also: ControllerModel, DbContextModel,\nFullStackModel, 27+ template categories,\nISolutionFactory, IClassFactory,\nIEntityFactory, ICqrsFactory" as N1
+}
+
+package "CodeGenerator.Python" {
+    class Py_ClassModel {
+        +Name: string
+        +Methods: List<MethodModel>
+        +Decorators: List<DecoratorModel>
+    }
+    class Py_FunctionModel {
+        +Name: string
+        +Params: List<ParamModel>
+        +TypeHint: TypeHintModel
+    }
+    class Py_ModuleModel {
+        +Name: string
+        +Imports: List<ImportModel>
+        +Classes: List<ClassModel>
+    }
+}
+
+package "CodeGenerator.Flask" {
+    class Fl_ControllerModel {
+        +Name: string
+        +Routes: list
+    }
+    class Fl_ModelModel {
+        +Name: string
+        +Fields: list
+    }
+    class Fl_RepositoryModel
+    class Fl_ServiceModel
+    class Fl_SchemaModel
+    class Fl_AppFactoryModel
+}
+
+package "CodeGenerator.Angular" {
+    class Ng_WorkspaceModel {
+        +Name: string
+        +Version: string
+        +Projects: List<ProjectModel>
+    }
+    class Ng_ProjectModel {
+        +Name: string
+        +Prefix: string
+    }
+    class Ng_FunctionModel
+}
+
+package "CodeGenerator.React" {
+    class Rx_ComponentModel
+    class Rx_HookModel
+    class Rx_StoreModel
+    class Rx_ApiClientModel
+    class Rx_TypeScriptInterfaceModel
+}
+
+package "CodeGenerator.ReactNative" {
+    class RN_ScreenModel
+    class RN_ComponentModel
+    class RN_NavigationModel
+    class RN_StoreModel
+    class RN_StyleModel
+}
+
+package "CodeGenerator.Playwright" {
+    class Pw_PageObjectModel
+    class Pw_TestSpecModel
+    class Pw_FixtureModel
+    class Pw_ConfigModel
+    class Pw_BasePageModel
+}
+
+package "CodeGenerator.Detox" {
+    class Dx_PageObjectModel
+    class Dx_TestSpecModel
+    class Dx_DetoxConfigModel
+    class Dx_JestConfigModel
+    class Dx_BasePageModel
+}
+
+EntityModel --|> ClassModel
+
+@enduml

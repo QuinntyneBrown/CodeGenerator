@@ -1,0 +1,59 @@
+@startuml sequence_validation
+!theme plain
+
+title Validation Flow in GenerateAsync Pipeline
+
+actor "Agent" as agent
+participant "ArtifactGenerator" as artgen
+participant "model : IValidatable" as model
+participant "ValidationResult" as result
+participant "Strategy" as strategy
+participant "File System" as fs
+
+agent -> artgen : GenerateAsync(model)
+activate artgen
+
+artgen -> model : Validate()
+activate model
+model --> artgen : ValidationResult
+deactivate model
+
+alt result.IsValid == false
+    artgen -> agent : throw ModelValidationException(\n  result, model.GetType())
+    note right of agent
+        Exception.Message contains:
+        - Model type name
+        - Each error: property + message
+        - Actionable fix hints
+    end note
+else result.IsValid == true
+    artgen -> artgen : Resolve strategy wrapper\n(existing dispatch logic)
+    artgen -> strategy : GenerateAsync(model)
+    activate strategy
+    strategy -> fs : Write files
+    strategy --> artgen : Task complete
+    deactivate strategy
+    artgen --> agent : Success
+end
+
+deactivate artgen
+
+== Syntax Generation (same pattern) ==
+
+agent -> artgen : SyntaxGenerator.GenerateAsync<T>(model)
+activate artgen
+artgen -> model : Validate()
+activate model
+model --> artgen : ValidationResult
+deactivate model
+
+alt result.IsValid == false
+    artgen -> agent : throw ModelValidationException
+else valid
+    artgen -> strategy : GenerateAsync(model)
+    strategy --> artgen : generated string
+    artgen --> agent : string
+end
+deactivate artgen
+
+@enduml

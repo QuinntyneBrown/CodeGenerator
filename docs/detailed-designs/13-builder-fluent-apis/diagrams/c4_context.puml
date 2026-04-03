@@ -1,0 +1,21 @@
+@startuml c4_context
+!theme plain
+!include <C4/C4_Context>
+
+title Builder / Fluent APIs — System Context
+
+Person(agent, "AI Agent", "Claude, GPT, or other coding agent that constructs models to generate code")
+
+System(builders, "Builder / Fluent APIs", "Fluent builder layer that compresses model construction into minimal token sequences")
+System(codegen, "CodeGenerator", "Core generation engine: dispatches models to strategies, produces files")
+
+System_Ext(fs, "File System", "Target directory for generated output")
+
+Rel(agent, builders, "Constructs models via fluent API\n(low token cost)")
+Rel(builders, codegen, "Produces fully-populated model objects")
+Rel(codegen, fs, "Writes generated files")
+
+Lay_D(agent, builders)
+Lay_D(builders, codegen)
+
+@enduml

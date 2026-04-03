@@ -1,0 +1,29 @@
+@startuml c4_container
+!theme plain
+!include <C4/C4_Container>
+
+title Incremental Generation — Container Diagram
+
+Person(agent, "Coding Agent", "Builds incremental models")
+
+System_Boundary(cg, "CodeGenerator Framework") {
+    Container(core, "CodeGenerator.Core", "NuGet", "IArtifactGenerator dispatch, IProjectContext, conflict resolution")
+    Container(dotnet, "CodeGenerator.DotNet", "NuGet", "DotNet incremental strategies (add entity, add controller, update DI)")
+    Container(flask, "CodeGenerator.Flask", "NuGet", "Flask incremental strategies (add route, add model)")
+    Container(react, "CodeGenerator.React", "NuGet", "React incremental strategies (add component, add page)")
+    Container(pw, "CodeGenerator.Playwright", "NuGet", "Playwright incremental strategies (add page object, add spec)")
+}
+
+System_Ext(disk, "Existing Project on Disk", "Files, configs, solution/project structure")
+
+Rel(agent, core, "GenerateAsync(AddFileModel)")
+Rel(core, dotnet, "Dispatches to DotNet strategies")
+Rel(core, flask, "Dispatches to Flask strategies")
+Rel(core, react, "Dispatches to React strategies")
+Rel(core, pw, "Dispatches to Playwright strategies")
+Rel(dotnet, disk, "Reads structure, writes files")
+Rel(flask, disk, "Reads structure, writes files")
+Rel(react, disk, "Reads structure, writes files")
+Rel(pw, disk, "Reads structure, writes files")
+
+@enduml

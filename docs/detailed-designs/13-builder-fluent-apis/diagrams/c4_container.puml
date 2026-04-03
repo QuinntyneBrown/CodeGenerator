@@ -1,0 +1,41 @@
+@startuml c4_container
+!theme plain
+!include <C4/C4_Container>
+
+title Builder / Fluent APIs — Container Diagram
+
+Person(agent, "AI Agent", "Constructs models via builders")
+
+System_Boundary(codegen, "CodeGenerator Packages") {
+    Container(builders_core, "Builder Base", "CodeGenerator.Core", "BuilderBase<TModel, TBuilder> abstract class, IBuilder<T> interface, convention defaults engine")
+
+    Container(builders_dotnet, "DotNet Builders", "CodeGenerator.DotNet", "ClassBuilder, ControllerBuilder, EntityBuilder, ProjectBuilder, SolutionBuilder")
+    Container(builders_python, "Python Builders", "CodeGenerator.Python", "ClassBuilder, FunctionBuilder, ModuleBuilder")
+    Container(builders_flask, "Flask Builders", "CodeGenerator.Flask", "ControllerBuilder, ModelBuilder, ProjectBuilder")
+    Container(builders_react, "React Builders", "CodeGenerator.React", "ComponentBuilder, StoreBuilder, ApiClientBuilder")
+    Container(builders_angular, "Angular Builders", "CodeGenerator.Angular", "WorkspaceBuilder, ProjectBuilder")
+    Container(builders_rn, "ReactNative Builders", "CodeGenerator.ReactNative", "ScreenBuilder, NavigationBuilder")
+    Container(builders_pw, "Playwright Builders", "CodeGenerator.Playwright", "PageObjectBuilder, TestSpecBuilder")
+    Container(builders_detox, "Detox Builders", "CodeGenerator.Detox", "PageObjectBuilder, TestSpecBuilder")
+
+    Container(models, "Syntax Models", "All packages", "ClassModel, ControllerModel, ComponentModel, etc.")
+    Container(engine, "Generation Engine", "CodeGenerator.Core", "IArtifactGenerator, ISyntaxGenerator")
+}
+
+Rel(agent, builders_dotnet, "Fluent API calls")
+Rel(agent, builders_flask, "Fluent API calls")
+Rel(agent, builders_react, "Fluent API calls")
+
+Rel(builders_dotnet, builders_core, "Extends")
+Rel(builders_python, builders_core, "Extends")
+Rel(builders_flask, builders_core, "Extends")
+Rel(builders_react, builders_core, "Extends")
+Rel(builders_angular, builders_core, "Extends")
+Rel(builders_rn, builders_core, "Extends")
+Rel(builders_pw, builders_core, "Extends")
+Rel(builders_detox, builders_core, "Extends")
+
+Rel(builders_core, models, "Produces")
+Rel(models, engine, "Passed to")
+
+@enduml

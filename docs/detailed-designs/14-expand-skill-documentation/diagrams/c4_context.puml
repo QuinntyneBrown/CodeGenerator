@@ -1,0 +1,20 @@
+@startuml c4_context
+!theme plain
+!include <C4/C4_Context>
+
+title Expand SKILL.md — System Context
+
+Person(agent, "AI Agent", "Claude Code or other LLM agent using the CodeGenerator framework")
+Person(developer, "Developer", "Invokes CLI install command to set up skill documentation")
+
+System(skillmd, "SKILL.md", "Claude skill file describing all CodeGenerator capabilities across 8 framework modules")
+
+System_Ext(codegen, "CodeGenerator Framework", "8 modules: DotNet, Python, Flask, Angular, React, ReactNative, Playwright, Detox")
+System_Ext(fs, "Target Project", "Developer's project where .claude/skills/ is installed")
+
+Rel(developer, skillmd, "Installs via create-code-cli install")
+Rel(agent, skillmd, "Reads to discover capabilities")
+Rel(agent, codegen, "Generates code using discovered models")
+Rel(skillmd, fs, "Written to .claude/skills/code-generator/")
+
+@enduml
