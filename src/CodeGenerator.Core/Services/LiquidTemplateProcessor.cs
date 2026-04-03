@@ -12,39 +12,6 @@ using CodeGenerator.Core.Syntax;
 
 namespace CodeGenerator.Core.Services;
 
-public class RazorTemplateProcessor : ITemplateProcessor
-{
-    public string Process(string template, IDictionary<string, object> tokens, string[] ignoreTokens = null)
-    {
-        throw new NotImplementedException();
-    }
-
-    public string Process(string template, IDictionary<string, object> tokens)
-    {
-        throw new NotImplementedException();
-    }
-
-    public string Process(string template, dynamic model)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<string> ProcessAsync(string template, IDictionary<string, object> tokens, string[] ignoreTokens = null)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<string> ProcessAsync(string template, IDictionary<string, object> tokens)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<string> ProcessAsync(string template, dynamic model)
-    {
-        throw new NotImplementedException();
-    }
-}
-
 public class LiquidTemplateProcessor : ITemplateProcessor
 {
     private readonly SharedTemplateFileSystem _fileSystem;
