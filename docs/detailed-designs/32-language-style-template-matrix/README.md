@@ -1,6 +1,6 @@
 # Language/Style Template Matrix -- Detailed Design
 
-**Status:** Proposed
+**Status:** Implemented
 
 ## 1. Overview
 

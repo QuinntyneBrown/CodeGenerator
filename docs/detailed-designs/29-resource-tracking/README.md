@@ -1,6 +1,6 @@
 # Resource Tracking -- Detailed Design
 
-**Status:** Proposed
+**Status:** Implemented
 
 **Depends on:** DD-28 (Cross-Template State / Generation Context)
 

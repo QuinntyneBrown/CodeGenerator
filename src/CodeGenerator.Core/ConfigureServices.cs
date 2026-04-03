@@ -5,8 +5,10 @@ using System.Reflection;
 using CodeGenerator.Core.Artifacts.Abstractions;
 using CodeGenerator.Core.Dependencies;
 using CodeGenerator.Core.Incremental.Services;
+using CodeGenerator.Core.Schema;
 using CodeGenerator.Core.Services;
 using CodeGenerator.Core.Syntax;
+using CodeGenerator.Core.Templates;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace CodeGenerator.Core;
@@ -15,6 +17,17 @@ public static class ConfigureServices
 {
     public static void AddCoreServices(this IServiceCollection services, Assembly assembly)
     {
+        services.AddScoped<IGenerationContext, TemplateGenerationContext>();
+        services.AddSingleton<ITemplateSetInfoLoader, TemplateSetInfoLoader>();
+        services.AddSingleton<NamingFilterParser>();
+        services.AddSingleton<IConventionTemplateDiscovery, ConventionTemplateDiscovery>();
+        services.AddSingleton<IStyleRegistry, StyleRegistry>();
+        services.AddSingleton<StyleResolver>();
+        services.AddSingleton<IFilenamePlaceholderResolver, FilenamePlaceholderResolver>();
+        services.AddSingleton<TemplatePartitioner>();
+        services.AddSingleton<ISchemaFormatDetector, SchemaFormatDetector>();
+        services.AddSingleton<SchemaNormalizerDispatcher>();
+        services.AddSingleton<ISchemaNormalizer, JsonSchemaNormalizer>();
         services.AddSingleton<IDependencyResolver, DependencyResolver>();
         services.AddSingleton<SharedTemplateFileSystem>(sp =>
         {

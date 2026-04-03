@@ -1,6 +1,6 @@
 # Schema Normalization Pipeline -- Detailed Design
 
-**Status:** Proposed
+**Status:** Implemented
 
 ## 1. Overview
 

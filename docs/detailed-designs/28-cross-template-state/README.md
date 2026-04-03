@@ -1,6 +1,6 @@
 # Cross-Template State / Generation Context -- Detailed Design
 
-**Status:** Proposed
+**Status:** Implemented
 
 ## 1. Overview
 

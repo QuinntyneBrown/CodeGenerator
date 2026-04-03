@@ -1,6 +1,6 @@
 # Convention-Based Template Discovery -- Detailed Design
 
-**Status:** Proposed
+**Status:** Implemented
 
 ## 1. Overview
 
