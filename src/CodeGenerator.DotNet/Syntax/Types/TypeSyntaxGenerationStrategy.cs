@@ -33,7 +33,7 @@ public class TypeSyntaxGenerationStrategy : ISyntaxGenerationStrategy<TypeModel>
         {
             builder.Append('<');
 
-            builder.AppendJoin(',', await Task.WhenAll(model.GenericTypeParameters.Select(async x => await syntaxGenerator.GenerateAsync(x))));
+            builder.AppendJoin(", ", await Task.WhenAll(model.GenericTypeParameters.Select(async x => await syntaxGenerator.GenerateAsync(x))));
 
             builder.Append('>');
         }
