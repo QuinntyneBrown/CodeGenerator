@@ -1,6 +1,6 @@
 # Underscore-Prefix Template Ordering -- Detailed Design
 
-**Status:** Proposed
+**Status:** Implemented
 **Depends on:** [DD-31 Convention-Based Template Discovery](../31-convention-based-template-discovery/README.md), [DD-28 Cross-Template State](../28-cross-template-state/README.md)
 **Pattern source:** [Pattern 5 -- Underscore-Prefix Ordering](../../xregistry-codegen-patterns.md#pattern-5-underscore-prefix-ordering-for-post-processing)
 

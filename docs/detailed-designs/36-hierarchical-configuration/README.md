@@ -1,6 +1,6 @@
 # Hierarchical Configuration -- Detailed Design
 
-**Status:** Proposed
+**Status:** Implemented
 **Pattern source:** [Pattern 11 -- Hierarchical Configuration](../../xregistry-codegen-patterns.md#pattern-11-hierarchical-configuration-cli--env--file--defaults)
 
 ## 1. Overview

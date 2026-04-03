@@ -3,10 +3,13 @@
 
 using System.Reflection;
 using CodeGenerator.Core.Artifacts.Abstractions;
+using CodeGenerator.Core.Configuration;
+using CodeGenerator.Core.Errors;
 using CodeGenerator.Core.Dependencies;
 using CodeGenerator.Core.Incremental.Services;
 using CodeGenerator.Core.Schema;
 using CodeGenerator.Core.Services;
+using CodeGenerator.Core.Validation;
 using CodeGenerator.Core.Syntax;
 using CodeGenerator.Core.Templates;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,6 +21,12 @@ public static class ConfigureServices
     public static void AddCoreServices(this IServiceCollection services, Assembly assembly)
     {
         services.AddScoped<IGenerationContext, TemplateGenerationContext>();
+        services.AddSingleton<ICodeGeneratorConfiguration>(sp =>
+            new CodeGeneratorConfiguration(
+                defaults: new Dictionary<string, string>(),
+                fileConfig: new Dictionary<string, string>(),
+                envConfig: new Dictionary<string, string>(),
+                cliConfig: new Dictionary<string, string>()));
         services.AddSingleton<ITemplateSetInfoLoader, TemplateSetInfoLoader>();
         services.AddSingleton<NamingFilterParser>();
         services.AddSingleton<IConventionTemplateDiscovery, ConventionTemplateDiscovery>();
@@ -28,6 +37,9 @@ public static class ConfigureServices
         services.AddSingleton<ISchemaFormatDetector, SchemaFormatDetector>();
         services.AddSingleton<SchemaNormalizerDispatcher>();
         services.AddSingleton<ISchemaNormalizer, JsonSchemaNormalizer>();
+        services.AddSingleton<ISchemaRegistry, SchemaRegistry>();
+        services.AddSingleton<IInputValidator, JsonSchemaInputValidator>();
+        services.AddScoped<IGenerationRollbackService, Errors.GenerationRollbackService>();
         services.AddSingleton<IDependencyResolver, DependencyResolver>();
         services.AddSingleton<SharedTemplateFileSystem>(sp =>
         {

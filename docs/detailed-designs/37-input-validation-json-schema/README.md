@@ -1,6 +1,6 @@
 # Input Validation with JSON Schema -- Detailed Design
 
-**Status:** Proposed
+**Status:** Implemented
 **Depends on:** [DD-22 YAML Configuration Schema](../22-yaml-configuration-schema/README.md), [DD-36 Hierarchical Configuration](../36-hierarchical-configuration/README.md)
 **Pattern source:** [Pattern 12 -- Input Validation with JSON Schema](../../xregistry-codegen-patterns.md#pattern-12-input-validation-with-json-schema)
 

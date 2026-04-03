@@ -1,7 +1,7 @@
 # Bulletproof Error Handling — Detailed Design
 
 **Feature:** 38-bulletproof-error-handling (CLI Vision 1.1)
-**Status:** Proposed
+**Status:** Implemented
 **Context:** The CLI currently has no structured error handling. Exceptions from file I/O, shell commands, and template rendering propagate as unhandled exceptions with raw stack traces, providing no useful feedback to users and leaving partially generated output on disk.
 
 ---
