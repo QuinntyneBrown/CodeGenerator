@@ -14,6 +14,7 @@ public class ConstructorModel : SyntaxModel
     {
         Params = [];
         BaseParams = [];
+        ThisParams = [];
     }
 
     public ConstructorModel(ClassModel @class, string name)
@@ -22,6 +23,7 @@ public class ConstructorModel : SyntaxModel
         Name = name;
         Params = [];
         BaseParams = [];
+        ThisParams = [];
         Body = new ConstructorExpressionModel(@class, this);
     }
 
@@ -32,6 +34,8 @@ public class ConstructorModel : SyntaxModel
     public ExpressionModel Body { get; set; }
 
     public List<string> BaseParams { get; set; }
+
+    public List<string> ThisParams { get; set; }
 
     public List<ParamModel> Params { get; set; }
 

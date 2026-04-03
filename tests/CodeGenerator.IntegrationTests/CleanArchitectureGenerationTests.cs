@@ -868,4 +868,629 @@ await _context.SaveChangesAsync(cancellationToken);"),
         Assert.Contains("namespace CleanArchitecture.Infrastructure.Identity;", result);
         Assert.Contains("public class ApplicationUser : IdentityUser { }", result);
     }
+
+    // ========================================
+    // ITERATION 2: MORE COMPLEX PATTERNS
+    // ========================================
+
+    [Fact]
+    public async Task Application_Result_GeneratesExpectedSyntax()
+    {
+        // Target: Application/Common/Models/Result.cs
+        // Internal constructor, static methods, init properties
+
+        var parentClass = new ClassModel("Result");
+
+        var classModel = new ClassModel("Result")
+        {
+            Constructors =
+            [
+                new ConstructorModel
+                {
+                    Name = "Result",
+                    AccessModifier = AccessModifier.Internal,
+                    Params =
+                    [
+                        new ParamModel { Type = new TypeModel("bool"), Name = "succeeded" },
+                        new ParamModel { Type = new TypeModel("IEnumerable") { GenericTypeParameters = [new TypeModel("string")] }, Name = "errors" },
+                    ],
+                    Body = new ExpressionModel("Succeeded = succeeded;\nErrors = errors.ToArray();"),
+                },
+            ],
+            Properties =
+            [
+                new PropertyModel(parentClass, AccessModifier.Public, new TypeModel("bool"), "Succeeded", PropertyAccessorModel.GetInit),
+                new PropertyModel(parentClass, AccessModifier.Public, new TypeModel("string[]"), "Errors", PropertyAccessorModel.GetInit),
+            ],
+            Methods =
+            [
+                new MethodModel
+                {
+                    AccessModifier = AccessModifier.Public,
+                    Static = true,
+                    ReturnType = new TypeModel("Result"),
+                    Name = "Success",
+                    Body = new ExpressionModel("return new Result(true, Array.Empty<string>());"),
+                },
+                new MethodModel
+                {
+                    AccessModifier = AccessModifier.Public,
+                    Static = true,
+                    ReturnType = new TypeModel("Result"),
+                    Name = "Failure",
+                    Params = [new ParamModel { Type = new TypeModel("IEnumerable") { GenericTypeParameters = [new TypeModel("string")] }, Name = "errors" }],
+                    Body = new ExpressionModel("return new Result(false, errors);"),
+                },
+            ],
+        };
+
+        var document = new DocumentModel
+        {
+            Name = "Result",
+            RootNamespace = "CleanArchitecture",
+            Namespace = "Application.Common.Models",
+            Code = [classModel],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(document);
+        _output.WriteLine(result);
+
+        Assert.Contains("namespace CleanArchitecture.Application.Common.Models;", result);
+        Assert.Contains("public class Result", result);
+        Assert.Contains("internal Result(bool succeeded, IEnumerable<string> errors)", result);
+        Assert.Contains("public bool Succeeded { get; init; }", result);
+        Assert.Contains("public string[] Errors { get; init; }", result);
+        Assert.Contains("public static Result Success()", result);
+        Assert.Contains("public static Result Failure(IEnumerable<string> errors)", result);
+    }
+
+    [Fact]
+    public async Task Application_ValidationException_GeneratesExpectedSyntax()
+    {
+        // Target: Application/Common/Exceptions/ValidationException.cs
+        // Constructor with : this() chain
+
+        var parentClass = new ClassModel("ValidationException");
+
+        var classModel = new ClassModel("ValidationException")
+        {
+            BaseClass = "Exception",
+            Usings = [new UsingModel("FluentValidation.Results")],
+            Constructors =
+            [
+                new ConstructorModel
+                {
+                    Name = "ValidationException",
+                    AccessModifier = AccessModifier.Public,
+                    BaseParams = ["\"One or more validation failures have occurred.\""],
+                    Body = new ExpressionModel("Errors = new Dictionary<string, string[]>();"),
+                },
+                new ConstructorModel
+                {
+                    Name = "ValidationException",
+                    AccessModifier = AccessModifier.Public,
+                    Params = [new ParamModel { Type = new TypeModel("IEnumerable") { GenericTypeParameters = [new TypeModel("ValidationFailure")] }, Name = "failures" }],
+                    ThisParams = [],
+                    Body = new ExpressionModel(
+@"Errors = failures
+    .GroupBy(e => e.PropertyName, e => e.ErrorMessage)
+    .ToDictionary(failureGroup => failureGroup.Key, failureGroup => failureGroup.ToArray());"),
+                },
+            ],
+            Properties =
+            [
+                new PropertyModel(parentClass, AccessModifier.Public, new TypeModel("IDictionary") { GenericTypeParameters = [new TypeModel("string"), new TypeModel("string[]")] }, "Errors", [PropertyAccessorModel.Get]),
+            ],
+        };
+
+        var document = new DocumentModel
+        {
+            Name = "ValidationException",
+            RootNamespace = "CleanArchitecture",
+            Namespace = "Application.Common.Exceptions",
+            Code = [classModel],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(document);
+        _output.WriteLine(result);
+
+        Assert.Contains("using FluentValidation.Results;", result);
+        Assert.Contains("namespace CleanArchitecture.Application.Common.Exceptions;", result);
+        Assert.Contains("public class ValidationException : Exception", result);
+        Assert.Contains("public ValidationException()", result);
+        Assert.Contains(": base(\"One or more validation failures have occurred.\")", result);
+        Assert.Contains("public ValidationException(IEnumerable<ValidationFailure> failures)", result);
+        Assert.Contains("public IDictionary<string, string[]> Errors { get; }", result);
+    }
+
+    [Fact]
+    public async Task Application_LogTodoItemCompleted_GeneratesExpectedSyntax()
+    {
+        // Target: Application/TodoItems/EventHandlers/LogTodoItemCompleted.cs
+
+        var classModel = new ClassModel("LogTodoItemCompleted")
+        {
+            Usings =
+            [
+                new UsingModel("CleanArchitecture.Domain.Events"),
+                new UsingModel("Microsoft.Extensions.Logging"),
+            ],
+            Implements = [new TypeModel("INotificationHandler") { GenericTypeParameters = [new TypeModel("TodoItemCompletedEvent")] }],
+            Fields =
+            [
+                new FieldModel
+                {
+                    AccessModifier = AccessModifier.Private,
+                    ReadOnly = true,
+                    Type = TypeModel.LoggerOf("LogTodoItemCompleted"),
+                    Name = "_logger",
+                },
+            ],
+            Constructors =
+            [
+                new ConstructorModel
+                {
+                    Name = "LogTodoItemCompleted",
+                    AccessModifier = AccessModifier.Public,
+                    Params = [ParamModel.LoggerOf("LogTodoItemCompleted")],
+                    Body = new ExpressionModel("_logger = logger;"),
+                },
+            ],
+            Methods =
+            [
+                new MethodModel
+                {
+                    AccessModifier = AccessModifier.Public,
+                    ReturnType = new TypeModel("Task"),
+                    Name = "Handle",
+                    Params =
+                    [
+                        new ParamModel { Type = new TypeModel("TodoItemCompletedEvent"), Name = "notification" },
+                        ParamModel.CancellationToken,
+                    ],
+                    Body = new ExpressionModel(
+@"_logger.LogInformation(""CleanArchitecture Domain Event: {DomainEvent}"", notification.GetType().Name);
+
+return Task.CompletedTask;"),
+                },
+            ],
+        };
+
+        var document = new DocumentModel
+        {
+            Name = "LogTodoItemCompleted",
+            RootNamespace = "CleanArchitecture",
+            Namespace = "Application.TodoItems.EventHandlers",
+            Code = [classModel],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(document);
+        _output.WriteLine(result);
+
+        Assert.Contains("using CleanArchitecture.Domain.Events;", result);
+        Assert.Contains("using Microsoft.Extensions.Logging;", result);
+        Assert.Contains("public class LogTodoItemCompleted : INotificationHandler<TodoItemCompletedEvent>", result);
+        Assert.Contains("private readonly ILogger<LogTodoItemCompleted> _logger;", result);
+        Assert.Contains("public LogTodoItemCompleted(ILogger<LogTodoItemCompleted> logger)", result);
+        Assert.Contains("public Task Handle(TodoItemCompletedEvent notification, CancellationToken cancellationToken)", result);
+    }
+
+    [Fact]
+    public async Task Application_UnhandledExceptionBehaviour_GeneratesExpectedSyntax()
+    {
+        // Target: Application/Common/Behaviours/UnhandledExceptionBehaviour.cs
+        // Generic class with where constraint
+
+        var classModel = new ClassModel("UnhandledExceptionBehaviour")
+        {
+            Usings = [new UsingModel("Microsoft.Extensions.Logging")],
+            GenericTypeParameters = ["TRequest", "TResponse"],
+            GenericConstraints = ["where TRequest : notnull"],
+            Implements = [new TypeModel("IPipelineBehavior") { GenericTypeParameters = [new TypeModel("TRequest"), new TypeModel("TResponse")] }],
+            Fields =
+            [
+                new FieldModel
+                {
+                    AccessModifier = AccessModifier.Private,
+                    ReadOnly = true,
+                    Type = TypeModel.LoggerOf("TRequest"),
+                    Name = "_logger",
+                },
+            ],
+            Constructors =
+            [
+                new ConstructorModel
+                {
+                    Name = "UnhandledExceptionBehaviour",
+                    AccessModifier = AccessModifier.Public,
+                    Params = [new ParamModel { Type = TypeModel.LoggerOf("TRequest"), Name = "logger" }],
+                    Body = new ExpressionModel("_logger = logger;"),
+                },
+            ],
+            Methods =
+            [
+                new MethodModel
+                {
+                    AccessModifier = AccessModifier.Public,
+                    Async = true,
+                    ReturnType = TypeModel.TaskOf("TResponse"),
+                    Name = "Handle",
+                    Params =
+                    [
+                        new ParamModel { Type = new TypeModel("TRequest"), Name = "request" },
+                        new ParamModel { Type = new TypeModel("RequestHandlerDelegate") { GenericTypeParameters = [new TypeModel("TResponse")] }, Name = "next" },
+                        ParamModel.CancellationToken,
+                    ],
+                    Body = new ExpressionModel(
+@"try
+{
+    return await next();
+}
+catch (Exception ex)
+{
+    var requestName = typeof(TRequest).Name;
+
+    _logger.LogError(ex, ""CleanArchitecture Request: Unhandled Exception for Request {Name} {@Request}"", requestName, request);
+
+    throw;
+}"),
+                },
+            ],
+        };
+
+        var document = new DocumentModel
+        {
+            Name = "UnhandledExceptionBehaviour",
+            RootNamespace = "CleanArchitecture",
+            Namespace = "Application.Common.Behaviours",
+            Code = [classModel],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(document);
+        _output.WriteLine(result);
+
+        Assert.Contains("using Microsoft.Extensions.Logging;", result);
+        Assert.Contains("public class UnhandledExceptionBehaviour<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>", result);
+        Assert.Contains("where TRequest : notnull", result);
+        Assert.Contains("private readonly ILogger<TRequest> _logger;", result);
+        Assert.Contains("public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)", result);
+    }
+
+    [Fact]
+    public async Task Application_ValidationBehaviour_WithUsingAlias_GeneratesExpectedSyntax()
+    {
+        // Target: Application/Common/Behaviours/ValidationBehaviour.cs
+        // Uses "using ValidationException = ..." file-level alias
+
+        var classModel = new ClassModel("ValidationBehaviour")
+        {
+            GenericTypeParameters = ["TRequest", "TResponse"],
+            GenericConstraints = ["where TRequest : notnull"],
+            Implements = [new TypeModel("IPipelineBehavior") { GenericTypeParameters = [new TypeModel("TRequest"), new TypeModel("TResponse")] }],
+            UsingAs = [new UsingAsModel("CleanArchitecture.Application.Common.Exceptions.ValidationException", "ValidationException")],
+            Fields =
+            [
+                new FieldModel
+                {
+                    AccessModifier = AccessModifier.Private,
+                    ReadOnly = true,
+                    Type = new TypeModel("IEnumerable") { GenericTypeParameters = [new TypeModel("IValidator") { GenericTypeParameters = [new TypeModel("TRequest")] }] },
+                    Name = "_validators",
+                },
+            ],
+            Constructors =
+            [
+                new ConstructorModel
+                {
+                    Name = "ValidationBehaviour",
+                    AccessModifier = AccessModifier.Public,
+                    Params = [new ParamModel { Type = new TypeModel("IEnumerable") { GenericTypeParameters = [new TypeModel("IValidator") { GenericTypeParameters = [new TypeModel("TRequest")] }] }, Name = "validators" }],
+                    Body = new ExpressionModel("_validators = validators;"),
+                },
+            ],
+            Methods =
+            [
+                new MethodModel
+                {
+                    AccessModifier = AccessModifier.Public,
+                    Async = true,
+                    ReturnType = TypeModel.TaskOf("TResponse"),
+                    Name = "Handle",
+                    Params =
+                    [
+                        new ParamModel { Type = new TypeModel("TRequest"), Name = "request" },
+                        new ParamModel { Type = new TypeModel("RequestHandlerDelegate") { GenericTypeParameters = [new TypeModel("TResponse")] }, Name = "next" },
+                        ParamModel.CancellationToken,
+                    ],
+                    Body = new ExpressionModel(
+@"if (_validators.Any())
+{
+    var validationResults = await Task.WhenAll(
+        _validators.Select(v =>
+            v.ValidateAsync(new ValidationContext<TRequest>(request), cancellationToken)));
+
+    var failures = validationResults
+        .Where(r => r.Errors.Any())
+        .SelectMany(r => r.Errors)
+        .ToList();
+
+    if (failures.Count != 0)
+        throw new ValidationException(failures);
+}
+
+return await next();"),
+                },
+            ],
+        };
+
+        var document = new DocumentModel
+        {
+            Name = "ValidationBehaviour",
+            RootNamespace = "CleanArchitecture",
+            Namespace = "Application.Common.Behaviours",
+            Code = [classModel],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(document);
+        _output.WriteLine(result);
+
+        Assert.Contains("using ValidationException = CleanArchitecture.Application.Common.Exceptions.ValidationException;", result);
+        Assert.Contains("namespace CleanArchitecture.Application.Common.Behaviours;", result);
+        Assert.Contains("public class ValidationBehaviour<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>", result);
+        Assert.Contains("where TRequest : notnull", result);
+    }
+
+    [Fact]
+    public async Task Application_LookupDto_WithInnerClass_GeneratesExpectedSyntax()
+    {
+        // Target: Application/Common/Models/LookupDto.cs
+        // Class with inner class (Mapping : Profile)
+
+        var parentClass = new ClassModel("LookupDto");
+
+        var classModel = new ClassModel("LookupDto")
+        {
+            Usings = [new UsingModel("CleanArchitecture.Domain.Entities")],
+            Properties =
+            [
+                new PropertyModel(parentClass, AccessModifier.Public, new TypeModel("int"), "Id", PropertyAccessorModel.GetInit),
+                new PropertyModel(parentClass, AccessModifier.Public, new TypeModel("string") { Nullable = true }, "Title", PropertyAccessorModel.GetInit),
+            ],
+            InnerClasses =
+            [
+                new ClassModel("Mapping")
+                {
+                    AccessModifier = AccessModifier.Private,
+                    BaseClass = "Profile",
+                    Constructors =
+                    [
+                        new ConstructorModel
+                        {
+                            Name = "Mapping",
+                            AccessModifier = AccessModifier.Public,
+                            Body = new ExpressionModel("CreateMap<TodoList, LookupDto>();\nCreateMap<TodoItem, LookupDto>();"),
+                        },
+                    ],
+                },
+            ],
+        };
+
+        var document = new DocumentModel
+        {
+            Name = "LookupDto",
+            RootNamespace = "CleanArchitecture",
+            Namespace = "Application.Common.Models",
+            Code = [classModel],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(document);
+        _output.WriteLine(result);
+
+        Assert.Contains("using CleanArchitecture.Domain.Entities;", result);
+        Assert.Contains("public class LookupDto", result);
+        Assert.Contains("public int Id { get; init; }", result);
+        Assert.Contains("private class Mapping : Profile", result);
+        Assert.Contains("CreateMap<TodoList, LookupDto>();", result);
+    }
+
+    [Fact]
+    public async Task Application_TodosVm_MultipleTopLevelClasses_GeneratesExpectedSyntax()
+    {
+        // Target: Application/TodoLists/Queries/GetTodos/TodosVm.cs
+        // Multiple classes in same file
+
+        var parentTodosVm = new ClassModel("TodosVm");
+        var parentColourDto = new ClassModel("ColourDto");
+
+        var todosVm = new ClassModel("TodosVm")
+        {
+            Usings = [new UsingModel("CleanArchitecture.Application.Common.Models")],
+            Properties =
+            [
+                new PropertyModel(parentTodosVm, AccessModifier.Public, new TypeModel("IReadOnlyCollection") { GenericTypeParameters = [new TypeModel("LookupDto")] }, "PriorityLevels", PropertyAccessorModel.GetInit)
+                {
+                    DefaultValue = "[]",
+                },
+                new PropertyModel(parentTodosVm, AccessModifier.Public, new TypeModel("IReadOnlyCollection") { GenericTypeParameters = [new TypeModel("ColourDto")] }, "Colours", PropertyAccessorModel.GetInit)
+                {
+                    DefaultValue = "[]",
+                },
+                new PropertyModel(parentTodosVm, AccessModifier.Public, new TypeModel("IReadOnlyCollection") { GenericTypeParameters = [new TypeModel("TodoListDto")] }, "Lists", PropertyAccessorModel.GetInit)
+                {
+                    DefaultValue = "[]",
+                },
+            ],
+        };
+
+        var colourDto = new ClassModel("ColourDto")
+        {
+            Properties =
+            [
+                new PropertyModel(parentColourDto, AccessModifier.Public, new TypeModel("string"), "Code", PropertyAccessorModel.GetInit)
+                {
+                    DefaultValue = "string.Empty",
+                },
+                new PropertyModel(parentColourDto, AccessModifier.Public, new TypeModel("string"), "Name", PropertyAccessorModel.GetInit)
+                {
+                    DefaultValue = "string.Empty",
+                },
+            ],
+        };
+
+        var document = new DocumentModel
+        {
+            Name = "TodosVm",
+            RootNamespace = "CleanArchitecture",
+            Namespace = "Application.TodoLists.Queries.GetTodos",
+            Code = [todosVm, colourDto],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(document);
+        _output.WriteLine(result);
+
+        Assert.Contains("using CleanArchitecture.Application.Common.Models;", result);
+        Assert.Contains("public class TodosVm", result);
+        Assert.Contains("public IReadOnlyCollection<LookupDto> PriorityLevels { get; init; } = [];", result);
+        Assert.Contains("public IReadOnlyCollection<ColourDto> Colours { get; init; } = [];", result);
+        Assert.Contains("public class ColourDto", result);
+        Assert.Contains("public string Code { get; init; } = string.Empty;", result);
+    }
+
+    [Fact]
+    public async Task Application_AuthorizeAttribute_WithClassAttribute_GeneratesExpectedSyntax()
+    {
+        // Target: Application/Common/Security/AuthorizeAttribute.cs
+
+        var parentClass = new ClassModel("AuthorizeAttribute");
+
+        var classModel = new ClassModel("AuthorizeAttribute")
+        {
+            BaseClass = "Attribute",
+            Attributes =
+            [
+                new AttributeModel
+                {
+                    Name = "AttributeUsage",
+                    Template = "AttributeTargets.Class",
+                    RawProperties = new Dictionary<string, string>
+                    {
+                        ["AllowMultiple"] = "true",
+                        ["Inherited"] = "true",
+                    },
+                },
+            ],
+            Constructors =
+            [
+                new ConstructorModel
+                {
+                    Name = "AuthorizeAttribute",
+                    AccessModifier = AccessModifier.Public,
+                    Body = null,
+                },
+            ],
+            Properties =
+            [
+                new PropertyModel(parentClass, AccessModifier.Public, new TypeModel("string"), "Roles", PropertyAccessorModel.GetSet)
+                {
+                    DefaultValue = "string.Empty",
+                },
+                new PropertyModel(parentClass, AccessModifier.Public, new TypeModel("string"), "Policy", PropertyAccessorModel.GetSet)
+                {
+                    DefaultValue = "string.Empty",
+                },
+            ],
+        };
+
+        var document = new DocumentModel
+        {
+            Name = "AuthorizeAttribute",
+            RootNamespace = "CleanArchitecture",
+            Namespace = "Application.Common.Security",
+            Code = [classModel],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(document);
+        _output.WriteLine(result);
+
+        Assert.Contains("namespace CleanArchitecture.Application.Common.Security;", result);
+        Assert.Contains("[AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = true)]", result);
+        Assert.Contains("public class AuthorizeAttribute : Attribute", result);
+        Assert.Contains("public AuthorizeAttribute()", result);
+        Assert.Contains("public string Roles { get; set; } = string.Empty;", result);
+        Assert.Contains("public string Policy { get; set; } = string.Empty;", result);
+    }
+
+    [Fact]
+    public async Task Application_CreateTodoListValidator_GeneratesExpectedSyntax()
+    {
+        // Target: Application/TodoLists/Commands/CreateTodoList/CreateTodoListCommandValidator.cs
+
+        var classModel = new ClassModel("CreateTodoListCommandValidator")
+        {
+            Usings = [new UsingModel("CleanArchitecture.Application.Common.Interfaces")],
+            BaseClass = "AbstractValidator<CreateTodoListCommand>",
+            Fields =
+            [
+                new FieldModel
+                {
+                    AccessModifier = AccessModifier.Private,
+                    ReadOnly = true,
+                    Type = new TypeModel("IApplicationDbContext"),
+                    Name = "_context",
+                },
+            ],
+            Constructors =
+            [
+                new ConstructorModel
+                {
+                    Name = "CreateTodoListCommandValidator",
+                    AccessModifier = AccessModifier.Public,
+                    Params = [new ParamModel { Type = new TypeModel("IApplicationDbContext"), Name = "context" }],
+                    Body = new ExpressionModel(
+@"_context = context;
+
+RuleFor(v => v.Title)
+    .NotEmpty()
+    .MaximumLength(200)
+    .MustAsync(BeUniqueTitle)
+        .WithMessage(""'{PropertyName}' must be unique."")
+        .WithErrorCode(""Unique"");"),
+                },
+            ],
+            Methods =
+            [
+                new MethodModel
+                {
+                    AccessModifier = AccessModifier.Public,
+                    Async = true,
+                    ReturnType = TypeModel.TaskOf("bool"),
+                    Name = "BeUniqueTitle",
+                    Params =
+                    [
+                        new ParamModel { Type = new TypeModel("string"), Name = "title" },
+                        ParamModel.CancellationToken,
+                    ],
+                    Body = new ExpressionModel(
+@"return !await _context.TodoLists
+    .AnyAsync(l => l.Title == title, cancellationToken);"),
+                },
+            ],
+        };
+
+        var document = new DocumentModel
+        {
+            Name = "CreateTodoListCommandValidator",
+            RootNamespace = "CleanArchitecture",
+            Namespace = "Application.TodoLists.Commands.CreateTodoList",
+            Code = [classModel],
+        };
+
+        var result = await _syntaxGenerator.GenerateAsync(document);
+        _output.WriteLine(result);
+
+        Assert.Contains("using CleanArchitecture.Application.Common.Interfaces;", result);
+        Assert.Contains("public class CreateTodoListCommandValidator : AbstractValidator<CreateTodoListCommand>", result);
+        Assert.Contains("private readonly IApplicationDbContext _context;", result);
+        Assert.Contains("public async Task<bool> BeUniqueTitle(string title, CancellationToken cancellationToken)", result);
+    }
 }

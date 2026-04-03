@@ -48,6 +48,11 @@ public class ConstructorSyntaxGenerationStrategy : ISyntaxGenerationStrategy<Con
             builder.AppendLine();
             builder.Append($"        : base({string.Join(", ", model.BaseParams)})");
         }
+        else if (model.ThisParams.Count > 0)
+        {
+            builder.AppendLine();
+            builder.Append($"        : this({string.Join(", ", model.ThisParams)})");
+        }
 
         builder.AppendLine();
         builder.AppendLine("{");

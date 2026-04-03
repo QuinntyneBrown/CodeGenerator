@@ -4,6 +4,7 @@
 using System.Linq;
 using System.Text;
 using System.Threading;
+using CodeGenerator.DotNet.Syntax;
 using Microsoft.Extensions.Logging;
 
 namespace CodeGenerator.DotNet.Syntax.Documents.Strategies;
@@ -25,15 +26,36 @@ public class DocumentGenerationStrategy : ISyntaxGenerationStrategy<DocumentMode
 
         StringBuilder stringBuilder = new();
 
-        foreach (var @using in model.GetDescendants().SelectMany(x => x.Usings).DistinctBy(x => x.Name))
+        var descendants = model.GetDescendants();
+
+        var usings = descendants.SelectMany(x => x.Usings).DistinctBy(x => x.Name).ToList();
+
+        var usingAliases = descendants
+            .OfType<TypeDeclarationModel>()
+            .SelectMany(x => x.UsingAs)
+            .DistinctBy(x => x.Alias)
+            .ToList();
+
+        foreach (var @using in usings)
         {
             var globalPrefix = @using.Global ? "global " : "";
             stringBuilder.AppendLine($"{globalPrefix}using {@using.Name};");
         }
 
-        stringBuilder.AppendLine();
+        foreach (var alias in usingAliases)
+        {
+            stringBuilder.AppendLine($"using {alias.Alias} = {alias.Name};");
+        }
 
-        stringBuilder.AppendLine($"namespace {model.RootNamespace}.{model.Namespace};");
+        if (usings.Count > 0 || usingAliases.Count > 0)
+        {
+            stringBuilder.AppendLine();
+        }
+
+        var namespaceParts = new[] { model.RootNamespace, model.Namespace }
+            .Where(x => !string.IsNullOrEmpty(x));
+
+        stringBuilder.AppendLine($"namespace {string.Join(".", namespaceParts)};");
 
         stringBuilder.AppendLine();
 

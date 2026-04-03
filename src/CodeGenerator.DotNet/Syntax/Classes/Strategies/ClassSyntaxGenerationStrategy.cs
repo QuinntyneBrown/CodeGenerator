@@ -35,16 +35,6 @@ public class ClassSyntaxGenerationStrategy : ISyntaxGenerationStrategy<ClassMode
 
         var builder = StringBuilderCache.Acquire();
 
-        if (model.UsingAs.Count > 0)
-        {
-            foreach (var directive in model.UsingAs)
-            {
-                builder.AppendLine($"using {directive.Alias} = {directive.Name};");
-            }
-
-            builder.AppendLine();
-        }
-
         foreach (var attribute in model.Attributes)
         {
             builder.AppendLine(await _syntaxGenerator.GenerateAsync(attribute));
