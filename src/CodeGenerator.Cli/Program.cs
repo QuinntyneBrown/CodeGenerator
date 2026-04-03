@@ -24,6 +24,7 @@ services.AddLogging(builder =>
 
 services.AddCoreServices(typeof(Program).Assembly);
 services.AddDotNetServices();
+services.AddScaffoldingServices();
 
 var serviceProvider = services.BuildServiceProvider();
 

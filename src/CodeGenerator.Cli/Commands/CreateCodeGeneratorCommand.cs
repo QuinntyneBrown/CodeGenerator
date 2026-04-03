@@ -56,6 +56,7 @@ public class CreateCodeGeneratorCommand : RootCommand
         AddOption(localSourceRootOption);
 
         AddCommand(new InstallCommand(serviceProvider));
+        AddCommand(new ScaffoldCommand(serviceProvider));
 
         this.SetHandler(HandleAsync, nameOption, outputOption, frameworkOption, slnxOption, localSourceRootOption);
     }
