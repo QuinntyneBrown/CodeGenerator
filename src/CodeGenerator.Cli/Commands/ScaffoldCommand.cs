@@ -2,9 +2,13 @@
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
 using System.CommandLine;
+using System.Reflection;
+using CodeGenerator.Cli.Rendering;
+using CodeGenerator.Core.Diagnostics;
 using CodeGenerator.Core.Scaffold.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Spectre.Console;
 
 namespace CodeGenerator.Cli.Commands;
 
@@ -54,6 +58,11 @@ public class ScaffoldCommand : Command
             description: "Generate starter scaffold.yaml",
             getDefaultValue: () => false);
 
+        var diagnosticsOption = new Option<bool>(
+            aliases: ["--diagnostics"],
+            description: "Show environment info and per-step timing",
+            getDefaultValue: () => false);
+
         AddOption(configOption);
         AddOption(outputOption);
         AddOption(dryRunOption);
@@ -61,13 +70,15 @@ public class ScaffoldCommand : Command
         AddOption(validateOption);
         AddOption(exportSchemaOption);
         AddOption(initOption);
+        AddOption(diagnosticsOption);
 
-        this.SetHandler(HandleAsync, configOption, outputOption, dryRunOption, forceOption, validateOption, exportSchemaOption, initOption);
+        this.SetHandler(HandleAsync, configOption, outputOption, dryRunOption, forceOption, validateOption, exportSchemaOption, initOption, diagnosticsOption);
     }
 
-    private async Task HandleAsync(string? configPath, string outputDirectory, bool dryRun, bool force, bool validate, bool exportSchema, bool init)
+    private async Task HandleAsync(string? configPath, string outputDirectory, bool dryRun, bool force, bool validate, bool exportSchema, bool init, bool diagnostics)
     {
         var logger = _serviceProvider.GetRequiredService<ILogger<ScaffoldCommand>>();
+        IGenerationTimer timer = diagnostics ? new GenerationTimer() : new NullGenerationTimer();
 
         if (exportSchema)
         {
@@ -86,46 +97,59 @@ public class ScaffoldCommand : Command
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(configPath))
+        string yaml;
+        using (timer.TimeStep("Load configuration file"))
         {
-            configPath = Path.Combine(outputDirectory, "scaffold.yaml");
+            if (string.IsNullOrWhiteSpace(configPath))
+            {
+                configPath = Path.Combine(outputDirectory, "scaffold.yaml");
+
+                if (!File.Exists(configPath))
+                {
+                    logger.LogError("No configuration file specified and no scaffold.yaml found in current directory.");
+                    return;
+                }
+            }
 
             if (!File.Exists(configPath))
             {
-                logger.LogError("No configuration file specified and no scaffold.yaml found in current directory.");
+                logger.LogError("Configuration file not found: {Path}", configPath);
                 return;
             }
+
+            yaml = await File.ReadAllTextAsync(configPath);
         }
 
-        if (!File.Exists(configPath))
-        {
-            logger.LogError("Configuration file not found: {Path}", configPath);
-            return;
-        }
-
-        var yaml = await File.ReadAllTextAsync(configPath);
         var engine = _serviceProvider.GetRequiredService<IScaffoldEngine>();
 
         if (validate)
         {
-            var validationResult = engine.Validate(yaml);
+            using (timer.TimeStep("Validate YAML"))
+            {
+                var validationResult = engine.Validate(yaml);
 
-            if (validationResult.ValidationResult.IsValid)
-            {
-                logger.LogInformation("Configuration is valid.");
-            }
-            else
-            {
-                foreach (var error in validationResult.ValidationResult.Errors)
+                if (validationResult.ValidationResult.IsValid)
                 {
-                    logger.LogError("Validation error [{Property}]: {Message}", error.PropertyName, error.ErrorMessage);
+                    logger.LogInformation("Configuration is valid.");
+                }
+                else
+                {
+                    foreach (var error in validationResult.ValidationResult.Errors)
+                    {
+                        logger.LogError("Validation error [{Property}]: {Message}", error.PropertyName, error.ErrorMessage);
+                    }
                 }
             }
 
+            RenderDiagnosticsIfEnabled(diagnostics, timer);
             return;
         }
 
-        var result = await engine.ScaffoldAsync(yaml, outputDirectory, dryRun, force);
+        Core.Scaffold.Models.ScaffoldResult result;
+        using (timer.TimeStep("Scaffold files"))
+        {
+            result = await engine.ScaffoldAsync(yaml, outputDirectory, dryRun, force);
+        }
 
         if (!result.ValidationResult.IsValid)
         {
@@ -134,6 +158,7 @@ public class ScaffoldCommand : Command
                 logger.LogError("Validation error [{Property}]: {Message}", error.PropertyName, error.ErrorMessage);
             }
 
+            RenderDiagnosticsIfEnabled(diagnostics, timer);
             return;
         }
 
@@ -145,6 +170,7 @@ public class ScaffoldCommand : Command
                 logger.LogInformation("  {Action}: {Path}", file.Action, file.Path);
             }
 
+            RenderDiagnosticsIfEnabled(diagnostics, timer);
             return;
         }
 
@@ -157,5 +183,23 @@ public class ScaffoldCommand : Command
                 logger.LogWarning("Post-scaffold command failed: {Command} (exit code {ExitCode})", cmd.Command, cmd.ExitCode);
             }
         }
+
+        RenderDiagnosticsIfEnabled(diagnostics, timer);
+    }
+
+    private void RenderDiagnosticsIfEnabled(bool diagnostics, IGenerationTimer timer)
+    {
+        if (!diagnostics) return;
+
+        var collector = _serviceProvider.GetRequiredService<DiagnosticsCollector>();
+        var cliVersion = Assembly.GetEntryAssembly()?.GetName().Version?.ToString() ?? "0.0.0";
+        var report = new DiagnosticsReport
+        {
+            Environment = collector.CollectEnvironment(cliVersion),
+            Steps = timer.GetEntries().ToList(),
+            TotalDuration = timer.TotalElapsed,
+        };
+        var renderer = new DiagnosticsRenderer(AnsiConsole.Console);
+        renderer.Render(report);
     }
 }

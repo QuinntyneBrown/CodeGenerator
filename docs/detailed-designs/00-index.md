@@ -73,7 +73,7 @@
 | 46 | [Version Consistency](46-version-consistency/README.md) | Draft | Vision 1.9 | Centralize package versions, assembly metadata at runtime |
 | 47 | [Shell Completion](47-shell-completion/README.md) | Draft | Vision 1.10 | dotnet-suggest integration for bash, zsh, PowerShell, fish |
 | 48 | [Post-Generation Verification](48-post-generation-verification/README.md) | Draft | Vision 1.11 | --verify flag: dotnet build + smoke test on generated output |
-| 49 | [Telemetry and Diagnostics](49-telemetry-and-diagnostics/README.md) | Draft | Vision 1.12 | --diagnostics flag: environment info, per-step timing |
+| 49 | [Telemetry and Diagnostics](49-telemetry-and-diagnostics/README.md) | Implemented | Vision 1.12 | --diagnostics flag: environment info, per-step timing |
 | 50 | [Plugin Discovery](50-plugin-discovery/README.md) | Draft | Vision 1.13 | ICliPlugin interface, NuGet/directory/flag-based assembly loading |
 
 ### Production-Grade Error Handling (error-handling-plan.md)

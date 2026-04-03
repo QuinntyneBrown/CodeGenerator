@@ -6,7 +6,7 @@ using System.Diagnostics;
 
 namespace CodeGenerator.Core.Diagnostics;
 
-public class GenerationTimer
+public class GenerationTimer : IGenerationTimer
 {
     private readonly ConcurrentBag<TimingEntry> _entries = [];
     private int _order;

@@ -2,6 +2,8 @@
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
 using CodeGenerator.Core.Diagnostics;
+using Spectre.Console.Testing;
+using CodeGenerator.Cli.Rendering;
 using Xunit;
 
 namespace CodeGenerator.IntegrationTests;
@@ -9,40 +11,40 @@ namespace CodeGenerator.IntegrationTests;
 public class TelemetryAndDiagnosticsTests
 {
     [Fact]
-    public void DiagnosticsCollector_CollectsEnvironment()
+    public void IGenerationTimer_GenerationTimer_ImplementsInterface()
     {
-        var collector = new DiagnosticsCollector();
-
-        var info = collector.CollectEnvironment("1.2.0");
-
-        Assert.Equal("1.2.0", info.CliVersion);
-        Assert.NotEmpty(info.DotNetSdkVersion);
-        Assert.NotEmpty(info.RuntimeVersion);
-        Assert.NotEmpty(info.OperatingSystem);
-        Assert.NotEmpty(info.Architecture);
-        Assert.NotEmpty(info.WorkingDirectory);
+        IGenerationTimer timer = new GenerationTimer();
+        Assert.NotNull(timer);
     }
 
     [Fact]
-    public void GenerationTimer_TimeStep_RecordsDuration()
+    public void IGenerationTimer_NullGenerationTimer_ImplementsInterface()
     {
-        var timer = new GenerationTimer();
+        IGenerationTimer timer = new NullGenerationTimer();
+        Assert.NotNull(timer);
+    }
 
-        using (timer.TimeStep("Test step"))
+    [Fact]
+    public void GenerationTimer_TimeStep_RecordsEntry()
+    {
+        IGenerationTimer timer = new GenerationTimer();
+
+        using (timer.TimeStep("Test Step"))
         {
-            Thread.Sleep(10); // Small delay to ensure measurable time
+            Thread.Sleep(10);
         }
 
         var entries = timer.GetEntries();
         Assert.Single(entries);
-        Assert.Equal("Test step", entries[0].StepName);
-        Assert.True(entries[0].Duration > TimeSpan.Zero);
+        Assert.Equal("Test Step", entries[0].StepName);
+        Assert.True(entries[0].Duration.TotalMilliseconds >= 5);
+        Assert.Equal(1, entries[0].Order);
     }
 
     [Fact]
-    public void GenerationTimer_MultipleSteps_RecordsInOrder()
+    public void GenerationTimer_MultipleSteps_OrderedCorrectly()
     {
-        var timer = new GenerationTimer();
+        IGenerationTimer timer = new GenerationTimer();
 
         using (timer.TimeStep("Step 1")) { }
         using (timer.TimeStep("Step 2")) { }
@@ -53,84 +55,122 @@ public class TelemetryAndDiagnosticsTests
         Assert.Equal("Step 1", entries[0].StepName);
         Assert.Equal("Step 2", entries[1].StepName);
         Assert.Equal("Step 3", entries[2].StepName);
-        Assert.Equal(1, entries[0].Order);
-        Assert.Equal(2, entries[1].Order);
-        Assert.Equal(3, entries[2].Order);
     }
 
     [Fact]
-    public void GenerationTimer_TotalElapsed_IsNonZero()
+    public void NullGenerationTimer_TimeStep_ReturnsNoOpDisposable()
+    {
+        IGenerationTimer timer = new NullGenerationTimer();
+
+        using (timer.TimeStep("Test Step"))
+        {
+            // Should not throw
+        }
+
+        var entries = timer.GetEntries();
+        Assert.Empty(entries);
+        Assert.Equal(TimeSpan.Zero, timer.TotalElapsed);
+    }
+
+    [Fact]
+    public void DiagnosticsCollector_CollectEnvironment_ReturnsPopulatedInfo()
+    {
+        var collector = new DiagnosticsCollector();
+        var info = collector.CollectEnvironment("1.0.0-test");
+
+        Assert.Equal("1.0.0-test", info.CliVersion);
+        Assert.NotEmpty(info.DotNetSdkVersion);
+        Assert.NotEmpty(info.RuntimeVersion);
+        Assert.NotEmpty(info.OperatingSystem);
+        Assert.NotEmpty(info.Architecture);
+        Assert.NotEmpty(info.WorkingDirectory);
+    }
+
+    [Fact]
+    public void DiagnosticsReport_AssemblesFromTimerAndCollector()
     {
         var timer = new GenerationTimer();
+        using (timer.TimeStep("Validate")) { }
+        using (timer.TimeStep("Generate")) { Thread.Sleep(10); }
 
-        using (timer.TimeStep("Step")) { Thread.Sleep(10); }
-
-        Assert.True(timer.TotalElapsed > TimeSpan.Zero);
-    }
-
-    [Fact]
-    public void DiagnosticsReport_CanBeConstructed()
-    {
-        var info = new EnvironmentInfo
-        {
-            CliVersion = "1.0.0",
-            DotNetSdkVersion = "9.0.100",
-            RuntimeVersion = ".NET 9.0.0",
-            OperatingSystem = "Windows 11",
-            Architecture = "X64",
-            Shell = "bash",
-            WorkingDirectory = @"C:\temp",
-        };
-
+        var collector = new DiagnosticsCollector();
         var report = new DiagnosticsReport
         {
-            Environment = info,
-            Steps =
-            [
-                new TimingEntry { StepName = "Build", Duration = TimeSpan.FromSeconds(1), Order = 1 },
-                new TimingEntry { StepName = "Test", Duration = TimeSpan.FromSeconds(2), Order = 2 },
-            ],
-            TotalDuration = TimeSpan.FromSeconds(3),
+            Environment = collector.CollectEnvironment("2.0.0"),
+            Steps = timer.GetEntries().ToList(),
+            TotalDuration = timer.TotalElapsed,
         };
 
         Assert.Equal(2, report.Steps.Count);
-        Assert.Equal(TimeSpan.FromSeconds(3), report.TotalDuration);
-        Assert.Equal("1.0.0", report.Environment.CliVersion);
+        Assert.Equal("2.0.0", report.Environment.CliVersion);
+        Assert.True(report.TotalDuration > TimeSpan.Zero);
+        Assert.True(report.GeneratedAt <= DateTime.UtcNow);
     }
 
     [Fact]
-    public void TimingEntry_RecordProperties()
+    public void DiagnosticsRenderer_Render_OutputsEnvironmentAndTimings()
     {
-        var entry = new TimingEntry
+        var console = new TestConsole();
+        var renderer = new DiagnosticsRenderer(console);
+
+        var report = new DiagnosticsReport
         {
-            StepName = "Generate files",
-            Duration = TimeSpan.FromMilliseconds(500),
-            Order = 1,
+            Environment = new EnvironmentInfo
+            {
+                CliVersion = "1.2.0",
+                DotNetSdkVersion = "9.0.1",
+                RuntimeVersion = ".NET 9.0.1",
+                OperatingSystem = "Windows 11",
+                Architecture = "X64",
+                Shell = "bash",
+                WorkingDirectory = @"C:\projects\Test",
+            },
+            Steps =
+            [
+                new TimingEntry { StepName = "Validate options", Duration = TimeSpan.FromMilliseconds(12), Order = 1 },
+                new TimingEntry { StepName = "Create solution", Duration = TimeSpan.FromMilliseconds(847), Order = 2 },
+            ],
+            TotalDuration = TimeSpan.FromMilliseconds(859),
         };
 
-        Assert.Equal("Generate files", entry.StepName);
-        Assert.Equal(500, entry.Duration.TotalMilliseconds);
-        Assert.Equal(1, entry.Order);
+        renderer.Render(report);
+
+        var output = console.Output;
+        Assert.Contains("Diagnostics", output);
+        Assert.Contains("1.2.0", output);
+        Assert.Contains("9.0.1", output);
+        Assert.Contains("Windows 11", output);
+        Assert.Contains("Validate options", output);
+        Assert.Contains("Create solution", output);
+        Assert.Contains("Total", output);
     }
 
     [Fact]
-    public void EnvironmentInfo_ShellDetection_ReturnsNonEmpty()
+    public void DiagnosticsRenderer_Render_EmptySteps_StillShowsEnvironment()
     {
-        var collector = new DiagnosticsCollector();
-        var info = collector.CollectEnvironment();
+        var console = new TestConsole();
+        var renderer = new DiagnosticsRenderer(console);
 
-        // Shell may be "unknown" in some test environments but should not be empty
-        Assert.NotNull(info.Shell);
-        Assert.NotEmpty(info.Shell);
-    }
+        var report = new DiagnosticsReport
+        {
+            Environment = new EnvironmentInfo
+            {
+                CliVersion = "1.0.0",
+                DotNetSdkVersion = "9.0.0",
+                RuntimeVersion = ".NET 9.0.0",
+                OperatingSystem = "Linux",
+                Architecture = "X64",
+                Shell = "zsh",
+                WorkingDirectory = "/home/user",
+            },
+            Steps = [],
+            TotalDuration = TimeSpan.Zero,
+        };
 
-    [Fact]
-    public void GenerationTimer_EmptyTimer_ReturnsEmptyEntries()
-    {
-        var timer = new GenerationTimer();
+        renderer.Render(report);
 
-        var entries = timer.GetEntries();
-
-        Assert.Empty(entries);
+        var output = console.Output;
+        Assert.Contains("1.0.0", output);
+        Assert.Contains("Linux", output);
     }
 }

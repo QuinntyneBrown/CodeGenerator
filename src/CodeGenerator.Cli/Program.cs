@@ -3,6 +3,7 @@
 
 using CodeGenerator.Cli.Commands;
 using CodeGenerator.Core;
+using CodeGenerator.Core.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -22,6 +23,7 @@ services.AddLogging(builder =>
     builder.SetMinimumLevel(LogLevel.Information);
 });
 
+services.AddSingleton<DiagnosticsCollector>();
 services.AddCoreServices(typeof(Program).Assembly);
 services.AddDotNetServices();
 services.AddScaffoldingServices();

@@ -3,9 +3,12 @@
 
 using System.CommandLine;
 using System.IO.Abstractions;
+using System.Reflection;
 using System.Text;
+using CodeGenerator.Cli.Rendering;
 using CodeGenerator.Cli.Validation;
 using CodeGenerator.Core.Artifacts.Abstractions;
+using CodeGenerator.Core.Diagnostics;
 using CodeGenerator.Core.Errors;
 using CodeGenerator.Core.Services;
 using CodeGenerator.DotNet.Artifacts.Files;
@@ -14,6 +17,7 @@ using CodeGenerator.DotNet.Artifacts.Projects.Enums;
 using CodeGenerator.DotNet.Artifacts.Solutions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Spectre.Console;
 
 namespace CodeGenerator.Cli.Commands;
 
@@ -52,47 +56,58 @@ public class CreateCodeGeneratorCommand : RootCommand
             aliases: ["--local-source-root"],
             description: "Optional path to the local CodeGenerator src directory for project references");
 
+        var diagnosticsOption = new Option<bool>(
+            aliases: ["--diagnostics"],
+            description: "Show environment info and per-step timing",
+            getDefaultValue: () => false);
+
         AddOption(nameOption);
         AddOption(outputOption);
         AddOption(frameworkOption);
         AddOption(slnxOption);
         AddOption(localSourceRootOption);
+        AddOption(diagnosticsOption);
 
         AddCommand(new InstallCommand(serviceProvider));
         AddCommand(new ScaffoldCommand(serviceProvider));
 
-        this.SetHandler(HandleAsync, nameOption, outputOption, frameworkOption, slnxOption, localSourceRootOption);
+        this.SetHandler(HandleAsync, nameOption, outputOption, frameworkOption, slnxOption, localSourceRootOption, diagnosticsOption);
     }
 
-    private async Task HandleAsync(string name, string outputDirectory, string framework, bool slnx, string? localSourceRoot)
+    private async Task HandleAsync(string name, string outputDirectory, string framework, bool slnx, string? localSourceRoot, bool diagnostics)
     {
         var logger = _serviceProvider.GetRequiredService<ILogger<CreateCodeGeneratorCommand>>();
         var fileSystem = _serviceProvider.GetRequiredService<IFileSystem>();
         var artifactGenerator = _serviceProvider.GetRequiredService<IArtifactGenerator>();
         var commandService = _serviceProvider.GetRequiredService<ICommandService>();
 
+        IGenerationTimer timer = diagnostics ? new GenerationTimer() : new NullGenerationTimer();
+
         // Step 1: Validate before any generation
-        var validator = new GenerationOptionsValidator(fileSystem);
-
-        var options = new GenerationOptions
+        using (timer.TimeStep("Validate options"))
         {
-            Name = name,
-            OutputDirectory = outputDirectory,
-            Framework = framework,
-            Slnx = slnx,
-            LocalSourceRoot = localSourceRoot,
-        };
+            var validator = new GenerationOptionsValidator(fileSystem);
 
-        var validationResult = validator.Validate(options);
+            var options = new GenerationOptions
+            {
+                Name = name,
+                OutputDirectory = outputDirectory,
+                Framework = framework,
+                Slnx = slnx,
+                LocalSourceRoot = localSourceRoot,
+            };
 
-        if (!validationResult.IsValid)
-        {
-            throw new CliValidationException(validationResult);
-        }
+            var validationResult = validator.Validate(options);
 
-        foreach (var warning in validationResult.Warnings)
-        {
-            logger.LogWarning("{Property}: {Message}", warning.PropertyName, warning.ErrorMessage);
+            if (!validationResult.IsValid)
+            {
+                throw new CliValidationException(validationResult);
+            }
+
+            foreach (var warning in validationResult.Warnings)
+            {
+                logger.LogWarning("{Property}: {Message}", warning.PropertyName, warning.ErrorMessage);
+            }
         }
 
         // Step 2: Proceed with generation
@@ -138,45 +153,62 @@ public class CreateCodeGeneratorCommand : RootCommand
         // Add project to solution
         solution.Projects.Add(project);
 
-        // Generate solution structure
-        Directory.CreateDirectory(solution.SolutionDirectory);
-        Directory.CreateDirectory(solution.SrcDirectory);
-        Directory.CreateDirectory(project.Directory);
-        Directory.CreateDirectory(Path.Combine(project.Directory, "Commands"));
-        Directory.CreateDirectory(Path.Combine(solution.SolutionDirectory, "eng", "scripts"));
+        using (timer.TimeStep("Create directories"))
+        {
+            Directory.CreateDirectory(solution.SolutionDirectory);
+            Directory.CreateDirectory(solution.SrcDirectory);
+            Directory.CreateDirectory(project.Directory);
+            Directory.CreateDirectory(Path.Combine(project.Directory, "Commands"));
+            Directory.CreateDirectory(Path.Combine(solution.SolutionDirectory, "eng", "scripts"));
+        }
 
         // Create solution file
-        if (slnx)
+        using (timer.TimeStep("Create solution file"))
         {
-            commandService.Start($"dotnet new slnx -n {name}", solution.SolutionDirectory);
-        }
-        else
-        {
-            commandService.Start($"dotnet new sln -n {name}", solution.SolutionDirectory);
+            if (slnx)
+            {
+                commandService.Start($"dotnet new slnx -n {name}", solution.SolutionDirectory);
+            }
+            else
+            {
+                commandService.Start($"dotnet new sln -n {name}", solution.SolutionDirectory);
+            }
         }
 
         // Generate custom .csproj (not using dotnet new since we need tool-specific settings)
-        await artifactGenerator.GenerateAsync(new ContentFileModel(
-            GenerateCliProjectContent(name, framework, localSourceRoot, project.Directory),
-            $"{name}.Cli",
-            project.Directory,
-            ".csproj"));
+        using (timer.TimeStep("Generate .csproj"))
+        {
+            await artifactGenerator.GenerateAsync(new ContentFileModel(
+                GenerateCliProjectContent(name, framework, localSourceRoot, project.Directory),
+                $"{name}.Cli",
+                project.Directory,
+                ".csproj"));
+        }
 
         // Generate project files
-        foreach (var file in project.Files)
+        using (timer.TimeStep("Generate project files"))
         {
-            await artifactGenerator.GenerateAsync(file);
+            foreach (var file in project.Files)
+            {
+                await artifactGenerator.GenerateAsync(file);
+            }
         }
 
         // Add project to solution
-        commandService.Start($"dotnet sln add {project.Path}", solution.SolutionDirectory);
+        using (timer.TimeStep("Add project to solution"))
+        {
+            commandService.Start($"dotnet sln add {project.Path}", solution.SolutionDirectory);
+        }
 
         // Generate install-cli.bat script
-        await artifactGenerator.GenerateAsync(new ContentFileModel(
-            GenerateInstallCliBatContent(name),
-            "install-cli",
-            Path.Combine(solution.SolutionDirectory, "eng", "scripts"),
-            ".bat"));
+        using (timer.TimeStep("Generate install script"))
+        {
+            await artifactGenerator.GenerateAsync(new ContentFileModel(
+                GenerateInstallCliBatContent(name),
+                "install-cli",
+                Path.Combine(solution.SolutionDirectory, "eng", "scripts"),
+                ".bat"));
+        }
 
         logger.LogInformation("Solution created successfully at: {Path}", solution.SolutionDirectory);
         logger.LogInformation("");
@@ -188,6 +220,20 @@ public class CreateCodeGeneratorCommand : RootCommand
         logger.LogInformation("");
         logger.LogInformation("To install as a global tool:");
         logger.LogInformation("  eng\\scripts\\install-cli.bat");
+
+        if (diagnostics)
+        {
+            var collector = _serviceProvider.GetRequiredService<DiagnosticsCollector>();
+            var cliVersion = Assembly.GetEntryAssembly()?.GetName().Version?.ToString() ?? "0.0.0";
+            var report = new DiagnosticsReport
+            {
+                Environment = collector.CollectEnvironment(cliVersion),
+                Steps = timer.GetEntries().ToList(),
+                TotalDuration = timer.TotalElapsed,
+            };
+            var renderer = new DiagnosticsRenderer(AnsiConsole.Console);
+            renderer.Render(report);
+        }
     }
 
     private static string GenerateCliProjectContent(string name, string framework, string? localSourceRoot, string projectDirectory)
