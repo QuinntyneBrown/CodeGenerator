@@ -1,0 +1,39 @@
+@startuml c4_container
+!theme plain
+!include <C4/C4_Container>
+
+title Container Diagram: Before and After Package Split
+
+System_Boundary(before, "BEFORE: Current State") {
+    Container(core_before, "CodeGenerator.Core", ".NET Library", "ALL interfaces + base models\n+ ArtifactGenerator + SyntaxGenerator\n+ LiquidTemplateProcessor\n+ NamingConventionConverter\n+ LibGit2Sharp, Roslyn, MediatR,\nAutoMapper, Octokit, System.Reactive,\nSharpSimpleNLG, EnvDTE, TextCopy")
+
+    Container(flask_before, "CodeGenerator.Flask", ".NET Library", "Flask generation strategies")
+    Container(python_before, "CodeGenerator.Python", ".NET Library", "Python syntax strategies")
+    Container(angular_before, "CodeGenerator.Angular", ".NET Library", "Angular generation strategies")
+
+    Rel(flask_before, core_before, "ProjectReference\n(pulls ALL deps)")
+    Rel(python_before, core_before, "ProjectReference\n(pulls ALL deps)")
+    Rel(angular_before, core_before, "ProjectReference\n(pulls ALL deps)")
+}
+
+System_Boundary(after, "AFTER: Extracted Abstractions") {
+    Container(abstractions, "CodeGenerator.Abstractions", ".NET Library", "Interfaces + base models + enums\nDeps: System.IO.Abstractions,\nMicrosoft.Extensions.DI.Abstractions")
+
+    Container(core_after, "CodeGenerator.Core", ".NET Library", "Orchestration + DI registration\n+ Template processing + Naming\nDeps: DotLiquid, Humanizer.Core,\nSerilog, Newtonsoft.Json")
+
+    Container(dotnet_after, "CodeGenerator.DotNet", ".NET Library", "C# / Roslyn generation\nDeps: Roslyn, LibGit2Sharp,\nMediatR, AutoMapper, Octokit")
+
+    Container(flask_after, "CodeGenerator.Flask", ".NET Library", "Flask generation strategies")
+    Container(python_after, "CodeGenerator.Python", ".NET Library", "Python syntax strategies")
+    Container(angular_after, "CodeGenerator.Angular", ".NET Library", "Angular generation strategies")
+
+    Rel(core_after, abstractions, "depends on")
+    Rel(dotnet_after, core_after, "depends on")
+    Rel(flask_after, abstractions, "depends on\n(lightweight!)")
+    Rel(flask_after, core_after, "optional: only if\nusing template processor")
+    Rel(python_after, abstractions, "depends on\n(lightweight!)")
+    Rel(angular_after, core_after, "depends on")
+}
+
+SHOW_LEGEND()
+@enduml

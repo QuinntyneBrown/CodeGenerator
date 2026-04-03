@@ -1,0 +1,33 @@
+@startuml c4_container
+!theme plain
+!include <C4/C4_Container>
+
+title Model Validation — Container Diagram
+
+Person(agent, "AI Agent / Developer", "Constructs and submits models")
+
+System_Boundary(codegen, "CodeGenerator Framework") {
+    Container(core, "CodeGenerator.Core", "C# Library", "Base models, generators, IValidatable interface, ValidationResult")
+    Container(dotnet, "CodeGenerator.DotNet", "C# Library", "DotNet model validators")
+    Container(python, "CodeGenerator.Python", "C# Library", "Python model validators")
+    Container(flask, "CodeGenerator.Flask", "C# Library", "Flask model validators")
+    Container(react, "CodeGenerator.React", "C# Library", "React model validators")
+    Container(angular, "CodeGenerator.Angular", "C# Library", "Angular model validators")
+    Container(rn, "CodeGenerator.ReactNative", "C# Library", "ReactNative model validators")
+    Container(pw, "CodeGenerator.Playwright", "C# Library", "Playwright model validators")
+    Container(detox, "CodeGenerator.Detox", "C# Library", "Detox model validators")
+}
+
+Rel(agent, core, "Calls GenerateAsync()")
+Rel(core, agent, "Returns ValidationException on failure")
+
+Rel(dotnet, core, "Implements IValidatable")
+Rel(python, core, "Implements IValidatable")
+Rel(flask, core, "Implements IValidatable")
+Rel(react, core, "Implements IValidatable")
+Rel(angular, core, "Implements IValidatable")
+Rel(rn, core, "Implements IValidatable")
+Rel(pw, core, "Implements IValidatable")
+Rel(detox, core, "Implements IValidatable")
+
+@enduml

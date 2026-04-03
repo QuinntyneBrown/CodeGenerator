@@ -1,0 +1,27 @@
+@startuml c4_component
+!theme plain
+!include <C4/C4_Component>
+
+title Model Validation — Component Diagram (CodeGenerator.Core)
+
+Container_Boundary(core, "CodeGenerator.Core") {
+    Component(ivalidatable, "IValidatable", "Interface", "Validate() method contract for all models")
+    Component(result, "ValidationResult", "Class", "Holds IsValid flag and list of ValidationError")
+    Component(error, "ValidationError", "Class", "PropertyName, ErrorMessage, Severity")
+    Component(exception, "ModelValidationException", "Exception", "Wraps ValidationResult for pipeline abort")
+    Component(artgen, "ArtifactGenerator", "Class", "Calls Validate() before dispatching to strategy")
+    Component(syngen, "SyntaxGenerator", "Class", "Calls Validate() before dispatching to strategy")
+    Component(syntaxmodel, "SyntaxModel", "Base Class", "Implements IValidatable with virtual Validate()")
+    Component(artifactmodel, "ArtifactModel", "Base Class", "Implements IValidatable with virtual Validate()")
+}
+
+Rel(artgen, ivalidatable, "Calls Validate() on model")
+Rel(syngen, ivalidatable, "Calls Validate() on model")
+Rel(ivalidatable, result, "Returns")
+Rel(result, error, "Contains list of")
+Rel(artgen, exception, "Throws on invalid model")
+Rel(syngen, exception, "Throws on invalid model")
+Rel(syntaxmodel, ivalidatable, "Implements")
+Rel(artifactmodel, ivalidatable, "Implements")
+
+@enduml

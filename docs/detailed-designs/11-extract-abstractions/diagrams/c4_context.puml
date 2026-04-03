@@ -1,0 +1,26 @@
+@startuml c4_context
+!theme plain
+!include <C4/C4_Context>
+
+title System Context: CodeGenerator Package Ecosystem
+
+Person(agent, "AI Agent / Developer", "Generates code via CLI or programmatic API")
+
+System(abstractions, "CodeGenerator.Abstractions", "Lightweight interfaces, base models, enums.\nZero heavy dependencies.")
+System(core, "CodeGenerator.Core", "Orchestration, DI registration,\ntemplate processing, naming conventions.\nReferences Abstractions.")
+System(dotnet, "CodeGenerator.DotNet", "C#/Roslyn syntax, .NET solution scaffolding.\nRoslyn, LibGit2Sharp, MediatR.")
+System(framework, "Framework Modules", "Angular, React, Python, Flask,\nPlaywright, ReactNative, Detox")
+System_Ext(nuget, "NuGet.org", "Package distribution")
+
+Rel(agent, core, "Invokes generation")
+Rel(agent, framework, "Selects target framework")
+Rel(framework, abstractions, "Depends on (lightweight)")
+Rel(core, abstractions, "Depends on")
+Rel(dotnet, core, "Depends on")
+Rel(dotnet, abstractions, "Depends on (transitive)")
+Rel(core, nuget, "Published to")
+Rel(abstractions, nuget, "Published to")
+Rel(dotnet, nuget, "Published to")
+
+SHOW_LEGEND()
+@enduml

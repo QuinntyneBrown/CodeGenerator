@@ -1,0 +1,38 @@
+@startuml c4_component
+!theme plain
+!include <C4/C4_Component>
+
+title Component Diagram: CodeGenerator.Abstractions Package
+
+Container_Boundary(abstractions, "CodeGenerator.Abstractions") {
+
+    Component(iartifact_gen, "IArtifactGenerator", "Interface", "Task GenerateAsync(object model)")
+    Component(iartifact_strat, "IArtifactGenerationStrategy<T>", "Interface", "CanHandle, GetPriority, GenerateAsync")
+    Component(artifact_strat_base, "ArtifactGenerationStrategyBase", "Abstract Class", "GenerateAsync(IServiceProvider, object, CancellationToken)")
+
+    Component(isyntax_gen, "ISyntaxGenerator", "Interface", "Task<string> GenerateAsync<T>(T model)")
+    Component(isyntax_strat, "ISyntaxGenerationStrategy<T>", "Interface", "CanHandle, GetPriority, GenerateAsync")
+    Component(syntax_strat_base, "SyntaxGenerationStrategyBase", "Abstract Class", "GenerateAsync(IServiceProvider, object, CancellationToken)")
+
+    Component(syntax_model, "SyntaxModel", "Base Class", "Parent, Imports, GetChildren, GetDescendants")
+    Component(artifact_model, "ArtifactModel", "Base Class", "Parent, GetChildren, GetDescendants")
+    Component(file_model, "FileModel", "Model", "Name, Directory, Extension, Path, Body")
+    Component(using_model, "ImportModel", "Model", "Name (renamed from UsingModel)")
+
+    Component(itemplate, "ITemplateProcessor", "Interface", "Process / ProcessAsync with tokens or model")
+    Component(itemplate_locator, "ITemplateLocator", "Interface", "Get(filename)")
+    Component(inaming, "INamingConventionConverter", "Interface", "Convert(from, to, value)")
+    Component(icmd, "ICommandService", "Interface", "Start(command, workingDirectory)")
+    Component(icontext, "IContext", "Interface", "Set<T>, Get<T>")
+    Component(ifile_provider, "IFileProvider", "Interface", "Get(searchPattern, directory)")
+
+    Component(naming_enum, "NamingConvention", "Enum", "PascalCase, CamelCase, SnakeCase, KebobCase, etc.")
+}
+
+Rel(file_model, artifact_model, "extends")
+Rel(iartifact_strat, artifact_model, "operates on")
+Rel(isyntax_strat, syntax_model, "operates on")
+Rel(syntax_model, using_model, "has many")
+
+SHOW_LEGEND()
+@enduml

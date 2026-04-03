@@ -1,0 +1,17 @@
+@startuml c4_context
+!theme plain
+!include <C4/C4_Context>
+
+title Model Validation — System Context
+
+Person(agent, "AI Agent / Developer", "Constructs code-generation models and invokes generation")
+
+System(codegen, "CodeGenerator", "Model-driven code generation framework with built-in model validation")
+
+System_Ext(fs, "File System", "Target directory for generated artifacts")
+
+Rel(agent, codegen, "Submits models via GenerateAsync()")
+Rel(codegen, agent, "Returns validation errors with actionable messages")
+Rel(codegen, fs, "Writes generated files on success")
+
+@enduml
