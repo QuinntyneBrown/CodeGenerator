@@ -1,6 +1,8 @@
 // Copyright (c) Quinntyne Brown. All Rights Reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
+using CodeGenerator.Core.Validation;
+
 namespace CodeGenerator.Detox.Syntax;
 
 public class PageObjectModel : SyntaxModel
@@ -29,6 +31,14 @@ public class PageObjectModel : SyntaxModel
     public List<QueryHelperModel> QueryHelpers { get; set; }
 
     public List<ImportModel> Imports { get; set; }
+
+    public override ValidationResult Validate()
+    {
+        var result = new ValidationResult();
+        if (string.IsNullOrWhiteSpace(Name))
+            result.AddError(nameof(Name), "PageObject name is required.");
+        return result;
+    }
 }
 
 public class InteractionModel

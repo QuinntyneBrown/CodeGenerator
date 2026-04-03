@@ -1,6 +1,8 @@
 // Copyright (c) Quinntyne Brown. All Rights Reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
+using CodeGenerator.Core.Validation;
+
 namespace CodeGenerator.Flask.Syntax;
 
 public class ModelModel : SyntaxModel
@@ -34,6 +36,14 @@ public class ModelModel : SyntaxModel
     public bool HasUuidMixin { get; set; }
 
     public bool HasTimestampMixin { get; set; }
+
+    public override ValidationResult Validate()
+    {
+        var result = new ValidationResult();
+        if (string.IsNullOrWhiteSpace(Name))
+            result.AddError(nameof(Name), "Model name is required.");
+        return result;
+    }
 }
 
 public class ColumnModel

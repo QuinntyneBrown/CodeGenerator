@@ -13,6 +13,7 @@ public static class ConfigureServices
     {
         services.AddSingleton<Artifacts.IFileFactory, Artifacts.FileFactory>();
         services.AddSingleton<Artifacts.IProjectFactory, Artifacts.ProjectFactory>();
+        services.AddSingleton<Syntax.IModelFactory, Syntax.ModelFactory>();
         services.AddArifactGenerator(typeof(ProjectModel).Assembly);
         services.AddSyntaxGenerator(typeof(ProjectModel).Assembly);
     }

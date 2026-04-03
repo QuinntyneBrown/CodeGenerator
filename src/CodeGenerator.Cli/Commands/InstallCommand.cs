@@ -43,35 +43,40 @@ public class InstallCommand : Command
 
     private const string SkillContent = @"---
 name: code-generator
-description: Generate code using CodeGenerator.DotNet and CodeGenerator.Angular
+description: Generate code using CodeGenerator framework — supports DotNet, Python, Flask, Angular, React, ReactNative, Playwright, Detox
 user-invocable: true
 ---
 
 # CodeGenerator Skill
 
-Use this skill when asked to generate .NET solutions, projects, classes, entities, or Angular workspaces using the CodeGenerator framework.
+Use this skill when asked to generate code for .NET, Python, Flask, Angular, React, React Native, Playwright, or Detox using the CodeGenerator framework. Construct models and pass them to `IArtifactGenerator.GenerateAsync()` or `ISyntaxGenerator.GenerateAsync()`.
 
 ## Package References
 
-Add these NuGet packages to your project:
-
 ```xml
-<PackageReference Include=""QuinntyneBrown.CodeGenerator.Core"" Version=""1.0.0"" />
-<PackageReference Include=""QuinntyneBrown.CodeGenerator.DotNet"" Version=""1.0.0"" />
-<PackageReference Include=""QuinntyneBrown.CodeGenerator.Angular"" Version=""1.0.0"" />
+<PackageReference Include=""QuinntyneBrown.CodeGenerator.Core"" Version=""1.3.0"" />
+<PackageReference Include=""QuinntyneBrown.CodeGenerator.DotNet"" Version=""1.2.0"" />
+<PackageReference Include=""QuinntyneBrown.CodeGenerator.Angular"" Version=""1.2.0"" />
+<PackageReference Include=""QuinntyneBrown.CodeGenerator.React"" Version=""1.2.5"" />
+<PackageReference Include=""QuinntyneBrown.CodeGenerator.ReactNative"" Version=""1.2.1"" />
+<PackageReference Include=""QuinntyneBrown.CodeGenerator.Python"" Version=""1.2.1"" />
+<PackageReference Include=""QuinntyneBrown.CodeGenerator.Flask"" Version=""1.2.6"" />
+<PackageReference Include=""QuinntyneBrown.CodeGenerator.Playwright"" Version=""1.2.5"" />
+<PackageReference Include=""QuinntyneBrown.CodeGenerator.Detox"" Version=""1.2.1"" />
 ```
 
 ## Service Registration
 
-Register services in your DI container:
-
 ```csharp
-using CodeGenerator.Core;
-using Microsoft.Extensions.DependencyInjection;
-
-services.AddCoreServices(typeof(Program).Assembly);  // Core + artifact/syntax generation strategies
-services.AddDotNetServices();                         // .NET factories, template processor, syntax services
-services.AddAngularServices();                        // Angular file factory and generation strategies
+services.AddCoreServices(typeof(Program).Assembly);
+services.AddDotNetServices();
+services.AddAngularServices();
+services.AddReactServices();
+services.AddReactNativeServices();
+services.AddPythonServices();
+services.AddFlaskServices();
+services.AddPlaywrightServices();
+services.AddDetoxServices();
 ```
 
 ## Core Abstractions
@@ -443,36 +448,169 @@ var import = new ImportModel(""Component"", ""@angular/core"");
 // import.Module -> ""@angular/core""
 ```
 
-## Generation Pattern
-
-The typical workflow is:
-
-1. **Create models** — build a hierarchy of solution/project/file/syntax models
-2. **Generate** — pass models to `IArtifactGenerator.GenerateAsync(model)`
+## Python Models
 
 ```csharp
-// Example: Generate a complete solution
-var solution = new SolutionModel(""MyApp"", outputDir);
-var project = new ProjectModel(DotNetProjectType.WebApi, ""MyApp.Api"", solution.SrcDirectory)
-{
-    TargetFramework = ""net8.0""  // defaults to ""net9.0"" if omitted
-};
-project.Files.Add(new ContentFileModel(content, ""Program"", project.Directory, "".cs""));
-solution.Projects.Add(project);
+using CodeGenerator.Python.Syntax;
+using CodeGenerator.Python.Artifacts;
 
-// Create directories
-Directory.CreateDirectory(solution.SolutionDirectory);
-Directory.CreateDirectory(solution.SrcDirectory);
-Directory.CreateDirectory(project.Directory);
+// ClassModel — Python class
+var cls = new ClassModel(""UserService"");
+cls.Bases.Add(""BaseService"");
+cls.Properties.Add(new PropertyModel { Name = ""name"", Type = ""str"" });
+cls.Methods.Add(new MethodModel(""get_user"") { Body = ""return self.repo.get(id)"" });
+cls.Decorators.Add(new DecoratorModel(""inject""));
+cls.Imports.Add(new ImportModel(""typing"", ""Optional""));
 
-// Generate files
-commandService.Start($""dotnet new sln -n {solution.Name}"", solution.SolutionDirectory);
+// FunctionModel — standalone function
+var func = new FunctionModel(""calculate_total"") { Body = ""return sum(items)"", IsAsync = false };
+func.Params.Add(new ParamModel { Name = ""items"", TypeHint = new TypeHintModel(""list"") });
+
+// ModuleModel — Python module with imports, classes, functions
+var module = new ModuleModel(""services"");
+module.Classes.Add(cls);
+module.Functions.Add(func);
+
+// ProjectModel — Python project scaffolding
+var project = new ProjectModel(""my-app"", Constants.ProjectType.Flask, outputDir);
+project.Packages.Add(new PackageModel { Name = ""flask"", Version = ""3.0.0"" });
 await artifactGenerator.GenerateAsync(project);
-foreach (var file in project.Files)
-{
-    await artifactGenerator.GenerateAsync(file);
-}
-commandService.Start($""dotnet sln add {project.Path}"", solution.SolutionDirectory);
 ```
+
+## Flask Models
+
+```csharp
+using CodeGenerator.Flask.Syntax;
+using CodeGenerator.Flask.Artifacts;
+
+// ControllerModel — Flask controller with routes
+var controller = new ControllerModel(""user"") { UrlPrefix = ""/api/users"" };
+controller.Routes.Add(new ControllerRouteModel {
+    Path = ""/"", Methods = [""GET""], HandlerName = ""get_users"",
+    Body = ""return jsonify(schema.dump(User.query.all(), many=True))""
+});
+
+// ModelModel — SQLAlchemy model
+var model = new ModelModel(""User"") { TableName = ""users"" };
+model.Columns.Add(new ColumnModel(""id"", ""db.Integer"") { PrimaryKey = true });
+model.Columns.Add(new ColumnModel(""name"", ""db.String(100)"") { Nullable = false });
+
+// SchemaModel — Marshmallow schema
+var schema = new SchemaModel(""User"");
+schema.Fields.Add(new SchemaFieldModel { Name = ""name"", FieldType = ""ma.String"", Required = true });
+
+// ServiceModel — service layer
+var service = new ServiceModel(""UserService"");
+service.Methods.Add(new ServiceMethodModel { Name = ""get_all"", Body = ""return User.query.all()"" });
+
+// ProjectModel — Flask project scaffolding (creates venv, installs deps, creates structure)
+var flaskProject = new ProjectModel(""my-api"", outputDir) { ProjectType = Constants.ProjectType.FlaskApi };
+await artifactGenerator.GenerateAsync(flaskProject);
+```
+
+## React Models
+
+```csharp
+using CodeGenerator.React.Syntax;
+using CodeGenerator.React.Artifacts;
+
+// ComponentModel — React functional component
+var component = new ComponentModel(""UserCard"");
+component.Props.Add(new PropertyModel { Name = ""name"", Type = ""string"" });
+component.Props.Add(new PropertyModel { Name = ""email"", Type = ""string"" });
+component.BodyContent = ""<div>{name}</div>"";
+string tsx = await syntaxGenerator.GenerateAsync(component);
+
+// HookModel — custom React hook
+var hook = new HookModel(""useAuth"");
+hook.StateProperties.Add(new PropertyModel { Name = ""user"", Type = ""User | null"" });
+
+// StoreModel — Zustand store
+var store = new StoreModel(""userStore"");
+store.StateProperties.Add(new PropertyModel { Name = ""users"", Type = ""User[]"" });
+store.Actions.Add(new ActionModel { Name = ""fetchUsers"", Body = ""/* fetch logic */"" });
+
+// ApiClientModel — Axios API client
+var apiClient = new ApiClientModel(""UserApi"") { BaseUrl = ""/api/users"" };
+apiClient.Methods.Add(new ApiClientMethodModel { Name = ""getAll"", HttpMethod = ""GET"", Path = ""/"" });
+
+// WorkspaceModel — Vite + React + TypeScript workspace
+var workspace = new WorkspaceModel(""my-app"", ""1.0.0"", outputDir);
+await artifactGenerator.GenerateAsync(workspace);
+```
+
+## React Native Models
+
+```csharp
+using CodeGenerator.ReactNative.Syntax;
+using CodeGenerator.ReactNative.Artifacts;
+
+// ScreenModel — React Native screen component
+var screen = new ScreenModel(""HomeScreen"");
+screen.Props.Add(new PropertyModel { Name = ""title"", Type = ""string"" });
+
+// ComponentModel — reusable React Native component
+var rnComponent = new ComponentModel(""Avatar"");
+rnComponent.Props.Add(new PropertyModel { Name = ""imageUrl"", Type = ""string"" });
+
+// NavigationModel — React Navigation configuration
+var nav = new NavigationModel(""AppNavigation"", ""stack"");
+nav.Screens.AddRange([""Home"", ""Profile"", ""Settings""]);
+
+// ProjectModel — React Native project scaffolding
+var rnProject = new ProjectModel(""MyApp"", outputDir);
+await artifactGenerator.GenerateAsync(rnProject);
+```
+
+## Playwright Models
+
+```csharp
+using CodeGenerator.Playwright.Syntax;
+using CodeGenerator.Playwright.Artifacts;
+
+// PageObjectModel — page object with locators and actions
+var page = new PageObjectModel(""LoginPage"") { Url = ""/login"" };
+page.Locators.Add(new LocatorModel { Name = ""emailInput"", Strategy = ""GetByTestId"", Selector = ""email-input"" });
+page.Actions.Add(new PageActionModel { Name = ""login"", Body = ""await this.emailInput.fill(email);"" });
+page.Queries.Add(new PageQueryModel { Name = ""getErrorMessage"", ReturnExpression = ""this.errorText.textContent()"" });
+
+// TestSpecModel — Playwright test specification
+var testSpec = new TestSpecModel(""Login"");
+testSpec.Tests.Add(new TestCaseModel { Name = ""should login successfully"", Body = ""/* test body */"" });
+
+// FixtureModel — custom Playwright fixtures
+var fixture = new FixtureModel(""auth"");
+fixture.Definitions.Add(new FixtureDefinitionModel { Name = ""loginPage"", Type = ""LoginPage"" });
+
+// ProjectModel — Playwright project scaffolding
+var pwProject = new ProjectModel(""e2e-tests"", outputDir);
+await artifactGenerator.GenerateAsync(pwProject);
+```
+
+## Detox Models
+
+```csharp
+using CodeGenerator.Detox.Syntax;
+using CodeGenerator.Detox.Artifacts;
+
+// PageObjectModel — mobile page object with testID elements
+var page = new PageObjectModel(""LoginPage"");
+page.Elements.Add(new PropertyModel { Name = ""emailInput"", TestId = ""email-input"" });
+page.Interactions.Add(new InteractionModel { Name = ""login"", Body = ""await this.emailInput.typeText(email);"" });
+
+// TestSpecModel — Detox test specification
+var testSpec = new TestSpecModel(""Login"");
+testSpec.Tests.Add(new TestModel { Description = ""should login"", Steps = [""await loginPage.login()""] });
+
+// ProjectModel — Detox project scaffolding
+var detoxProject = new ProjectModel(""e2e"", outputDir);
+await artifactGenerator.GenerateAsync(detoxProject);
+```
+
+## Generation Pattern
+
+1. **Create models** — build syntax/artifact models for the target framework
+2. **Generate** — pass to `IArtifactGenerator.GenerateAsync(model)` for files or `ISyntaxGenerator.GenerateAsync(model)` for code strings
+3. **Builders** — use fluent builders for concise model construction: `ClassBuilder.For(""User"").WithProperty(""Name"", ""string"").Build()`
 ";
 }

@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
+using CodeGenerator.Core.Validation;
 using CodeGenerator.DotNet.Syntax.Attributes;
 using CodeGenerator.DotNet.Syntax.Constructors;
 using CodeGenerator.DotNet.Syntax.Fields;
@@ -46,6 +47,14 @@ public class ClassModel : InterfaceModel
     public bool Sealed { get; set; }
 
     public string BaseClass { get; set; }
+
+    public override ValidationResult Validate()
+    {
+        var result = base.Validate();
+        if (string.IsNullOrWhiteSpace(Name))
+            result.AddError(nameof(Name), "Class name is required.");
+        return result;
+    }
 
     public override void AddMethod(MethodModel method)
     {

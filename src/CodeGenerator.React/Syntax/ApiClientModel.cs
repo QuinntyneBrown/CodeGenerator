@@ -1,6 +1,8 @@
 // Copyright (c) Quinntyne Brown. All Rights Reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
+using CodeGenerator.Core.Validation;
+
 namespace CodeGenerator.React.Syntax;
 
 public class ApiClientModel : SyntaxModel
@@ -38,6 +40,16 @@ public class ApiClientModel : SyntaxModel
     public bool IncludeAuthInterceptor { get; set; }
 
     public string AuthTokenStorageKey { get; set; } = "authToken";
+
+    public override ValidationResult Validate()
+    {
+        var result = new ValidationResult();
+        if (string.IsNullOrWhiteSpace(Name))
+            result.AddError(nameof(Name), "ApiClient name is required.");
+        if (string.IsNullOrWhiteSpace(BaseUrl))
+            result.AddError(nameof(BaseUrl), "Base URL is required.");
+        return result;
+    }
 }
 
 public class ApiClientMethodModel

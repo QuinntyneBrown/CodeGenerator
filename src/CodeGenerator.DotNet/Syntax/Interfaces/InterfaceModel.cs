@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
+using CodeGenerator.Core.Validation;
 using CodeGenerator.DotNet.Syntax.Methods;
 using CodeGenerator.DotNet.Syntax.Types;
 
@@ -23,6 +24,14 @@ public class InterfaceModel : TypeDeclarationModel
     public List<TypeModel> Implements { get; set; } = [];
 
     public List<MethodModel> Methods { get; set; } = [];
+
+    public override ValidationResult Validate()
+    {
+        var result = base.Validate();
+        if (string.IsNullOrWhiteSpace(Name))
+            result.AddError(nameof(Name), "Interface name is required.");
+        return result;
+    }
 
     public virtual void AddMethod(MethodModel method)
     {

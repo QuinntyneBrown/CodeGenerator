@@ -3,6 +3,7 @@
 
 using System.Reflection;
 using CodeGenerator.Core.Artifacts.Abstractions;
+using CodeGenerator.Core.Incremental.Services;
 using CodeGenerator.Core.Services;
 using CodeGenerator.Core.Syntax;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,6 +15,8 @@ public static class ConfigureServices
     public static void AddCoreServices(this IServiceCollection services, Assembly assembly)
     {
         services.AddSingleton<IUserInputService, UserInputService>();
+        services.AddSingleton<IProjectContextFactory, ProjectContextFactory>();
+        services.AddSingleton<IConflictResolver, DefaultConflictResolver>();
         AddArifactGenerator(services, assembly);
         AddSyntaxGenerator(services, assembly);
     }

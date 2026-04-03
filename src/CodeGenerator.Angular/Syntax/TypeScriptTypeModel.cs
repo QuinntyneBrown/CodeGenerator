@@ -1,6 +1,8 @@
 // Copyright (c) Quinntyne Brown. All Rights Reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
+using CodeGenerator.Core.Validation;
+
 namespace CodeGenerator.Angular.Syntax;
 
 /// <summary>
@@ -30,4 +32,12 @@ public class TypeScriptTypeModel : SyntaxModel
     /// Gets or sets the collection of property models.
     /// </summary>
     public List<PropertyModel> Properties { get; set; }
+
+    public override ValidationResult Validate()
+    {
+        var result = new ValidationResult();
+        if (string.IsNullOrWhiteSpace(Name))
+            result.AddError(nameof(Name), "TypeScriptType name is required.");
+        return result;
+    }
 }

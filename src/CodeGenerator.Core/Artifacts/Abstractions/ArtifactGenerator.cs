@@ -3,6 +3,7 @@
 
 using System.Collections.Concurrent;
 using CodeGenerator.Core.Syntax;
+using CodeGenerator.Core.Validation;
 using Microsoft.Extensions.Logging;
 
 namespace CodeGenerator.Core.Artifacts.Abstractions;
@@ -24,6 +25,22 @@ public class ArtifactGenerator : IArtifactGenerator
     public async Task GenerateAsync(object model)
     {
         logger.LogInformation("Generating artifact for model. {type}", model.GetType());
+
+        if (model is IValidatable validatable)
+        {
+            var result = validatable.Validate();
+
+            foreach (var warning in result.Warnings)
+            {
+                logger.LogWarning("Validation warning on {Type}.{Prop}: {Msg}",
+                    model.GetType().Name, warning.PropertyName, warning.ErrorMessage);
+            }
+
+            if (!result.IsValid)
+            {
+                throw new ModelValidationException(result, model.GetType());
+            }
+        }
 
         var handler = _artifactGenerators.GetOrAdd(model.GetType(), static targetType =>
         {

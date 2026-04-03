@@ -1,6 +1,8 @@
 // Copyright (c) Quinntyne Brown. All Rights Reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
+using CodeGenerator.Core.Validation;
+
 namespace CodeGenerator.ReactNative.Syntax;
 
 public class ComponentModel : SyntaxModel
@@ -23,4 +25,12 @@ public class ComponentModel : SyntaxModel
     public List<string> Children { get; set; }
 
     public List<ImportModel> Imports { get; set; }
+
+    public override ValidationResult Validate()
+    {
+        var result = new ValidationResult();
+        if (string.IsNullOrWhiteSpace(Name))
+            result.AddError(nameof(Name), "Component name is required.");
+        return result;
+    }
 }

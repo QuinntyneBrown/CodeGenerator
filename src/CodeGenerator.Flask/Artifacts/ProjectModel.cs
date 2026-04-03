@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
 using CodeGenerator.Core.Artifacts;
+using CodeGenerator.Core.Validation;
 
 namespace CodeGenerator.Flask.Artifacts;
 
@@ -25,4 +26,12 @@ public class ProjectModel : ArtifactModel
     public string AppDirectory { get; set; }
 
     public List<string> Features { get; set; }
+
+    public override ValidationResult Validate()
+    {
+        var result = new ValidationResult();
+        if (string.IsNullOrWhiteSpace(Name))
+            result.AddError(nameof(Name), "Project name is required.");
+        return result;
+    }
 }

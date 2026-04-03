@@ -3,6 +3,7 @@
 
 using System.Collections.Generic;
 using System.Text;
+using CodeGenerator.Core.Validation;
 using CodeGenerator.DotNet.Services;
 using CodeGenerator.DotNet.Syntax.Constructors;
 using CodeGenerator.DotNet.Syntax.Entities;
@@ -92,6 +93,14 @@ public class DbContextModel : ClassModel
     public List<EntityModel> Entities { get; private set; } = new List<EntityModel>();
 
     public string Schema { get; private set; }
+
+    public override ValidationResult Validate()
+    {
+        var result = base.Validate();
+        if (string.IsNullOrWhiteSpace(Name))
+            result.AddError(nameof(Name), "DbContext name is required.");
+        return result;
+    }
 
     public InterfaceModel ToInterface()
     {

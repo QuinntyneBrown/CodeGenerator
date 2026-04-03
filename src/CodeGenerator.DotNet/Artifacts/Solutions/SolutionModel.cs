@@ -4,6 +4,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using CodeGenerator.Core.Validation;
 using CodeGenerator.DotNet.Artifacts.Files;
 using CodeGenerator.DotNet.Artifacts.Projects;
 using CodeGenerator.DotNet.Syntax.Classes;
@@ -67,6 +68,16 @@ public class SolutionModel : ArtifactModel
     public string SolultionFileName => $"{Name}{SolutionExtension}";
 
     public ProjectModel DefaultProject => Folders.First().Projects.First();
+
+    public override ValidationResult Validate()
+    {
+        var result = new ValidationResult();
+        if (string.IsNullOrWhiteSpace(Name))
+            result.AddError(nameof(Name), "Solution name is required.");
+        if (Projects == null || Projects.Count == 0)
+            result.AddError(nameof(Projects), "Solution must contain at least one project.");
+        return result;
+    }
 
     public void RemoveAllServices()
     {

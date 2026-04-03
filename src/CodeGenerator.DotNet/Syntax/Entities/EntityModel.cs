@@ -1,6 +1,7 @@
 // Copyright (c) Quinntyne Brown. All Rights Reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
+using CodeGenerator.Core.Validation;
 using CodeGenerator.DotNet.Syntax.Classes;
 
 namespace CodeGenerator.DotNet.Syntax.Entities;
@@ -14,6 +15,14 @@ public class EntityModel : ClassModel
     }
 
     public string AggregateRootName { get; private set; }
+
+    public override ValidationResult Validate()
+    {
+        var result = base.Validate();
+        if (string.IsNullOrWhiteSpace(Name))
+            result.AddError(nameof(Name), "Entity name is required.");
+        return result;
+    }
 
     public ClassModel CreateDto()
     {

@@ -1,6 +1,8 @@
 // Copyright (c) Quinntyne Brown. All Rights Reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
+using CodeGenerator.Core.Validation;
+
 namespace CodeGenerator.Playwright.Syntax;
 
 public class FixtureModel : SyntaxModel
@@ -14,6 +16,14 @@ public class FixtureModel : SyntaxModel
     public string Name { get; set; }
 
     public List<FixtureDefinitionModel> Fixtures { get; set; }
+
+    public override ValidationResult Validate()
+    {
+        var result = new ValidationResult();
+        if (string.IsNullOrWhiteSpace(Name))
+            result.AddError(nameof(Name), "Fixture name is required.");
+        return result;
+    }
 }
 
 public class FixtureDefinitionModel

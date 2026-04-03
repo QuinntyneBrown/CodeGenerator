@@ -1,15 +1,22 @@
 // Copyright (c) Quinntyne Brown. All Rights Reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
+using CodeGenerator.Core.Validation;
+
 namespace CodeGenerator.Core.Artifacts;
 
-public class ArtifactModel
+public class ArtifactModel : IValidatable
 {
     public ArtifactModel()
     {
     }
 
     public ArtifactModel Parent { get; set; }
+
+    public virtual ValidationResult Validate()
+    {
+        return ValidationResult.Success();
+    }
 
     public virtual IEnumerable<ArtifactModel> GetChildren()
     {

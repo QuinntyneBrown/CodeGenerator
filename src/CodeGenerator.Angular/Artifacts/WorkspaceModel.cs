@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
 using CodeGenerator.Core.Artifacts;
+using CodeGenerator.Core.Validation;
 
 namespace CodeGenerator.Angular.Artifacts;
 
@@ -16,4 +17,12 @@ public class WorkspaceModel(string name, string version, string rootDirectory) :
     public string Directory { get; set; } = Path.Combine(rootDirectory, name);
 
     public List<ProjectModel> Projects { get; set; } = [];
+
+    public override ValidationResult Validate()
+    {
+        var result = new ValidationResult();
+        if (string.IsNullOrWhiteSpace(Name))
+            result.AddError(nameof(Name), "Workspace name is required.");
+        return result;
+    }
 }

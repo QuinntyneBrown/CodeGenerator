@@ -1,9 +1,11 @@
 // Copyright (c) Quinntyne Brown. All Rights Reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
+using CodeGenerator.Core.Validation;
+
 namespace CodeGenerator.Core.Syntax;
 
-public class SyntaxModel
+public class SyntaxModel : IValidatable
 {
     public SyntaxModel()
     {
@@ -13,6 +15,11 @@ public class SyntaxModel
     public SyntaxModel? Parent { get; set; }
 
     public List<UsingModel> Usings { get; set; }
+
+    public virtual ValidationResult Validate()
+    {
+        return ValidationResult.Success();
+    }
 
     public virtual IEnumerable<SyntaxModel> GetChildren()
     {

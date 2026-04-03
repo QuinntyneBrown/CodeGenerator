@@ -1,6 +1,8 @@
 // Copyright (c) Quinntyne Brown. All Rights Reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
+using CodeGenerator.Core.Validation;
+
 namespace CodeGenerator.React.Syntax;
 
 public class ComponentModel : SyntaxModel
@@ -48,4 +50,12 @@ public class ComponentModel : SyntaxModel
     public bool UseMemo { get; set; }
 
     public bool SpreadProps { get; set; }
+
+    public override ValidationResult Validate()
+    {
+        var result = new ValidationResult();
+        if (string.IsNullOrWhiteSpace(Name))
+            result.AddError(nameof(Name), "Component name is required.");
+        return result;
+    }
 }

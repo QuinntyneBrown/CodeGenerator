@@ -1,6 +1,8 @@
 // Copyright (c) Quinntyne Brown. All Rights Reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
+using CodeGenerator.Core.Validation;
+
 namespace CodeGenerator.React.Syntax;
 
 public class StoreModel : SyntaxModel
@@ -32,4 +34,12 @@ public class StoreModel : SyntaxModel
     public string? EntityName { get; set; }
 
     public bool IncludeAsyncState { get; set; } = false;
+
+    public override ValidationResult Validate()
+    {
+        var result = new ValidationResult();
+        if (string.IsNullOrWhiteSpace(Name))
+            result.AddError(nameof(Name), "Store name is required.");
+        return result;
+    }
 }

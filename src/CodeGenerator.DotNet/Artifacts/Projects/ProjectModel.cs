@@ -6,6 +6,7 @@ using System.IO.Abstractions;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using CodeGenerator.Core.Validation;
 using CodeGenerator.DotNet.Artifacts.Projects.Enums;
 
 namespace CodeGenerator.DotNet.Artifacts.Projects;
@@ -58,6 +59,14 @@ public class ProjectModel : ArtifactModel
     }
 
     public string Name { get; init; }
+
+    public override ValidationResult Validate()
+    {
+        var result = new ValidationResult();
+        if (string.IsNullOrWhiteSpace(Name))
+            result.AddError(nameof(Name), "Project name is required.");
+        return result;
+    }
 
     public string Directory { get; init; }
 
