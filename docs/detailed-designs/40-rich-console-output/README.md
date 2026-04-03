@@ -1,7 +1,7 @@
 # Rich Console Output — Detailed Design
 
 **Feature:** 40-rich-console-output (CLI Vision 1.3)
-**Status:** Proposed
+**Status:** Implemented
 **Context:** The CLI currently uses `ILogger` for all output, producing flat, unstyled log lines. Users cannot easily see generation progress, distinguish errors from informational messages, or get a summary of what was generated. The output is not visually scannable.
 
 ---

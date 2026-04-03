@@ -1,6 +1,6 @@
 # Extract Embedded Templates — Detailed Design
 
-**Status:** Proposed
+**Status:** Implemented
 **Feature:** 45
 
 ## 1. Overview

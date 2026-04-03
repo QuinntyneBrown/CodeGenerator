@@ -1,6 +1,6 @@
 # Configuration File Support — Detailed Design
 
-**Status:** Proposed
+**Status:** Implemented
 **Feature:** 44
 
 ## 1. Overview

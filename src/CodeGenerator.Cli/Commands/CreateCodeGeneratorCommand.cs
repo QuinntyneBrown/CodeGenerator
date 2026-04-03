@@ -2,8 +2,11 @@
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
 using System.CommandLine;
+using System.IO.Abstractions;
 using System.Text;
+using CodeGenerator.Cli.Validation;
 using CodeGenerator.Core.Artifacts.Abstractions;
+using CodeGenerator.Core.Errors;
 using CodeGenerator.Core.Services;
 using CodeGenerator.DotNet.Artifacts.Files;
 using CodeGenerator.DotNet.Artifacts.Projects;
@@ -64,9 +67,35 @@ public class CreateCodeGeneratorCommand : RootCommand
     private async Task HandleAsync(string name, string outputDirectory, string framework, bool slnx, string? localSourceRoot)
     {
         var logger = _serviceProvider.GetRequiredService<ILogger<CreateCodeGeneratorCommand>>();
+        var fileSystem = _serviceProvider.GetRequiredService<IFileSystem>();
         var artifactGenerator = _serviceProvider.GetRequiredService<IArtifactGenerator>();
         var commandService = _serviceProvider.GetRequiredService<ICommandService>();
 
+        // Step 1: Validate before any generation
+        var validator = new GenerationOptionsValidator(fileSystem);
+
+        var options = new GenerationOptions
+        {
+            Name = name,
+            OutputDirectory = outputDirectory,
+            Framework = framework,
+            Slnx = slnx,
+            LocalSourceRoot = localSourceRoot,
+        };
+
+        var validationResult = validator.Validate(options);
+
+        if (!validationResult.IsValid)
+        {
+            throw new CliValidationException(validationResult);
+        }
+
+        foreach (var warning in validationResult.Warnings)
+        {
+            logger.LogWarning("{Property}: {Message}", warning.PropertyName, warning.ErrorMessage);
+        }
+
+        // Step 2: Proceed with generation
         logger.LogInformation("Creating code generator solution: {Name}", name);
         logger.LogInformation("Output directory: {OutputDirectory}", outputDirectory);
 
@@ -431,16 +460,16 @@ echo ============================================
 endlocal
 ";
 
-    private static string GetPackageReferences() => @"  <ItemGroup>
-    <PackageReference Include=""QuinntyneBrown.CodeGenerator.Core"" Version=""1.2.0"" />
-    <PackageReference Include=""QuinntyneBrown.CodeGenerator.DotNet"" Version=""1.2.0"" />
-    <PackageReference Include=""QuinntyneBrown.CodeGenerator.Angular"" Version=""1.2.0"" />
-    <PackageReference Include=""QuinntyneBrown.CodeGenerator.React"" Version=""1.2.2"" />
-    <PackageReference Include=""QuinntyneBrown.CodeGenerator.Flask"" Version=""1.2.2"" />
-    <PackageReference Include=""QuinntyneBrown.CodeGenerator.Python"" Version=""1.2.1"" />
-    <PackageReference Include=""QuinntyneBrown.CodeGenerator.Playwright"" Version=""1.2.5"" />
-    <PackageReference Include=""QuinntyneBrown.CodeGenerator.Detox"" Version=""1.2.1"" />
-    <PackageReference Include=""QuinntyneBrown.CodeGenerator.ReactNative"" Version=""1.2.1"" />
+    private static string GetPackageReferences() => $@"  <ItemGroup>
+    <PackageReference Include=""QuinntyneBrown.CodeGenerator.Core"" Version=""{PackageVersions.Core}"" />
+    <PackageReference Include=""QuinntyneBrown.CodeGenerator.DotNet"" Version=""{PackageVersions.DotNet}"" />
+    <PackageReference Include=""QuinntyneBrown.CodeGenerator.Angular"" Version=""{PackageVersions.Angular}"" />
+    <PackageReference Include=""QuinntyneBrown.CodeGenerator.React"" Version=""{PackageVersions.React}"" />
+    <PackageReference Include=""QuinntyneBrown.CodeGenerator.Flask"" Version=""{PackageVersions.Flask}"" />
+    <PackageReference Include=""QuinntyneBrown.CodeGenerator.Python"" Version=""{PackageVersions.Python}"" />
+    <PackageReference Include=""QuinntyneBrown.CodeGenerator.Playwright"" Version=""{PackageVersions.Playwright}"" />
+    <PackageReference Include=""QuinntyneBrown.CodeGenerator.Detox"" Version=""{PackageVersions.Detox}"" />
+    <PackageReference Include=""QuinntyneBrown.CodeGenerator.ReactNative"" Version=""{PackageVersions.ReactNative}"" />
   </ItemGroup>";
 
     private static string GetProjectReferences(string localSourceRoot, string projectDirectory)

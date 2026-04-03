@@ -1,7 +1,7 @@
 # Dry-Run and Preview -- Detailed Design
 
 **Feature:** 43-dry-run-and-preview (Vision 1.6)
-**Status:** Draft
+**Status:** Implemented
 **Dependencies:** Feature 17 (Dry-Run Mode in Core), Feature 40 (Rich Console Output)
 
 ---

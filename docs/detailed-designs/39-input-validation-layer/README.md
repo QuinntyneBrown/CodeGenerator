@@ -1,7 +1,7 @@
 # Input Validation Layer — Detailed Design
 
 **Feature:** 39-input-validation-layer (CLI Vision 1.2)
-**Status:** Proposed
+**Status:** Implemented
 **Context:** The CLI currently accepts any string for `--name`, `--output`, and `--framework` without validation. Invalid C# identifiers in the name produce broken project files. Non-existent output directories cause cryptic I/O errors deep in generation. Invalid framework strings produce projects that fail to build.
 
 ---

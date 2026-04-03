@@ -1,6 +1,8 @@
 // Copyright (c) Quinntyne Brown. All Rights Reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
+using CodeGenerator.Core.Validation;
+
 namespace CodeGenerator.Core.Errors;
 
 public abstract class CliException : Exception
@@ -21,8 +23,22 @@ public abstract class CliException : Exception
 
 public class CliValidationException : CliException
 {
+    public ValidationResult? ValidationResult { get; }
+
     public CliValidationException(string message)
         : base(message, CliExitCodes.ValidationError) { }
+
+    public CliValidationException(ValidationResult validationResult)
+        : base(FormatValidationErrors(validationResult), CliExitCodes.ValidationError)
+    {
+        ValidationResult = validationResult;
+    }
+
+    private static string FormatValidationErrors(ValidationResult result)
+    {
+        var messages = result.Errors.Select(e => $"{e.PropertyName}: {e.ErrorMessage}");
+        return $"Validation failed: {string.Join("; ", messages)}";
+    }
 }
 
 public class CliIOException : CliException
