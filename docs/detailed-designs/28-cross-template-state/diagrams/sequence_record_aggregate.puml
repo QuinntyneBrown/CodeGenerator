@@ -2,35 +2,31 @@
 !theme plain
 skinparam sequenceMessageAlign center
 
-title Strategy Records File → Post-Processor Reads Context
+title Strategy Records File then Post-Processor Reads Context
 
 participant "ArtifactGenerator" as ag
-participant "ClassFileGeneration\nStrategy" as strat1
+participant "ClassFileStrategy" as strat1
 participant "IGenerationContext" as ctx
-participant "CsprojPostProcessing\nStrategy" as postStrat
+participant "CsprojPostStrategy" as postStrat
 database "File System" as fs
 
-[-> ag : GenerateAsync(ClassModel)
-activate ag
 ag -> strat1 : GenerateAsync(classModel)
 activate strat1
 strat1 -> fs : Write Order.cs
-strat1 -> ctx : RecordGeneratedFile(\n  "src/Domain/Order.cs",\n  "ClassFileGenerationStrategy")
+strat1 -> ctx : RecordGeneratedFile("Order.cs")
 deactivate strat1
-ag --> [
-deactivate ag
 
-...more strategies execute, each recording files...
+ag -> strat1 : GenerateAsync(classModel)
+activate strat1
+strat1 -> fs : Write Customer.cs
+strat1 -> ctx : RecordGeneratedFile("Customer.cs")
+deactivate strat1
 
-[-> ag : GenerateAsync(SolutionModel)
-activate ag
 ag -> postStrat : GenerateAsync(solutionModel)
 activate postStrat
 postStrat -> ctx : GeneratedFiles
-ctx --> postStrat : [PlannedFile("Order.cs", ...),\n PlannedFile("Customer.cs", ...)]
-postStrat -> fs : Update .csproj with\n discovered file entries
+ctx --> postStrat : [Order.cs, Customer.cs]
+postStrat -> fs : Update .csproj with entries
 deactivate postStrat
-ag --> [
-deactivate ag
 
 @enduml

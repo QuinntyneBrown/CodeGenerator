@@ -2,21 +2,17 @@
 !theme plain
 skinparam sequenceMessageAlign center
 
-title Duplicate Prevention — Strategy A Handles, Strategy B Skips
+title Duplicate Prevention via Resource Tracking
 
 participant "ArtifactGenerator" as ag
-participant "ControllerGeneration\nStrategy (Priority=10)" as stratA
-participant "GenericClassGeneration\nStrategy (Priority=1)" as stratB
+participant "StrategyA\n(Priority=10)" as stratA
+participant "StrategyB\n(Priority=1)" as stratB
 participant "IGenerationContext" as ctx
-participant "ILogger" as log
 database "File System" as fs
-
-[-> ag : GenerateAsync(ClassModel "UserController")
-activate ag
 
 ag -> stratA : CanHandle(classModel)
 activate stratA
-stratA -> ctx : IsHandled("ClassModel:UserController")
+stratA -> ctx : IsHandled("UserController")
 ctx --> stratA : false
 stratA --> ag : true
 deactivate stratA
@@ -24,36 +20,23 @@ deactivate stratA
 ag -> stratA : GenerateAsync(userController)
 activate stratA
 stratA -> fs : Write UserController.cs
-stratA -> ctx : MarkHandled(\n  "ClassModel:UserController",\n  "ControllerGenerationStrategy")
-ctx -> log : Debug: "Resource marked as handled"
-stratA -> ctx : RecordGeneratedFile(...)
+stratA -> ctx : MarkHandled("UserController", "StrategyA")
 deactivate stratA
 
-ag --> [
-deactivate ag
-
-== Second pass or multi-strategy dispatch ==
-
-[-> ag : GenerateAsync(ClassModel "UserController")
-activate ag
+== Later: same model dispatched again ==
 
 ag -> stratA : CanHandle(classModel)
 activate stratA
-stratA -> ctx : IsHandled("ClassModel:UserController")
+stratA -> ctx : IsHandled("UserController")
 ctx --> stratA : true
-stratA -> log : Info: "Skipping: already handled\nby ControllerGenerationStrategy"
-stratA --> ag : false
+stratA --> ag : false (skip)
 deactivate stratA
 
 ag -> stratB : CanHandle(classModel)
 activate stratB
-stratB -> ctx : IsHandled("ClassModel:UserController")
+stratB -> ctx : IsHandled("UserController")
 ctx --> stratB : true
-stratB -> log : Info: "Skipping: already handled"
-stratB --> ag : false
+stratB --> ag : false (skip)
 deactivate stratB
-
-ag --> [ : No strategy available (already handled)
-deactivate ag
 
 @enduml

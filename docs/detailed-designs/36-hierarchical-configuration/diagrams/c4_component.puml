@@ -2,35 +2,22 @@
 !theme plain
 !include <C4/C4_Component>
 
-title Hierarchical Configuration — Component Diagram
+title Hierarchical Configuration - Component Diagram
 
 Container_Boundary(config_system, "Configuration System") {
-    Component(iconfig, "ICodeGeneratorConfiguration", "Abstractions", "Read-only interface: GetValue, GetSection, GetAll, HasKey")
-    Component(config_impl, "CodeGeneratorConfiguration", "Core", "Merges four config tiers into resolved dictionary")
-    Component(locator, "ConfigFileLocator", "Core", "Walks up directory tree to find .codegenerator.json")
-    Component(parser, "ConfigFileParser", "Core", "Parses JSON config into flat key-value dictionary")
-    Component(env_mapper, "EnvironmentVariableMapper", "Core", "Maps CODEGEN_* env vars to camelCase keys")
-    Component(defaults, "DefaultsProvider", "Core", "Built-in default values for all known keys")
+    Component(iconfig, "ICodeGeneratorConfiguration", "Abstractions", "Read-only config interface")
+    Component(config_impl, "CodeGeneratorConfiguration", "Core", "Merges four config tiers")
+    Component(locator, "ConfigFileLocator", "Core", "Finds .codegenerator.json")
+    Component(env_mapper, "EnvironmentVariableMapper", "Core", "Maps CODEGEN_* env vars")
 }
 
-Container_Boundary(cli, "CLI Layer") {
-    Component(scaffold_cmd, "ScaffoldCommand", "CLI", "Parses --config key=value CLI overrides")
-    Component(program, "Program.cs", "CLI", "Startup: loads config, registers in DI")
-}
+Component(cli, "ScaffoldCommand", "CLI", "CLI overrides")
+Component(strategy, "Strategies", "Core", "Config consumers")
 
-Container_Boundary(consumers, "Configuration Consumers") {
-    Component(strategy, "ArtifactGenerationStrategies", "Core/DotNet/etc.", "Read defaultFramework, namingConvention, style")
-    Component(tmpl_ctx, "TemplateContextBuilder", "Core", "Injects globalVariables into template context")
-}
-
-Rel(program, defaults, "1. Load defaults")
-Rel(program, locator, "2. Find config file")
-Rel(locator, parser, "3. Parse if found")
-Rel(program, env_mapper, "4. Read env vars")
-Rel(scaffold_cmd, config_impl, "5. Pass CLI overrides")
-Rel(program, config_impl, "Construct with 4 tiers")
-Rel(config_impl, iconfig, "implements")
+Rel(config_impl, iconfig, "Implements")
+Rel(config_impl, locator, "Finds config file")
+Rel(config_impl, env_mapper, "Reads env vars")
+Rel(cli, config_impl, "Passes CLI args")
 Rel(strategy, iconfig, "GetValue()")
-Rel(tmpl_ctx, iconfig, "GetSection(\"globalVariables\")")
 
 @enduml

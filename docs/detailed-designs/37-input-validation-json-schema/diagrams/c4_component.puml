@@ -2,33 +2,22 @@
 !theme plain
 !include <C4/C4_Component>
 
-title Input Validation with JSON Schema — Component Diagram
+title Input Validation with JSON Schema - Component Diagram
 
-Container_Boundary(validation, "Input Validation System") {
-    Component(ivalidator, "IInputValidator", "Abstractions", "Interface: ValidateInput(content, schemaName) returns ValidationResult")
-    Component(validator_impl, "JsonSchemaInputValidator", "Core", "Validates JSON/YAML against JsonSchema.Net schemas")
-    Component(iregistry, "ISchemaRegistry", "Core", "Interface for loading/caching JSON Schema definitions")
-    Component(registry_impl, "SchemaRegistry", "Core", "Loads schemas from embedded resources at construction")
+Container_Boundary(validation, "Validation System") {
+    Component(ivalidator, "IInputValidator", "Abstractions", "Validates structured input")
+    Component(validator_impl, "JsonSchemaInputValidator", "Core", "JSON Schema validation")
+    Component(registry, "SchemaRegistry", "Core", "Loads and caches schemas")
 }
 
-Container_Boundary(schemas, "Bundled Schemas") {
-    Component(scaffold_schema, "scaffold-config.schema.json", "Embedded Resource", "Validates scaffold YAML configuration structure")
-    Component(config_schema, "codegenerator-config.schema.json", "Embedded Resource", "Validates .codegenerator.json structure")
-}
+Component(scaffold_schema, "scaffold-config.schema.json", "Embedded", "YAML config schema")
+Component(engine, "ScaffoldEngine", "Core", "Pre-generation validation")
+Component(cli, "ScaffoldCommand", "CLI", "Validate flag")
 
-Container_Boundary(consumers, "Validation Consumers") {
-    Component(engine, "ScaffoldEngine", "Core", "Pre-generation validation hook")
-    Component(cli, "ScaffoldCommand", "CLI", "--validate flag for validation-only mode")
-    Component(config_loader, "Program.cs", "CLI", "Optional config file validation at startup")
-}
-
-Rel(validator_impl, iregistry, "Loads schema by name")
-Rel(registry_impl, scaffold_schema, "Loads at construction")
-Rel(registry_impl, config_schema, "Loads at construction")
-Rel(engine, ivalidator, "ValidateInput(yaml,\n\"scaffold-config\")")
-Rel(cli, ivalidator, "ValidateInput() for\n--validate flag")
-Rel(config_loader, ivalidator, "ValidateInput(json,\n\"codegenerator-config\")")
-Rel(validator_impl, ivalidator, "implements")
-Rel(registry_impl, iregistry, "implements")
+Rel(validator_impl, ivalidator, "Implements")
+Rel(validator_impl, registry, "Loads schema")
+Rel(registry, scaffold_schema, "Reads embedded resource")
+Rel(engine, ivalidator, "ValidateInput()")
+Rel(cli, ivalidator, "ValidateInput()")
 
 @enduml

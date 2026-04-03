@@ -43,17 +43,17 @@
 
 | # | Feature | Status | Pattern Ref | Description |
 |---|---------|--------|-------------|-------------|
-| 24 | [Centralized Dependency Management](24-centralized-dependency-management/README.md) | Proposed | Pattern 14 | Central NuGet/npm version catalog for generated projects |
-| 25 | [Shared Template Macros](25-shared-template-macros/README.md) | Proposed | Pattern 3 | Reusable Liquid partials/macros across template libraries |
-| 26 | [Conditional File Generation](26-conditional-file-generation/README.md) | Proposed | Pattern 7 | Skip file output when template content is empty or exit tag hit |
-| 27 | [Additional Template Filters](27-additional-template-filters/README.md) | Proposed | Pattern 4 | Custom DotLiquid filters for naming, pluralization, type mapping |
-| 28 | [Cross-Template State](28-cross-template-state/README.md) | Proposed | Pattern 6 | Named stacks and dictionaries persisted across template renders |
-| 29 | [Resource Tracking](29-resource-tracking/README.md) | Proposed | Pattern 13 | mark_handled/is_handled to prevent duplicate generation |
-| 30 | [Template Metadata Sidecar](30-template-metadata-sidecar/README.md) | Proposed | Pattern 9 | .meta.json sidecar files for template configuration |
-| 31 | [Convention-Based Template Discovery](31-convention-based-template-discovery/README.md) | Proposed | Pattern 1 | Template directory structure mirrors output; auto-discovery |
-| 32 | [Language/Style Template Matrix](32-language-style-template-matrix/README.md) | Proposed | Pattern 2 | Two-level language/style template hierarchy |
-| 33 | [Dynamic Filename Placeholders](33-dynamic-filename-placeholders/README.md) | Proposed | Pattern 8 | Template filenames with {model} placeholders resolved at render time |
-| 34 | [Schema Normalization Pipeline](34-schema-normalization-pipeline/README.md) | Proposed | Pattern 10 | Normalize input schemas before generation |
-| 35 | [Underscore-Prefix Ordering](35-underscore-prefix-ordering/README.md) | Proposed | Pattern 5 | Templates prefixed with _ render after regular templates with enriched context |
-| 36 | [Hierarchical Configuration](36-hierarchical-configuration/README.md) | Proposed | Pattern 11 | Four-tier config: CLI > env vars > .codegenerator.json > defaults |
-| 37 | [Input Validation with JSON Schema](37-input-validation-json-schema/README.md) | Proposed | Pattern 12 | Validate YAML/JSON inputs against bundled JSON Schemas before generation |
+| 24 | [Centralized Dependency Management](24-centralized-dependency-management/README.md) | Draft | Pattern 9 | IDependencyResolver with JSON manifests replacing hard-coded versions |
+| 25 | [Shared Template Macros](25-shared-template-macros/README.md) | Draft | Pattern 8 | DotLiquid includes from shared `_common/` embedded resource fragments |
+| 26 | [Conditional File Generation](26-conditional-file-generation/README.md) | Draft | Pattern 7 | `{% exit %}` tag and skip-on-empty to suppress unnecessary file output |
+| 27 | [Additional Template Filters](27-additional-template-filters/README.md) | Draft | Pattern 10 | Custom DotLiquid filters: naming, pluralization, type mapping |
+| 28 | [Cross-Template State](28-cross-template-state/README.md) | Draft | Pattern 6 | IGenerationContext with named stacks, key-value store, file tracking |
+| 29 | [Resource Tracking](29-resource-tracking/README.md) | Draft | Pattern 13 | MarkHandled/IsHandled to prevent duplicate generation |
+| 30 | [Template Metadata Sidecar](30-template-metadata-sidecar/README.md) | Draft | Pattern 3 | `_templateinfo.json` sidecar files for template configuration |
+| 31 | [Convention-Based Template Discovery](31-convention-based-template-discovery/README.md) | Draft | Pattern 1 | Template directory structure mirrors output; auto-discovery |
+| 32 | [Language/Style Template Matrix](32-language-style-template-matrix/README.md) | Draft | Pattern 2 | Two-level language x style template hierarchy with `_common/` inheritance |
+| 33 | [Dynamic Filename Placeholders](33-dynamic-filename-placeholders/README.md) | Draft | Pattern 4 | `{{EntityName}}Controller.cs.liquid` with per-entity iteration |
+| 34 | [Schema Normalization Pipeline](34-schema-normalization-pipeline/README.md) | Draft | Pattern 14 | ISchemaNormalizer unifying PlantUML, OpenAPI, JSON Schema inputs |
+| 35 | [Underscore-Prefix Ordering](35-underscore-prefix-ordering/README.md) | Draft | Pattern 5 | `_`-prefixed templates render last with enriched context |
+| 36 | [Hierarchical Configuration](36-hierarchical-configuration/README.md) | Draft | Pattern 11 | Four-tier config: CLI > env vars > .codegenerator.json > defaults |
+| 37 | [Input Validation with JSON Schema](37-input-validation-json-schema/README.md) | Draft | Pattern 12 | Validate YAML/JSON inputs against bundled JSON Schemas before generation |
