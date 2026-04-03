@@ -41,7 +41,7 @@ public class ComponentModel : SyntaxModel
     /// </summary>
     public bool ExportDefault { get; set; }
 
-    public bool IncludeChildren { get; set; } = true;
+    public bool IncludeChildren { get; set; } = false;
 
     public string RefElementType { get; set; } = "HTMLDivElement";
 

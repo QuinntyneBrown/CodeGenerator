@@ -156,9 +156,16 @@ public class ControllerSyntaxGenerationStrategy : ISyntaxGenerationStrategy<Cont
                 {
                     foreach (var param in route.QueryParameters)
                     {
-                        var typeHint = !string.IsNullOrEmpty(param.Type) ? $", type={param.Type}" : "";
-                        var defaultVal = !string.IsNullOrEmpty(param.DefaultValue) ? $", {param.DefaultValue}" : "";
-                        builder.AppendLine($"        {param.Name} = request.args.get('{param.Name}'{defaultVal}{typeHint})");
+                        var parts = new List<string> { $"'{param.Name}'" };
+                        if (!string.IsNullOrEmpty(param.DefaultValue))
+                        {
+                            parts.Add($"default={param.DefaultValue}");
+                        }
+                        if (!string.IsNullOrEmpty(param.Type))
+                        {
+                            parts.Add($"type={param.Type}");
+                        }
+                        builder.AppendLine($"        {param.Name} = request.args.get({string.Join(", ", parts)})");
                     }
                 }
 

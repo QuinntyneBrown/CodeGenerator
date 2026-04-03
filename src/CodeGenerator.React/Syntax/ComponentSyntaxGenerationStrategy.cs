@@ -38,6 +38,12 @@ public class ComponentSyntaxGenerationStrategy : ISyntaxGenerationStrategy<Compo
             builder.AppendLine();
         }
 
+        if (model.ComponentStyle == "fc" || model.ComponentStyle == "forwardRef" || model.UseMemo)
+        {
+            builder.AppendLine("import React from 'react';");
+            builder.AppendLine();
+        }
+
         foreach (var import in model.Imports)
         {
             builder.AppendLine(await syntaxGenerator.GenerateAsync(import));

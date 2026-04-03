@@ -30,12 +30,21 @@ public class HookSyntaxGenerationStrategy : ISyntaxGenerationStrategy<HookModel>
 
         var builder = StringBuilderCache.Acquire();
 
+        if (model.Effects.Count > 0)
+        {
+            var hasReactImport = model.Imports.Any(i => i.Module == "react" || i.Module == "'react'");
+            if (!hasReactImport)
+            {
+                builder.AppendLine("import React from 'react';");
+            }
+        }
+
         foreach (var import in model.Imports)
         {
             builder.AppendLine(await syntaxGenerator.GenerateAsync(import));
         }
 
-        if (model.Imports.Count > 0)
+        if (model.Imports.Count > 0 || model.Effects.Count > 0)
         {
             builder.AppendLine();
         }
@@ -58,6 +67,8 @@ public class HookSyntaxGenerationStrategy : ISyntaxGenerationStrategy<HookModel>
 
         foreach (var effect in model.Effects)
         {
+            if (string.IsNullOrWhiteSpace(effect.Body)) continue;
+
             builder.AppendLine();
             builder.AppendLine("React.useEffect(() => {".Indent(1, 2));
             foreach (var line in effect.Body.Split(Environment.NewLine))

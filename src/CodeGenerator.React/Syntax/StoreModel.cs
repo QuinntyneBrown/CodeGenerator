@@ -31,5 +31,5 @@ public class StoreModel : SyntaxModel
 
     public string? EntityName { get; set; }
 
-    public bool IncludeAsyncState { get; set; } = true;
+    public bool IncludeAsyncState { get; set; } = false;
 }

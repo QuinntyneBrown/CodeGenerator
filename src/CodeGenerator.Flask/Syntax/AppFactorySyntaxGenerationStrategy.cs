@@ -107,6 +107,8 @@ public class AppFactorySyntaxGenerationStrategy : ISyntaxGenerationStrategy<AppF
         {
             foreach (var handler in model.ErrorHandlers)
             {
+                if (handler.StatusCode <= 0) continue;
+
                 builder.AppendLine($"    @app.errorhandler({handler.StatusCode})");
                 builder.AppendLine($"    def handle_{handler.StatusCode}(e):");
                 if (!string.IsNullOrEmpty(handler.Body))

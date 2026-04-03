@@ -33,7 +33,7 @@ public class ApiClientModel : SyntaxModel
     /// </summary>
     public string ExportStyle { get; set; } = "functions";
 
-    public bool WrapInTryCatch { get; set; } = true;
+    public bool WrapInTryCatch { get; set; } = false;
 
     public bool IncludeAuthInterceptor { get; set; }
 

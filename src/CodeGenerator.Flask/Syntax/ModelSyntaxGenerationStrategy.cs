@@ -109,7 +109,7 @@ public class ModelSyntaxGenerationStrategy : ISyntaxGenerationStrategy<ModelMode
             {
                 var colName = namingConventionConverter.Convert(NamingConvention.KebobCase, column.Name);
                 var columnTypeStr = column.ColumnType;
-                if (column.Length.HasValue)
+                if (column.Length.HasValue && column.ColumnType.Contains("String"))
                 {
                     columnTypeStr += $"({column.Length})";
                 }
