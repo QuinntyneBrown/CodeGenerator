@@ -20,6 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\CodeGenerator.Cli\CodeGenerator.Cli.csproj" />
     <ProjectReference Include="..\..\src\CodeGenerator.Core\CodeGenerator.Core.csproj" />
     <ProjectReference Include="..\..\src\CodeGenerator.DotNet\CodeGenerator.DotNet.csproj" />
     <ProjectReference Include="..\..\src\CodeGenerator.Angular\CodeGenerator.Angular.csproj" />

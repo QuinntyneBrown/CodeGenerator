@@ -5,5 +5,11 @@ namespace CodeGenerator.DotNet.Artifacts.FullStack;
 
 public class FullStackCreateOptions
 {
-    public string Name { get; set; }
+    public string Name { get; set; } = string.Empty;
+
+    public string Directory { get; set; } = string.Empty;
+
+    public string SolutionDirectory { get; set; } = string.Empty;
+
+    public string FrontendProjectName { get; set; } = string.Empty;
 }

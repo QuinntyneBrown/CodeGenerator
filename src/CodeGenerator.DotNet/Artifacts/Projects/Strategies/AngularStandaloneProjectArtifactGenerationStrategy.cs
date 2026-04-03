@@ -6,6 +6,7 @@ using CodeGenerator.DotNet.Services;
 using CodeGenerator.Core.Services;
 using Humanizer;
 using Microsoft.Extensions.Logging;
+using System.Text.RegularExpressions;
 
 namespace CodeGenerator.DotNet.Artifacts.Projects.Strategies;
 
@@ -13,21 +14,15 @@ public class AngularStandaloneProjectArtifactGenerationStrategy : IArtifactGener
 {
     private readonly ILogger<AngularStandaloneProjectArtifactGenerationStrategy> logger;
     private readonly IFileSystem fileSystem;
-    private readonly ITemplateLocator templateLocator;
-    private readonly ITemplateProcessor templateProcessor;
     private readonly ICommandService commandService;
 
     public AngularStandaloneProjectArtifactGenerationStrategy(
         ILogger<AngularStandaloneProjectArtifactGenerationStrategy> logger,
         IFileSystem fileSystem,
-        ITemplateLocator templateLocator,
-        ITemplateProcessor templateProcessor,
         ICommandService commandService)
     {
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         this.fileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
-        this.templateLocator = templateLocator ?? throw new ArgumentNullException(nameof(templateLocator));
-        this.templateProcessor = templateProcessor ?? throw new ArgumentNullException(nameof(templateProcessor));
         this.commandService = commandService ?? throw new ArgumentNullException(nameof(commandService));
     }
 
@@ -57,24 +52,38 @@ public class AngularStandaloneProjectArtifactGenerationStrategy : IArtifactGener
             fileSystem.Directory.CreateDirectory(model.Directory);
         }
 
-        // Convert project name to kebab-case
-        var kebabCaseProjectName = model.Name.Kebaberize();
+        var angularProjectName = SanitizeAngularProjectName(model.Name);
 
         // Create Angular workspace without initial application in the project's own directory
-        logger.LogInformation("Creating Angular workspace: ng new {projectName} --no-create-application --directory ./ --defaults", model.Name);
-        commandService.Start($"ng new {model.Name} --no-create-application --directory ./ --defaults", model.Directory);
+        logger.LogInformation("Creating Angular workspace: ng new {projectName} --no-create-application --directory ./ --defaults --skip-git --skip-install", angularProjectName);
+        commandService.Start($"ng new {angularProjectName} --no-create-application --directory ./ --defaults --skip-git --skip-install", model.Directory);
 
         // Create the single application with kebab-case name (run from workspace root where angular.json is located)
-        logger.LogInformation("Creating Angular application: ng g application {kebabCaseProjectName} --defaults", kebabCaseProjectName);
-        commandService.Start($"ng g application {kebabCaseProjectName} --defaults", model.Directory);
+        logger.LogInformation("Creating Angular application: ng g application {projectName} --defaults --skip-tests --skip-install", angularProjectName);
+        commandService.Start($"ng g application {angularProjectName} --defaults --skip-tests --skip-install", model.Directory);
 
         // Generate the .esproj file
-        var template = string.Join(Environment.NewLine, templateLocator.Get("EsProj"));
-
-        var result = templateProcessor.Process(template, new TokensBuilder()
-            .With("projectName", model.Name)
-            .Build());
-
-        fileSystem.File.WriteAllText(model.Path, result);
+        fileSystem.File.WriteAllText(model.Path, BuildEsProjContent(angularProjectName));
     }
+
+    private static string SanitizeAngularProjectName(string name)
+    {
+        var sanitized = Regex.Replace(name.Replace('.', '-').Kebaberize(), @"[^a-zA-Z0-9\-]", "-")
+            .Trim('-')
+            .ToLowerInvariant();
+
+        return string.IsNullOrWhiteSpace(sanitized) ? "app" : sanitized;
+    }
+
+    private static string BuildEsProjContent(string angularProjectName) =>
+        $@"<Project Sdk=""Microsoft.VisualStudio.JavaScript.Sdk"">
+  <PropertyGroup>
+    <StartupCommand>npm start</StartupCommand>
+    <JavaScriptTestRoot>src\</JavaScriptTestRoot>
+    <BuildCommand>npm run build</BuildCommand>
+    <BuildOutputFolder>dist\{angularProjectName}</BuildOutputFolder>
+    <ShouldRunNpmInstall>false</ShouldRunNpmInstall>
+  </PropertyGroup>
+</Project>
+";
 }
