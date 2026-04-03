@@ -47,6 +47,11 @@ public static class ErrorCodes
         public const string StrategyNotFound = "PLUGIN_STRATEGY_NOT_FOUND";
     }
 
+    public static class Strategy
+    {
+        public const string ExecutionFailed = "PLUGIN_STRATEGY_EXEC_FAILED";
+    }
+
     public static class Schema
     {
         public const string Invalid = "SCHEMA_INVALID";
