@@ -1,0 +1,59 @@
+@startuml class_diagram
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 11
+
+title Cross-Template State — Class Diagram
+
+package "CodeGenerator.Abstractions" {
+    interface IGenerationContext {
+        +Push(stackName : string, value : object) : void
+        +GetStack(stackName : string) : IReadOnlyList<object>
+        +Set(key : string, value : object) : void
+        +Get<T>(key : string) : T
+        +TryGet<T>(key : string, out value : T) : bool
+        +GeneratedFiles : IReadOnlyList<PlannedFile>
+        +RecordGeneratedFile(path : string, generatorName : string) : void
+    }
+
+    class PlannedFile <<record>> {
+        +Path : string
+        +GeneratorName : string
+        +GeneratedAt : DateTime
+    }
+}
+
+package "CodeGenerator.Core" {
+    class GenerationContext implements IGenerationContext {
+        -_stacks : ConcurrentDictionary<string, List<object>>
+        -_values : ConcurrentDictionary<string, object>
+        -_generatedFiles : List<PlannedFile>
+        -_filesLock : object
+    }
+
+    class ArtifactGenerator {
+        -logger : ILogger<ArtifactGenerator>
+        -serviceProvider : IServiceProvider
+        +GenerateAsync(model : object) : Task
+    }
+}
+
+package "Strategy Projects" {
+    class "<<strategy>>\nClassFileGenerationStrategy" as fileStrat {
+        -_context : IGenerationContext
+        +GenerateAsync(target : ClassModel) : Task
+    }
+
+    class "<<strategy>>\nCsprojPostProcessingStrategy" as postStrat {
+        -_context : IGenerationContext
+        +GenerateAsync(target : SolutionModel) : Task
+    }
+}
+
+IGenerationContext --> PlannedFile : exposes
+fileStrat --> IGenerationContext : writes to
+postStrat --> IGenerationContext : reads from
+ArtifactGenerator ..> fileStrat : dispatches
+ArtifactGenerator ..> postStrat : dispatches
+
+@enduml

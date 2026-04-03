@@ -1,0 +1,28 @@
+@startuml c4_component
+!theme plain
+!include <C4/C4_Component>
+
+title Centralized Dependency Management — Component Diagram
+
+Container_Boundary(abstractions, "CodeGenerator.Abstractions") {
+    Component(iresolver, "IDependencyResolver", "Interface", "GetVersion(framework, package) and GetAllPackages(framework)")
+}
+
+Container_Boundary(core, "CodeGenerator.Core") {
+    Component(resolver, "DependencyResolver", "Class", "Loads JSON manifests, caches in ConcurrentDictionary, resolves versions")
+    Component(manifest, "DependencyManifest", "POCO", "Deserialized JSON with Packages dictionary")
+    Component(json_files, "JSON Manifests", "Embedded Resources", "Per-framework version files under Dependencies/")
+    Component(di, "ConfigureServices", "Extension Method", "Registers IDependencyResolver as singleton")
+}
+
+Container_Boundary(dotnet, "CodeGenerator.DotNet") {
+    Component(strategy, "Strategy Classes", "IArtifactGenerationStrategy", "Consume IDependencyResolver to get package versions")
+}
+
+resolver ..|> iresolver : implements
+resolver --> manifest : deserializes into
+resolver --> json_files : loads from embedded resources
+strategy --> iresolver : injects
+di --> resolver : registers
+
+@enduml

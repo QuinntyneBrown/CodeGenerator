@@ -1,0 +1,31 @@
+@startuml c4_component
+!theme plain
+!include <C4/C4_Component>
+
+title Convention-Based Template Discovery — Component Diagram
+
+Container_Boundary(core, "CodeGenerator.Core") {
+    Component(discovery, "ConventionTemplateDiscovery", ".NET Service", "Walks template directory trees, builds TemplateFilePlan with entries for each .liquid file")
+    Component(strategy, "ConventionBasedArtifact\nGenerationStrategy", ".NET Strategy", "IArtifactGenerationStrategy<ConventionGenerationRequest> that iterates plan entries, resolves tokens, renders templates")
+    Component(templateProc, "LiquidTemplateProcessor", ".NET Service", "Renders DotLiquid templates with token dictionaries")
+    Component(tokensBuilder, "TokensBuilder", ".NET Service", "Builds 8 naming variants per token (PascalCase, camelCase, snake_case, plurals, TitleCase)")
+    Component(embeddedLocator, "EmbeddedResourceTemplate\nLocatorBase<T>", ".NET Service", "Loads .liquid templates from assembly embedded resources")
+    Component(fileService, "IFileGenerationService", ".NET Service", "Writes generated content to disk")
+}
+
+Container_Boundary(models, "Models") {
+    Component(plan, "TemplateFilePlan", "Model", "Ordered list of TemplateFileEntry objects describing template-to-output mappings")
+    Component(entry, "TemplateFileEntry", "Model", "Single mapping: template path, output path, placeholders, iteration flag")
+    Component(request, "ConventionGenerationRequest", "Model", "Style root, output root, tokens, entities, project name")
+}
+
+Rel(strategy, discovery, "Calls Discover()")
+Rel(discovery, plan, "Produces")
+Rel(plan, entry, "Contains list of")
+Rel(strategy, request, "Consumes")
+Rel(strategy, templateProc, "Renders templates via")
+Rel(strategy, tokensBuilder, "Builds tokens via")
+Rel(strategy, fileService, "Writes files via")
+Rel(discovery, embeddedLocator, "Falls back to for embedded resources")
+
+@enduml

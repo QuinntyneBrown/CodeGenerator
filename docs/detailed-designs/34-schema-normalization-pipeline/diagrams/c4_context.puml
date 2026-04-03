@@ -1,0 +1,24 @@
+@startuml c4_context
+!theme plain
+!include <C4/C4_Context>
+
+title Schema Normalization Pipeline — System Context
+
+Person(dev, "Developer", "Provides schema input in PlantUML, OpenAPI, JSON Schema, or other formats")
+
+System(normalizer, "Schema Normalization\nPipeline", "Detects input format, delegates to format-specific normalizer, produces uniform NormalizedSchema for all downstream generators")
+
+System_Ext(plantuml, "PlantUML Files", ".puml files with class diagrams, relationships, and component specifications")
+System_Ext(openapi, "OpenAPI Documents", "OpenAPI 3.x YAML/JSON with schemas and paths")
+System_Ext(jsonschema, "JSON Schema Files", "JSON Schema Draft 7 with definitions and properties")
+System_Ext(generators, "Code Generators", "IArtifactGenerationStrategy implementations that consume NormalizedSchema")
+System_Ext(fs, "File System", "Generated output files")
+
+Rel(dev, normalizer, "Provides schema file", "CLI / YAML config")
+Rel(plantuml, normalizer, "PlantUML input")
+Rel(openapi, normalizer, "OpenAPI input")
+Rel(jsonschema, normalizer, "JSON Schema input")
+Rel(normalizer, generators, "Provides NormalizedSchema", "uniform model")
+Rel(generators, fs, "Writes generated code")
+
+@enduml

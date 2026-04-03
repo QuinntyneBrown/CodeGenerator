@@ -1,0 +1,48 @@
+@startuml sequence_placeholder_resolution
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Placeholder Analysis and Iterated File Generation
+
+participant "ConventionBasedArtifact\nGenerationStrategy" as strategy
+participant "FilenamePlaceholder\nResolver" as resolver
+participant "TokensBuilder" as tokens
+participant "LiquidTemplate\nProcessor" as liquid
+participant "IFileGeneration\nService" as fileService
+
+[-> strategy : GenerateAsync(request)\nrequest.Entities = [User, Order, Product]
+activate strategy
+
+note over strategy
+  Processing entry:
+  TemplatePath = "src/Controllers/{{EntityName}}Controller.cs.liquid"
+  OutputRelativePath = "src/Controllers/{{EntityName}}Controller.cs"
+end note
+
+strategy -> resolver : Analyze("src/Controllers/\n{{EntityName}}Controller.cs")
+activate resolver
+
+resolver -> resolver : Regex.Matches()\nextract {{EntityName}}
+
+resolver --> strategy : FilenamePlaceholderResult(\n  RequiresIteration = true,\n  IterationTokenName = "EntityName",\n  Placeholders = [{TokenName="EntityName", Filter=null}])
+deactivate resolver
+
+loop for entity in [User, Order, Product]
+
+    strategy -> tokens : With("EntityName", entity.Name).Build()
+    tokens --> strategy : {entityNamePascalCase: "User",\n entityNameCamelCase: "user",\n entityNameSnakeCase: "user",\n entityNamePascalCasePlural: "Users", ...}
+
+    strategy -> resolver : Resolve("src/Controllers/\n{{EntityName}}Controller.cs", tokens)
+    resolver --> strategy : "src/Controllers/UserController.cs"
+
+    strategy -> liquid : ProcessAsync(templateContent, tokens)
+    liquid --> strategy : renderedContent
+
+    strategy -> fileService : WriteAsync("output/src/Controllers/\nUserController.cs", content)
+
+end
+
+[<-- strategy : 3 files generated:\nUserController.cs\nOrderController.cs\nProductController.cs
+deactivate strategy
+
+@enduml

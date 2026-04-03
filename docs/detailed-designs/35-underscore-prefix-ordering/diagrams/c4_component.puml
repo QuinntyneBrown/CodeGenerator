@@ -1,0 +1,24 @@
+@startuml c4_component
+!theme plain
+!include <C4/C4_Component>
+
+title Underscore-Prefix Template Ordering — Component Diagram
+
+Container_Boundary(convention, "Convention-Based Generation") {
+    Component(strategy, "ConventionBasedArtifact\nGenerationStrategy", "Core", "Discovers templates, partitions by prefix, renders in order")
+    Component(partitioner, "TemplatePartitioner", "Internal", "Separates templates into regular and _-prefixed groups, sorts each alphabetically")
+    Component(context_builder, "EnrichedContextBuilder", "Internal", "Builds generated_files, generated_classes, generated_modules from GenerationResult")
+}
+
+Component(gen_context, "IGenerationContext", "Core", "Tracks generated files in GenerationResult during rendering")
+Component(tmpl_processor, "ITemplateProcessor", "Core", "LiquidTemplateProcessor — renders DotLiquid templates")
+Component(artifact_gen, "IArtifactGenerator", "Core", "Writes rendered output to disk")
+
+Rel(strategy, partitioner, "Partitions discovered templates")
+Rel(strategy, tmpl_processor, "Renders templates\n(regular then post)")
+Rel(strategy, gen_context, "Reads GeneratedFiles\nafter regular phase")
+Rel(strategy, context_builder, "Builds enriched context\nfor post-processing")
+Rel(strategy, artifact_gen, "Writes output files")
+Rel(context_builder, gen_context, "Reads GenerationResult.GeneratedFiles")
+
+@enduml

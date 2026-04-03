@@ -1,0 +1,46 @@
+@startuml sequence_generation
+!theme plain
+skinparam sequenceMessageAlign center
+
+title File Generation with Merged Tokens
+
+participant "ArtifactGenerator" as ag
+participant "ConventionBased\nStrategy" as strat
+participant "NamingFilterParser" as parser
+participant "ITemplateProcessor" as tp
+database "File System" as fs
+
+[-> ag : GenerateAsync(model)
+ag -> strat : GenerateAsync(target)
+activate strat
+
+strat -> strat : TokensBuilder\n.With("name", "Order")\n.With("namespace", "MyApp.Domain")\n.Build()
+note right: Strategy tokens:\n{ "name": "Order",\n  "namespace": "MyApp.Domain" }
+
+strat -> strat : MergeTokens(strategyTokens)
+note right: Default tokens from _templateinfo.json:\n{ "framework": "net9.0",\n  "nullable": "enable" }\n\nMerged result:\n{ "framework": "net9.0",\n  "nullable": "enable",\n  "name": "Order",\n  "namespace": "MyApp.Domain" }
+
+strat -> strat : ValidateRequiredTokens(merged)
+note right: RequiredTokens: ["name", "namespace"]\nAll present → OK
+
+strat -> parser : Apply("src/{name|kebab}-api", mergedTokens)
+activate parser
+parser -> parser : Match {name|kebab}\n→ "Order" → kebab → "order"
+parser --> strat : "src/order-api"
+deactivate parser
+
+strat -> parser : Apply("{name|pascal}Api", mergedTokens)
+activate parser
+parser --> strat : "OrderApi"
+deactivate parser
+
+strat -> tp : Process(template, mergedTokens)
+activate tp
+tp --> strat : rendered content
+deactivate tp
+
+strat -> fs : Write "src/order-api/OrderApi.cs"
+strat --> ag : done
+deactivate strat
+
+@enduml

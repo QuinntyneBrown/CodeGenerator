@@ -1,0 +1,74 @@
+@startuml class_diagram
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 11
+
+title Hierarchical Configuration — Class Diagram
+
+package "CodeGenerator.Abstractions" {
+    interface ICodeGeneratorConfiguration {
+        +GetValue(key : string) : string?
+        +GetValue<T>(key : string, defaultValue : T) : T
+        +HasKey(key : string) : bool
+        +GetAll() : IReadOnlyDictionary<string, string>
+        +GetSection(prefix : string) : IReadOnlyDictionary<string, string>
+    }
+}
+
+package "CodeGenerator.Core" {
+    class CodeGeneratorConfiguration implements ICodeGeneratorConfiguration {
+        -_resolved : Dictionary<string, string>
+        +CodeGeneratorConfiguration(defaults, fileConfig, envConfig, cliConfig)
+        +GetValue(key : string) : string?
+        +GetValue<T>(key : string, defaultValue : T) : T
+        +HasKey(key : string) : bool
+        +GetAll() : IReadOnlyDictionary<string, string>
+        +GetSection(prefix : string) : IReadOnlyDictionary<string, string>
+    }
+
+    class ConfigFileLocator <<static>> {
+        +{static} ConfigFileName : string = ".codegenerator.json"
+        +{static} FindConfigFile(startDirectory : string) : string?
+    }
+
+    class ConfigFileParser <<static>> {
+        +{static} Parse(json : string) : IReadOnlyDictionary<string, string>
+    }
+
+    class EnvironmentVariableMapper <<static>> {
+        +{static} Prefix : string = "CODEGEN_"
+        +{static} ReadFromEnvironment() : IReadOnlyDictionary<string, string>
+        -{static} MapKeyToCamelCase(snakeCaseKey : string) : string
+    }
+
+    class DefaultsProvider <<static>> {
+        +{static} GetDefaults() : IReadOnlyDictionary<string, string>
+    }
+}
+
+package "CodeGenerator.Cli" {
+    class ScaffoldCommand {
+        -configOption : Option<string[]>
+        -ParseCliConfig(pairs : string[]) : IReadOnlyDictionary<string, string>
+    }
+}
+
+CodeGeneratorConfiguration ..> DefaultsProvider : tier 4 (lowest)
+CodeGeneratorConfiguration ..> ConfigFileParser : tier 3
+CodeGeneratorConfiguration ..> EnvironmentVariableMapper : tier 2
+CodeGeneratorConfiguration ..> ScaffoldCommand : tier 1 (highest)
+ConfigFileLocator ..> ConfigFileParser : locates file for
+
+note right of CodeGeneratorConfiguration
+  Merge order:
+  defaults < file < env < CLI
+  Later entries override earlier
+end note
+
+note bottom of ConfigFileLocator
+  Walks up from current directory
+  to filesystem root, looking for
+  .codegenerator.json (like .gitignore)
+end note
+
+@enduml

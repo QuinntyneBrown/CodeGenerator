@@ -1,0 +1,55 @@
+@startuml sequence_post_processing
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Post-Processing Template Render Detail (_project.csproj.liquid)
+
+participant "ConventionBased\nStrategy" as strategy
+participant "IGenerationContext" as ctx
+participant "EnrichedContext\nBuilder" as enricher
+participant "ITemplateProcessor" as tmpl
+database "File System" as fs
+
+[-> strategy : Render post-processing template\n_project.csproj.liquid
+activate strategy
+
+strategy -> ctx : Result.GeneratedFiles
+ctx --> strategy : ["src/Models/Order.cs",\n"src/Models/Product.cs",\n"src/Services/OrderService.cs"]
+
+strategy -> enricher : BuildEnrichedContext(generationResult)
+activate enricher
+
+enricher -> enricher : Map each path to GeneratedFileInfo
+note right
+  Order.cs -> {
+    RelativePath: "src/Models/Order.cs",
+    FileName: "Order.cs",
+    FileNameWithoutExtension: "Order",
+    Extension: ".cs",
+    Directory: "src/Models"
+  }
+end note
+
+enricher -> enricher : Extract class names -> generated_classes
+enricher -> enricher : Extract module names -> generated_modules
+
+enricher --> strategy : Hash { generated_files, generated_classes,\ngenerated_modules, ...standard context }
+deactivate enricher
+
+strategy -> tmpl : Process("_project.csproj.liquid", enrichedHash)
+note right
+  Template iterates generated_files
+  to produce <Compile Include="..."/>
+  entries in .csproj XML
+end note
+tmpl --> strategy : rendered .csproj content
+
+strategy -> strategy : ResolveOutputFilename("_project.csproj.liquid")\n-> "project.csproj"
+
+strategy -> fs : Write "project.csproj"
+strategy -> ctx : Record "project.csproj" in Result
+
+[<-- strategy : done
+deactivate strategy
+
+@enduml

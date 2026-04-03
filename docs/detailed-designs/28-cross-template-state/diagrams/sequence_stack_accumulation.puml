@@ -1,0 +1,41 @@
+@startuml sequence_stack_accumulation
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Stack-Based Accumulation for Barrel Files
+
+participant "ArtifactGenerator" as ag
+participant "ComponentSyntax\nGenerationStrategy" as comp
+participant "IGenerationContext" as ctx
+participant "BarrelFile\nGenerationStrategy" as barrel
+database "File System" as fs
+
+[-> ag : GenerateAsync(ComponentModel "UserList")
+activate ag
+ag -> comp : GenerateAsync(userListModel)
+activate comp
+comp -> fs : Write UserList.tsx
+comp -> ctx : Push("barrel:components", "UserList")
+deactivate comp
+deactivate ag
+
+[-> ag : GenerateAsync(ComponentModel "OrderDetail")
+activate ag
+ag -> comp : GenerateAsync(orderDetailModel)
+activate comp
+comp -> fs : Write OrderDetail.tsx
+comp -> ctx : Push("barrel:components", "OrderDetail")
+deactivate comp
+deactivate ag
+
+[-> ag : GenerateAsync(BarrelModel)
+activate ag
+ag -> barrel : GenerateAsync(barrelModel)
+activate barrel
+barrel -> ctx : GetStack("barrel:components")
+ctx --> barrel : ["UserList", "OrderDetail"]
+barrel -> fs : Write index.ts with\n export { UserList }\n export { OrderDetail }
+deactivate barrel
+deactivate ag
+
+@enduml

@@ -1,0 +1,29 @@
+@startuml c4_component
+!theme plain
+!include <C4/C4_Component>
+
+title Shared Template Macros — Component Diagram
+
+Container_Boundary(core, "CodeGenerator.Core") {
+    Component(processor, "LiquidTemplateProcessor", "ITemplateProcessor", "Parses and renders DotLiquid templates, sets FileSystem for include resolution")
+    Component(sharedfs, "SharedTemplateFileSystem", "DotLiquid.FileSystems.IFileSystem", "Resolves include paths to embedded resource content across assemblies")
+    Component(core_fragments, "Core Fragments", "Embedded Resources", "Templates/_common/file_header.liquid, license.liquid")
+}
+
+Container_Boundary(dotnet, "CodeGenerator.DotNet") {
+    Component(dotnet_fragments, "DotNet Fragments", "Embedded Resources", "Templates/_common/namespace_open.liquid, using_statements.liquid")
+    Component(templates, "DotNet Templates", "Embedded Resources", "Templates with {% include 'common/...' %} directives")
+}
+
+Container_Boundary(dotliquid, "DotLiquid Engine") {
+    Component(engine, "Template Engine", "Library", "Parses Liquid syntax, calls IFileSystem on {% include %} tags")
+}
+
+processor --> sharedfs : sets as FileSystem
+processor --> engine : Template.Parse + Render
+engine --> sharedfs : ReadTemplateFile("common/file_header")
+sharedfs --> dotnet_fragments : searches first (language-specific)
+sharedfs --> core_fragments : searches second (fallback)
+templates ..> engine : parsed by
+
+@enduml

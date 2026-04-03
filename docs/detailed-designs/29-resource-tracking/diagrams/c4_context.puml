@@ -1,0 +1,21 @@
+@startuml c4_context
+!theme plain
+!include <C4/C4_Context>
+
+title Resource Tracking — System Context
+
+Person(dev, "Developer", "Triggers code generation")
+
+System(codegen, "CodeGenerator", "Multi-framework code generation engine\nwith resource tracking to prevent duplicates")
+
+System_Ext(fs, "File System", "Generated output files")
+
+Rel(dev, codegen, "Invokes generation", "CLI / scaffold")
+Rel(codegen, fs, "Writes files (no duplicates)")
+
+note right of codegen
+  Resource tracking is internal.
+  No new external dependencies.
+end note
+
+@enduml

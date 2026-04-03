@@ -1,0 +1,18 @@
+@startuml c4_context
+!theme plain
+!include <C4/C4_Context>
+
+title Template Metadata Sidecar — System Context
+
+Person(author, "Template Author", "Creates/edits _templateinfo.json\nsidecar files alongside templates")
+Person(dev, "Developer", "Triggers code generation")
+
+System(codegen, "CodeGenerator", "Multi-framework code generation engine\nwith externalized template configuration")
+
+System_Ext(fs, "File System", "Template directories with\n_templateinfo.json sidecar files\nand generated output")
+
+Rel(author, fs, "Creates _templateinfo.json")
+Rel(dev, codegen, "Invokes generation", "CLI / scaffold")
+Rel(codegen, fs, "Reads _templateinfo.json\nWrites generated files")
+
+@enduml

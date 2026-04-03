@@ -1,0 +1,29 @@
+@startuml sequence_resolve_version
+!theme plain
+
+title Dependency Version Resolution Sequence
+
+participant "Strategy" as S
+participant "IDependencyResolver" as R
+participant "ConcurrentDictionary\n(Cache)" as C
+participant "Embedded Resource\nLoader" as E
+
+S -> R : GetVersion("dotnet/net8", "MediatR")
+R -> C : TryGetValue("dotnet/net8")
+
+alt Cache miss
+    C --> R : null
+    R -> R : LoadFromDisk("Dependencies/dotnet/net8.json")
+    alt Disk file not found
+        R -> E : Load embedded resource\nCodeGenerator.Core.Dependencies.dotnet.net8.json
+        E --> R : JSON content
+    end
+    R -> R : JsonSerializer.Deserialize<DependencyManifest>(json)
+    R -> C : Add("dotnet/net8", manifest)
+end
+
+C --> R : DependencyManifest
+R -> R : manifest.Packages["MediatR"]
+R --> S : "12.2.0"
+
+@enduml

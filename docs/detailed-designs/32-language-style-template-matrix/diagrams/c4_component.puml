@@ -1,0 +1,36 @@
+@startuml c4_component
+!theme plain
+!include <C4/C4_Component>
+
+title Language/Style Template Matrix — Component Diagram
+
+Container_Boundary(core, "CodeGenerator.Core") {
+    Component(registry, "StyleRegistry", ".NET Singleton", "Discovers and indexes available styles per language from embedded resources and filesystem directories")
+    Component(resolver, "StyleResolver", ".NET Service", "Merges _common/ and style-specific templates into a unified TemplateFilePlan")
+    Component(discovery, "ConventionTemplate\nDiscovery", ".NET Service", "Walks template directory trees (DD-31)")
+    Component(strategy, "ConventionBasedArtifact\nGenerationStrategy", ".NET Strategy", "Generates files from TemplateFilePlan (DD-31)")
+    Component(scaffolder, "ProjectScaffolder", ".NET Service", "Delegates to StyleResolver when style is specified (DD-23)")
+}
+
+Container_Boundary(models, "Models") {
+    Component(styleDef, "StyleDefinition", "Model", "Name, language, template root, common root, priority, metadata")
+    Component(plan, "TemplateFilePlan", "Model", "Merged template-to-output mappings (DD-31)")
+}
+
+Container_Boundary(langs, "Language Assemblies") {
+    Component(dotnet, "CodeGenerator.DotNet", "Assembly", "Embedded: dotnet/clean-architecture, dotnet/minimal-api, dotnet/vertical-slices")
+    Component(react, "CodeGenerator.React", "Assembly", "Embedded: react/vite-spa, react/next-app")
+    Component(python, "CodeGenerator.Python", "Assembly", "Embedded: python/flask-api, python/fastapi")
+}
+
+Rel(scaffolder, resolver, "ResolveTemplates(language, style)")
+Rel(resolver, registry, "GetStyle(language, styleName)")
+Rel(resolver, discovery, "Discover(_common/) + Discover(style/)")
+Rel(registry, dotnet, "Scans embedded resources")
+Rel(registry, react, "Scans embedded resources")
+Rel(registry, python, "Scans embedded resources")
+Rel(registry, styleDef, "Stores collection of")
+Rel(resolver, plan, "Produces merged")
+Rel(strategy, plan, "Consumes")
+
+@enduml

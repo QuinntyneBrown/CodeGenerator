@@ -1,0 +1,28 @@
+@startuml c4_component
+!theme plain
+!include <C4/C4_Component>
+
+title Additional Template Filters — Component Diagram
+
+Container_Boundary(core, "CodeGenerator.Core") {
+    Component(filters, "CodeGeneratorFilters", "Static Class", "Public static methods: Pascal, Camel, Snake, Kebab, Title, Allcaps, Namespace, Strip_namespace, Pluralize, Singularize, Schema_type")
+    Component(typemapper, "TypeMapper", "Internal Static Class", "Maps schema types to language-native types (csharp, python, typescript)")
+    Component(processor, "LiquidTemplateProcessor", "ITemplateProcessor", "Registers CodeGeneratorFilters in static constructor")
+}
+
+Container_Boundary(abstractions, "CodeGenerator.Abstractions") {
+    Component(converter, "INamingConventionConverter", "Interface", "Convert(to, value) for PascalCase, CamelCase, SnakeCase, KebobCase, TitleCase, AllCaps")
+}
+
+Container_Boundary(ext, "External Libraries") {
+    Component(humanizer, "Humanizer.Core", "NuGet Package", "Pluralize and Singularize inflector methods")
+    Component(dotliquid, "DotLiquid", "NuGet Package", "Template engine with filter registration via Template.RegisterFilter")
+}
+
+processor --> filters : Template.RegisterFilter(typeof(CodeGeneratorFilters))
+filters --> converter : delegates naming conversions
+filters --> typemapper : delegates schema_type mapping
+filters --> humanizer : delegates pluralize/singularize
+dotliquid --> filters : invokes on {{ value | filter_name }}
+
+@enduml

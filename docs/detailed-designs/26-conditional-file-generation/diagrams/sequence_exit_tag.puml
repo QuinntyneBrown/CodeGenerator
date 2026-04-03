@@ -1,0 +1,35 @@
+@startuml sequence_exit_tag
+!theme plain
+
+title Exit Tag — File Skip Sequence
+
+participant "TemplatedFileArtifact\nGenerationStrategy" as S
+participant "ITemplateLocator" as L
+participant "LiquidTemplateProcessor" as P
+participant "DotLiquid Engine" as E
+participant "ExitTag" as T
+participant "IArtifactGenerator" as AG
+
+S -> L : Get(model.Template)
+L --> S : template string
+
+S -> P : Process(template, tokens)
+P -> E : Template.Parse(template)
+P -> E : liquidTemplate.Render(hash)
+
+E -> E : Render tokens and blocks
+E -> E : Encounter {% exit %} tag
+E -> T : Render(context, result)
+T -> T : throw new SkipFileException()
+
+E <-- T : SkipFileException
+P <-- E : SkipFileException (propagates)
+S <-- P : SkipFileException (propagates)
+
+S -> S : catch (SkipFileException)
+S -> S : _logger.LogInformation("Skipping file...")
+S --> S : return (no file written)
+
+note over AG : GenerateAsync is never called
+
+@enduml

@@ -1,0 +1,22 @@
+@startuml c4_context
+!theme plain
+!include <C4/C4_Context>
+
+title Dynamic Filename Placeholders — System Context
+
+Person(author, "Template Author", "Creates .liquid templates with {{token}} placeholders in filenames")
+Person(dev, "Developer", "Triggers code generation providing entities and project configuration")
+
+System(codegen, "CodeGenerator with\nFilename Placeholders", "Parses {{token|filter}} patterns in template filenames, determines iteration, resolves to concrete output paths")
+
+System_Ext(templates, "Template Repository", ".liquid files with placeholder-bearing filenames in convention directories")
+System_Ext(fs, "File System", "Receives generated files at resolved paths")
+System_Ext(naming, "NamingConventionConverter", "Existing infrastructure for PascalCase, camelCase, snake_case, plural conversions")
+
+Rel(author, templates, "Creates templates with\n{{EntityName}}Controller.cs.liquid")
+Rel(dev, codegen, "Provides entities,\nproject config", "CLI / YAML")
+Rel(codegen, templates, "Reads template filenames")
+Rel(codegen, naming, "Applies naming filters")
+Rel(codegen, fs, "Writes UserController.cs,\nOrderController.cs, ...")
+
+@enduml

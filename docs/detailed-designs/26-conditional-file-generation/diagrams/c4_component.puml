@@ -1,0 +1,29 @@
+@startuml c4_component
+!theme plain
+!include <C4/C4_Component>
+
+title Conditional File Generation — Component Diagram
+
+Container_Boundary(core, "CodeGenerator.Core") {
+    Component(exit_tag, "ExitTag", "DotLiquid.Tag", "Custom tag that throws SkipFileException on render")
+    Component(skip_ex, "SkipFileException", "Exception", "Sentinel exception signaling file should not be written")
+    Component(processor, "LiquidTemplateProcessor", "ITemplateProcessor", "Registers ExitTag via Template.RegisterTag in static constructor")
+}
+
+Container_Boundary(dotnet, "CodeGenerator.DotNet") {
+    Component(templated, "TemplatedFileArtifact\nGenerationStrategy", "IArtifactGenerationStrategy<TemplatedFileModel>", "Catches SkipFileException, checks for empty output")
+    Component(content, "ContentFileArtifact\nGenerationStrategy", "IArtifactGenerationStrategy<ContentFileModel>", "Checks for empty content before writing")
+}
+
+Container_Boundary(dotliquid, "DotLiquid") {
+    Component(engine, "Template Engine", "Library", "Calls ExitTag.Render when {% exit %} encountered")
+}
+
+processor --> exit_tag : registers via Template.RegisterTag<ExitTag>("exit")
+engine --> exit_tag : invokes on {% exit %}
+exit_tag --> skip_ex : throws
+templated --> skip_ex : catches
+templated --> processor : calls Process()
+content ..> skip_ex : not applicable (no template)
+
+@enduml

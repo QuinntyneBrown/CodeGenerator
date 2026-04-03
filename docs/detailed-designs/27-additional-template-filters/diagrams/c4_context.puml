@@ -1,0 +1,16 @@
+@startuml c4_context
+!theme plain
+!include <C4/C4_Context>
+
+title Additional Template Filters — System Context
+
+Person(author, "Template Author", "Writes DotLiquid templates using filter syntax like {{ name | pascal }}")
+
+System(codegen, "CodeGenerator", "Code generation engine with custom DotLiquid filters for naming, pluralization, and type mapping")
+
+System_Ext(fs, "File System", "Generated source files with correctly formatted names and types")
+
+Rel(author, codegen, "Writes templates with filter expressions")
+Rel(codegen, fs, "Writes rendered output files")
+
+@enduml

@@ -1,0 +1,103 @@
+@startuml class_diagram
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 11
+
+title Input Validation with JSON Schema — Class Diagram
+
+package "CodeGenerator.Abstractions" {
+    interface IInputValidator {
+        +ValidateInput(content : string, schemaName : string) : ValidationResult
+        +ValidateInput(content : string, schemaName : string, format : InputFormat) : ValidationResult
+        +GetAvailableSchemas() : IReadOnlyList<string>
+    }
+
+    enum InputFormat {
+        Json
+        Yaml
+    }
+
+    class ValidationResult {
+        +IsValid : bool
+        +Errors : List<ValidationError>
+        +Warnings : List<ValidationError>
+        +AddError(propertyName : string, message : string)
+        +AddWarning(propertyName : string, message : string)
+        +Merge(other : ValidationResult)
+        +{static} Success() : ValidationResult
+    }
+
+    class ValidationError {
+        +PropertyName : string
+        +ErrorMessage : string
+        +Severity : ValidationSeverity
+        +Line : int?
+        +Column : int?
+        +SchemaPath : string?
+    }
+
+    enum ValidationSeverity {
+        Error
+        Warning
+    }
+}
+
+package "CodeGenerator.Core" {
+    interface ISchemaRegistry {
+        +GetSchema(schemaName : string) : JsonSchema?
+        +GetAvailableSchemaNames() : IReadOnlyList<string>
+    }
+
+    class JsonSchemaInputValidator implements IInputValidator {
+        -_schemaRegistry : ISchemaRegistry
+        -_logger : ILogger
+        +ValidateInput(content : string, schemaName : string) : ValidationResult
+        +ValidateInput(content : string, schemaName : string, format : InputFormat) : ValidationResult
+        +GetAvailableSchemas() : IReadOnlyList<string>
+        -DetectFormat(content : string) : InputFormat
+        -ConvertYamlToJsonNode(yaml : string) : JsonNode?
+    }
+
+    class SchemaRegistry implements ISchemaRegistry {
+        -_schemas : Dictionary<string, JsonSchema>
+        +SchemaRegistry()
+        +GetSchema(schemaName : string) : JsonSchema?
+        +GetAvailableSchemaNames() : IReadOnlyList<string>
+        -LoadEmbeddedSchemas()
+    }
+}
+
+package "CodeGenerator.Core.Scaffold" {
+    class ScaffoldEngine {
+        -_inputValidator : IInputValidator
+        -_parser : IYamlConfigParser
+        -_validator : IConfigValidator
+        -_orchestrator : IScaffoldOrchestrator
+        +ScaffoldAsync(yaml, outputPath, dryRun, force) : Task<ScaffoldResult>
+    }
+}
+
+JsonSchemaInputValidator --> ISchemaRegistry : loads schemas
+JsonSchemaInputValidator ..> ValidationResult : produces
+JsonSchemaInputValidator ..> InputFormat : uses
+ValidationResult --> ValidationError : contains
+ValidationError --> ValidationSeverity : has
+ScaffoldEngine --> IInputValidator : pre-parse validation
+
+note right of SchemaRegistry
+  Loads all *.schema.json files
+  from embedded resources at
+  construction time.
+
+  Known schemas:
+  - scaffold-config
+  - codegenerator-config
+end note
+
+note bottom of ValidationError
+  Line/Column are populated when
+  the error can be mapped back to
+  source location in the input file.
+end note
+
+@enduml

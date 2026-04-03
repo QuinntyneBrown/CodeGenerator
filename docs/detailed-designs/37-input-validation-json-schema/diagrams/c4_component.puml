@@ -1,0 +1,34 @@
+@startuml c4_component
+!theme plain
+!include <C4/C4_Component>
+
+title Input Validation with JSON Schema — Component Diagram
+
+Container_Boundary(validation, "Input Validation System") {
+    Component(ivalidator, "IInputValidator", "Abstractions", "Interface: ValidateInput(content, schemaName) returns ValidationResult")
+    Component(validator_impl, "JsonSchemaInputValidator", "Core", "Validates JSON/YAML against JsonSchema.Net schemas")
+    Component(iregistry, "ISchemaRegistry", "Core", "Interface for loading/caching JSON Schema definitions")
+    Component(registry_impl, "SchemaRegistry", "Core", "Loads schemas from embedded resources at construction")
+}
+
+Container_Boundary(schemas, "Bundled Schemas") {
+    Component(scaffold_schema, "scaffold-config.schema.json", "Embedded Resource", "Validates scaffold YAML configuration structure")
+    Component(config_schema, "codegenerator-config.schema.json", "Embedded Resource", "Validates .codegenerator.json structure")
+}
+
+Container_Boundary(consumers, "Validation Consumers") {
+    Component(engine, "ScaffoldEngine", "Core", "Pre-generation validation hook")
+    Component(cli, "ScaffoldCommand", "CLI", "--validate flag for validation-only mode")
+    Component(config_loader, "Program.cs", "CLI", "Optional config file validation at startup")
+}
+
+Rel(validator_impl, iregistry, "Loads schema by name")
+Rel(registry_impl, scaffold_schema, "Loads at construction")
+Rel(registry_impl, config_schema, "Loads at construction")
+Rel(engine, ivalidator, "ValidateInput(yaml,\n\"scaffold-config\")")
+Rel(cli, ivalidator, "ValidateInput() for\n--validate flag")
+Rel(config_loader, ivalidator, "ValidateInput(json,\n\"codegenerator-config\")")
+Rel(validator_impl, ivalidator, "implements")
+Rel(registry_impl, iregistry, "implements")
+
+@enduml

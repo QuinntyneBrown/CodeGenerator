@@ -1,0 +1,34 @@
+@startuml c4_component
+!theme plain
+!include <C4/C4_Component>
+
+title Template Metadata Sidecar — Component Diagram
+
+Container_Boundary(core, "CodeGenerator.Core") {
+    Component(info, "TemplateSetInfo", "Model", "Priority, OutputDirectory,\nDefaultTokens, RequiredTokens,\nMainProjectName, SrcLayout")
+    Component(iLoader, "ITemplateSetInfoLoader", "Interface", "Load, LoadOrDefault, GetAll")
+    Component(loader, "TemplateSetInfoLoader", "Class", "File discovery, JSON parsing,\nConcurrentDictionary cache")
+    Component(parser, "NamingFilterParser", "Class", "Parses {name|filter} patterns,\napplies via INamingConventionConverter")
+    Component(convStrat, "ConventionBased\nArtifactGenerationStrategy<T>", "Abstract class", "Base class reading metadata\nfor priority, naming, tokens, output")
+    Component(templateProc, "LiquidTemplateProcessor", "Class", "Existing: renders DotLiquid\ntemplates with merged tokens")
+}
+
+Container_Boundary(abstractions, "CodeGenerator.Abstractions") {
+    Component(naming, "INamingConventionConverter", "Interface", "Existing: PascalCase, camelCase,\nkebab-case, snake_case conversion")
+    Component(iTemplate, "ITemplateProcessor", "Interface", "Existing: Process(template, tokens)")
+}
+
+Container_Boundary(fs, "File System") {
+    Component(sidecar, "_templateinfo.json", "JSON file", "Sidecar metadata alongside\ntemplate directories")
+}
+
+Rel(loader, iLoader, "implements")
+Rel(loader, sidecar, "reads and parses")
+Rel(loader, info, "deserializes into")
+Rel(parser, naming, "applies naming filters")
+Rel(convStrat, iLoader, "loads metadata")
+Rel(convStrat, parser, "resolves names and paths")
+Rel(convStrat, iTemplate, "renders templates")
+Rel(convStrat, templateProc, "with merged tokens")
+
+@enduml

@@ -1,0 +1,60 @@
+@startuml sequence_style_discovery
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Style Discovery at Application Startup
+
+participant "DI Container" as di
+participant "StyleRegistry" as registry
+participant "CodeGenerator.DotNet\nAssembly" as dotnet
+participant "CodeGenerator.React\nAssembly" as react
+participant "CodeGenerator.Python\nAssembly" as python
+database "Local Filesystem\nTemplates/" as fs
+
+di -> registry : new StyleRegistry()
+activate registry
+
+== Embedded Resource Scanning ==
+
+di -> registry : DiscoverStyles(DotNet.Assembly,\n"CodeGenerator.DotNet.Templates.styles")
+registry -> dotnet : GetManifestResourceNames()
+dotnet --> registry : ["...styles.dotnet.clean-architecture.src.Program.cs.liquid",\n "...styles.dotnet.minimal-api.src.Program.cs.liquid",\n "...styles.dotnet._common.src.appsettings.json.liquid"]
+registry -> registry : Parse resource paths:\nlanguage="dotnet",\nstyles=["clean-architecture", "minimal-api"],\ncommon="_common"
+registry -> registry : Register(StyleDefinition(\n  name="clean-architecture",\n  language="dotnet",\n  sourceType=EmbeddedResource))
+registry -> registry : Register(StyleDefinition(\n  name="minimal-api",\n  language="dotnet",\n  sourceType=EmbeddedResource))
+
+di -> registry : DiscoverStyles(React.Assembly, ...)
+registry -> react : GetManifestResourceNames()
+react --> registry : [react/vite-spa, react/next-app resources]
+registry -> registry : Register "vite-spa", "next-app"
+
+di -> registry : DiscoverStyles(Python.Assembly, ...)
+registry -> python : GetManifestResourceNames()
+python --> registry : [python/flask-api, python/fastapi resources]
+registry -> registry : Register "flask-api", "fastapi"
+
+== Filesystem Override Scanning ==
+
+di -> registry : DiscoverStyles("./Templates")
+registry -> fs : Directory.Exists("./Templates/styles/")
+fs --> registry : true
+
+registry -> fs : EnumerateDirectories("./Templates/styles/")
+fs --> registry : ["dotnet"]
+
+registry -> fs : EnumerateDirectories("./Templates/styles/dotnet/")
+fs --> registry : ["clean-architecture"]
+
+registry -> registry : Override: StyleDefinition(\n  name="clean-architecture",\n  language="dotnet",\n  sourceType=Merged)
+
+note right of registry
+  Registry contents:
+  dotnet: clean-architecture (Merged), minimal-api (Embedded)
+  react: vite-spa (Embedded), next-app (Embedded)
+  python: flask-api (Embedded), fastapi (Embedded)
+end note
+
+[<-- registry : IStyleRegistry ready
+deactivate registry
+
+@enduml

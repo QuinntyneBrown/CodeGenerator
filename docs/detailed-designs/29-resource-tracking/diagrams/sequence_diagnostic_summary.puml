@@ -1,0 +1,33 @@
+@startuml sequence_diagnostic_summary
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Diagnostic Summary — Post-Generation Resource Report
+
+participant "CLI Host" as host
+participant "ArtifactGenerator" as ag
+participant "IGenerationContext" as ctx
+participant "ILogger" as log
+
+[-> host : Execute generation run
+activate host
+
+host -> ag : GenerateAsync(model1)
+host -> ag : GenerateAsync(model2)
+host -> ag : GenerateAsync(model3)
+
+note over ag : Strategies run, marking\nresources as handled
+
+host -> ctx : GetAllHandled()
+ctx --> host : { "ClassModel:UserController" → "ControllerGenerationStrategy",\n  "ClassModel:Order" → "EntityGenerationStrategy",\n  "ComponentModel:UserList" → "ComponentGenerationStrategy" }
+
+host -> log : Info: "Generation summary:\n  3 resources handled by 3 strategies"
+
+loop for each entry in handled
+    host -> log : Info: "{resourceId} → {handlerName}"
+end
+
+[<-- host : Generation complete
+deactivate host
+
+@enduml

@@ -1,0 +1,80 @@
+@startuml class_diagram
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 11
+
+title Language/Style Template Matrix — Class Diagram
+
+interface IStyleRegistry {
+    +GetStyles(language : string) : IReadOnlyList<StyleDefinition>
+    +GetStyle(language : string, styleName : string) : StyleDefinition
+    +GetLanguages() : IReadOnlyList<string>
+    +Register(style : StyleDefinition) : void
+    +DiscoverStyles(templatesRoot : string) : void
+    +DiscoverStyles(assembly : Assembly, resourcePrefix : string) : void
+}
+
+interface IConventionTemplateDiscovery {
+    +Discover(styleRoot : string, sourceType : TemplateSourceType) : TemplateFilePlan
+}
+
+class StyleRegistry implements IStyleRegistry {
+    -_styles : Dictionary<string, Dictionary<string, StyleDefinition>>
+    -_logger : ILogger<StyleRegistry>
+    +GetStyles(language : string) : IReadOnlyList<StyleDefinition>
+    +GetStyle(language : string, styleName : string) : StyleDefinition
+    +GetLanguages() : IReadOnlyList<string>
+    +Register(style : StyleDefinition) : void
+    +DiscoverStyles(templatesRoot : string) : void
+    +DiscoverStyles(assembly : Assembly, resourcePrefix : string) : void
+    -ScanDirectory(languageDir : string) : List<StyleDefinition>
+    -ScanEmbeddedResources(assembly : Assembly, prefix : string) : List<StyleDefinition>
+}
+
+class StyleResolver {
+    -_registry : IStyleRegistry
+    -_discovery : IConventionTemplateDiscovery
+    -_logger : ILogger<StyleResolver>
+    +ResolveTemplates(language : string, styleName : string) : TemplateFilePlan
+    -MergePlans(commonPlan : TemplateFilePlan, stylePlan : TemplateFilePlan) : TemplateFilePlan
+}
+
+class StyleDefinition {
+    +Name : string
+    +Language : string
+    +Description : string
+    +TemplateRoot : string
+    +CommonRoot : string
+    +Priority : int
+    +IsDefault : bool
+    +SourceType : TemplateSourceType
+    +Metadata : Dictionary<string, string>
+}
+
+class TemplateFilePlan {
+    +StyleRoot : string
+    +SourceType : TemplateSourceType
+    +Entries : List<TemplateFileEntry>
+}
+
+class TemplateFileEntry {
+    +TemplatePath : string
+    +OutputRelativePath : string
+    +TemplateContent : string
+    +RequiresIteration : bool
+    +Placeholders : List<string>
+}
+
+exception StyleNotFoundException {
+    +Language : string
+    +StyleName : string
+}
+
+StyleRegistry *-- "0..*" StyleDefinition : indexed by\nlanguage + name
+StyleResolver --> IStyleRegistry : queries
+StyleResolver --> IConventionTemplateDiscovery : discovers templates via
+StyleResolver ..> TemplateFilePlan : produces merged
+TemplateFilePlan *-- "0..*" TemplateFileEntry
+StyleRegistry ..> StyleNotFoundException : throws when not found
+
+@enduml

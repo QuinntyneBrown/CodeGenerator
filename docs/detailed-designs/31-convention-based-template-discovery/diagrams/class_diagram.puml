@@ -1,0 +1,87 @@
+@startuml class_diagram
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 11
+
+title Convention-Based Template Discovery — Class Diagram
+
+interface IConventionTemplateDiscovery {
+    +Discover(styleRoot : string, sourceType : TemplateSourceType) : TemplateFilePlan
+    +DiscoverFromEmbeddedResources(assembly : Assembly, resourcePrefix : string) : TemplateFilePlan
+}
+
+interface "IArtifactGenerationStrategy<ConventionGenerationRequest>" as IStrategy {
+    +CanHandle(model : object) : bool
+    +GetPriority() : int
+    +GenerateAsync(target : ConventionGenerationRequest) : Task
+}
+
+interface ITemplateProcessor {
+    +ProcessAsync(template : string, tokens : IDictionary<string, object>) : Task<string>
+}
+
+interface IFileGenerationService {
+    +WriteAsync(path : string, content : string) : Task
+}
+
+class ConventionTemplateDiscovery implements IConventionTemplateDiscovery {
+    -_logger : ILogger<ConventionTemplateDiscovery>
+    -_fileSystem : IFileSystem
+    +Discover(styleRoot : string, sourceType : TemplateSourceType) : TemplateFilePlan
+    +DiscoverFromEmbeddedResources(assembly : Assembly, resourcePrefix : string) : TemplateFilePlan
+    -WalkDirectory(root : string, current : string) : List<TemplateFileEntry>
+    -MergeWithPrecedence(filesystem : List<TemplateFileEntry>, embedded : List<TemplateFileEntry>) : List<TemplateFileEntry>
+    -ExtractPlaceholders(filename : string) : List<string>
+}
+
+class ConventionBasedArtifactGenerationStrategy implements IStrategy {
+    -_discovery : IConventionTemplateDiscovery
+    -_templateProcessor : ITemplateProcessor
+    -_fileService : IFileGenerationService
+    -_logger : ILogger
+    +CanHandle(model : object) : bool
+    +GetPriority() : int
+    +GenerateAsync(target : ConventionGenerationRequest) : Task
+    -BuildTokens(request : ConventionGenerationRequest, entity : EntityModel) : Dictionary<string, object>
+    -ResolvePath(templatePath : string, tokens : Dictionary<string, object>) : string
+}
+
+class TemplateFilePlan {
+    +StyleRoot : string
+    +SourceType : TemplateSourceType
+    +Entries : List<TemplateFileEntry>
+}
+
+class TemplateFileEntry {
+    +TemplatePath : string
+    +OutputRelativePath : string
+    +TemplateContent : string
+    +RequiresIteration : bool
+    +Placeholders : List<string>
+}
+
+class ConventionGenerationRequest {
+    +StyleRoot : string
+    +OutputRoot : string
+    +SourceType : TemplateSourceType
+    +Tokens : Dictionary<string, object>
+    +Entities : List<EntityModel>
+    +ProjectName : string
+}
+
+enum TemplateSourceType {
+    FileSystem
+    EmbeddedResource
+    Merged
+}
+
+ConventionBasedArtifactGenerationStrategy --> IConventionTemplateDiscovery : uses
+ConventionBasedArtifactGenerationStrategy --> ITemplateProcessor : renders via
+ConventionBasedArtifactGenerationStrategy --> IFileGenerationService : writes via
+ConventionBasedArtifactGenerationStrategy ..> ConventionGenerationRequest : consumes
+ConventionTemplateDiscovery ..> TemplateFilePlan : creates
+TemplateFilePlan *-- "0..*" TemplateFileEntry
+TemplateFileEntry --> TemplateSourceType
+ConventionGenerationRequest --> TemplateSourceType
+
+@enduml

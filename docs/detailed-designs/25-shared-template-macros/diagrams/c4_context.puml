@@ -1,0 +1,16 @@
+@startuml c4_context
+!theme plain
+!include <C4/C4_Context>
+
+title Shared Template Macros — System Context
+
+Person(author, "Template Author", "Creates and maintains DotLiquid templates with shared includes")
+
+System(codegen, "CodeGenerator", "Code generation engine with shared template fragment resolution via DotLiquid includes")
+
+System_Ext(fs, "File System", "Generated source files from rendered templates")
+
+Rel(author, codegen, "Writes templates using {% include 'common/...' %}")
+Rel(codegen, fs, "Writes rendered output files")
+
+@enduml

@@ -1,0 +1,38 @@
+@startuml sequence_include_resolution
+!theme plain
+
+title Include Resolution Sequence
+
+participant "TemplatedFileArtifact\nGenerationStrategy" as S
+participant "LiquidTemplateProcessor" as P
+participant "DotLiquid Engine" as E
+participant "SharedTemplateFileSystem" as FS
+participant "Assembly\n(CodeGenerator.DotNet)" as A1
+participant "Assembly\n(CodeGenerator.Core)" as A2
+
+S -> P : Process(template, tokens)
+P -> E : Template.Parse(template)
+P -> E : liquidTemplate.FileSystem = _fileSystem
+P -> E : liquidTemplate.Render(hash)
+
+E -> E : Encounters {% include 'common/file_header' %}
+E -> FS : ReadTemplateFile(context, "common/file_header")
+FS -> FS : Check cache for "common/file_header"
+
+alt Cache miss
+    FS -> A1 : GetManifestResourceNames()\nSearch for *Templates._common.file_header.liquid
+    alt Found in language assembly
+        A1 --> FS : resource stream content
+    else Not found, try Core
+        FS -> A2 : GetManifestResourceNames()\nSearch for *Templates._common.file_header.liquid
+        A2 --> FS : resource stream content
+    end
+    FS -> FS : Cache result
+end
+
+FS --> E : "// Copyright (c) {{ author }}..."
+E -> E : Render included fragment with parent tokens
+E --> P : Fully rendered output
+P --> S : Rendered string
+
+@enduml

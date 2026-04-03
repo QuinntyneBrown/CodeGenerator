@@ -1,0 +1,39 @@
+@startuml sequence_file_discovery
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Config File Discovery (Walk-Up Search)
+
+participant "ConfigFileLocator" as locator
+database "File System" as fs
+
+[-> locator : FindConfigFile(\n"/home/user/projects/myapp/src")
+activate locator
+
+locator -> fs : Exists("/home/user/projects/myapp/src/.codegenerator.json")
+fs --> locator : false
+
+locator -> fs : Exists("/home/user/projects/myapp/.codegenerator.json")
+fs --> locator : true
+
+[<-- locator : "/home/user/projects/myapp/.codegenerator.json"
+deactivate locator
+
+== Alternative: No config file found ==
+
+[-> locator : FindConfigFile("/tmp/scratch")
+activate locator
+
+locator -> fs : Exists("/tmp/scratch/.codegenerator.json")
+fs --> locator : false
+
+locator -> fs : Exists("/tmp/.codegenerator.json")
+fs --> locator : false
+
+locator -> fs : Exists("/.codegenerator.json")
+fs --> locator : false
+
+[<-- locator : null (no config file found;\nempty dictionary used)
+deactivate locator
+
+@enduml

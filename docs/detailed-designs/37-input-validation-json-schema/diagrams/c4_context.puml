@@ -1,0 +1,18 @@
+@startuml c4_context
+!theme plain
+!include <C4/C4_Context>
+
+title Input Validation with JSON Schema — System Context
+
+Person(dev, "Developer", "Provides YAML/JSON input files for code generation")
+
+System(codegen, "CodeGenerator", "Validates structured inputs against bundled JSON Schemas before generation")
+
+System_Ext(fs, "File System", "Input files: scaffold.yaml, .codegenerator.json, OpenAPI specs")
+System_Ext(schemas, "Bundled JSON Schemas", "Embedded resources: scaffold-config.schema.json, codegenerator-config.schema.json")
+
+Rel(dev, codegen, "Provides input files\nor --validate flag")
+Rel(codegen, fs, "Reads input files")
+Rel(codegen, schemas, "Loads JSON Schema\ndefinitions at startup")
+
+@enduml

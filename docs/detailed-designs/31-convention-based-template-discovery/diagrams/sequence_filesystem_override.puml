@@ -1,0 +1,36 @@
+@startuml sequence_filesystem_override
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Filesystem Override of Embedded Templates
+
+participant "ConventionTemplate\nDiscovery" as discovery
+database "Filesystem\nTemplate Directory" as fsDir
+database "Assembly\nEmbedded Resources" as embedded
+
+[-> discovery : Discover(styleRoot, Merged)
+activate discovery
+
+discovery -> embedded : GetManifestResourceNames()\nfiltered by style prefix
+embedded --> discovery : embeddedPaths = [\n  "src/Program.cs.liquid",\n  "src/Controllers/{{EntityName}}Controller.cs.liquid",\n  "_project.csproj.liquid"\n]
+
+discovery -> fsDir : Directory.EnumerateFiles("*.liquid",\nSearchOption.AllDirectories)
+fsDir --> discovery : fsPaths = [\n  "src/Program.cs.liquid"\n]
+
+discovery -> discovery : Build entries from embeddedPaths\n(3 entries)
+
+discovery -> discovery : Build entries from fsPaths\n(1 entry)
+
+discovery -> discovery : MergeWithPrecedence():\nfs "src/Program.cs.liquid" overrides\nembedded "src/Program.cs.liquid"
+
+note right of discovery
+  Final plan:
+  1. src/Program.cs.liquid (FROM FILESYSTEM)
+  2. src/Controllers/{{EntityName}}Controller.cs.liquid (from embedded)
+  3. _project.csproj.liquid (from embedded)
+end note
+
+[<-- discovery : TemplateFilePlan (3 entries,\n1 overridden from filesystem)
+deactivate discovery
+
+@enduml

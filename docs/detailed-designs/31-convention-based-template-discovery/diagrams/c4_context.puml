@@ -1,0 +1,20 @@
+@startuml c4_context
+!theme plain
+!include <C4/C4_Context>
+
+title Convention-Based Template Discovery — System Context
+
+Person(dev, "Developer", "Provides PlantUML, YAML config, or CLI arguments for code generation")
+
+System(codegen, "CodeGenerator with\nConvention-Based Discovery", "Discovers template directory trees, resolves tokens, renders DotLiquid templates, writes output files mirroring the template structure")
+
+System_Ext(fs, "File System", "Reads template directories and writes generated output files")
+System_Ext(templates, "Template Repository", "Embedded resources in assemblies or filesystem directories containing .liquid templates")
+System_Ext(dotnet_sdk, ".NET SDK", "Compiles and runs generated projects")
+
+Rel(dev, codegen, "Triggers generation", "CLI / YAML config")
+Rel(codegen, templates, "Reads .liquid templates from", "embedded resources / filesystem")
+Rel(codegen, fs, "Writes generated files to", "mirrored directory structure")
+Rel(dev, dotnet_sdk, "Builds generated project")
+
+@enduml

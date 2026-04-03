@@ -1,0 +1,33 @@
+@startuml c4_component
+!theme plain
+!include <C4/C4_Component>
+
+title Resource Tracking — Component Diagram
+
+Container_Boundary(abstractions, "CodeGenerator.Abstractions") {
+    Component(iCtx, "IGenerationContext", "Interface", "Extended with MarkHandled, IsHandled,\nGetHandler, GetAllHandled")
+    Component(resId, "ResourceId", "Static class", "Helper: For<T>(name) → '{Type}:{Name}'")
+}
+
+Container_Boundary(core, "CodeGenerator.Core") {
+    Component(ctx, "GenerationContext", "Class", "ConcurrentDictionary<string, string>\nfor handled resource registry")
+    Component(artGen, "ArtifactGenerator", "Class", "Dispatches models to strategies")
+}
+
+Container_Boundary(strategies, "Strategy Projects") {
+    Component(stratA, "High-Priority Strategy", "IArtifactGenerationStrategy<T>", "Checks IsHandled in CanHandle,\ncalls MarkHandled after generation")
+    Component(stratB, "Lower-Priority Strategy", "IArtifactGenerationStrategy<T>", "Checks IsHandled → true → skips")
+}
+
+Component(logger, "ILogger", "Microsoft.Extensions.Logging", "Logs skip and handle events")
+
+Rel(ctx, iCtx, "implements")
+Rel(artGen, stratA, "dispatches")
+Rel(artGen, stratB, "dispatches")
+Rel(stratA, iCtx, "IsHandled → false\nMarkHandled")
+Rel(stratB, iCtx, "IsHandled → true\n(skips)")
+Rel(stratA, resId, "ResourceId.For<T>()")
+Rel(stratB, resId, "ResourceId.For<T>()")
+Rel(ctx, logger, "logs handle/skip events")
+
+@enduml

@@ -1,0 +1,18 @@
+@startuml c4_context
+!theme plain
+!include <C4/C4_Context>
+
+title Cross-Template State — System Context
+
+Person(dev, "Developer", "Triggers generation run via CLI or scaffold command")
+
+System(codegen, "CodeGenerator", "Multi-framework code generation engine with cross-template state tracking")
+
+System_Ext(fs, "File System", "Target directory for generated files")
+System_Ext(templates, "Template Resources", "Embedded DotLiquid templates")
+
+Rel(dev, codegen, "Invokes generation", "CLI command")
+Rel(codegen, fs, "Writes generated files")
+Rel(codegen, templates, "Reads templates")
+
+@enduml

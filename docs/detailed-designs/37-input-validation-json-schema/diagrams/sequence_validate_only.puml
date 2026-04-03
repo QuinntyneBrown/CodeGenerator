@@ -1,0 +1,43 @@
+@startuml sequence_validate_only
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Validate-Only Mode (--validate flag)
+
+actor "Developer" as dev
+participant "ScaffoldCommand" as cli
+participant "IInputValidator" as validator
+participant "Console" as console
+
+dev -> cli : codegen scaffold -c scaffold.yaml --validate
+activate cli
+
+cli -> cli : yaml = File.ReadAllText("scaffold.yaml")
+
+cli -> validator : ValidateInput(yaml, "scaffold-config", Yaml)
+activate validator
+validator -> validator : Convert YAML to JSON
+validator -> validator : Evaluate against schema
+validator --> cli : ValidationResult
+deactivate validator
+
+alt result.IsValid
+    cli -> console : "Validation passed."
+    cli --> dev : Exit code 0
+else !result.IsValid
+    cli -> console : "Validation errors:"
+    loop for each error in result.Errors
+        cli -> console : "  /projects/0/type (line 5, col 3):\n    enum: Value 'invalid' is not valid"
+    end
+    cli --> dev : Exit code 1
+end
+
+deactivate cli
+
+note right of cli
+  Generation does NOT proceed
+  in --validate mode.
+  Only validation is performed.
+end note
+
+@enduml

@@ -1,0 +1,18 @@
+@startuml c4_context
+!theme plain
+!include <C4/C4_Context>
+
+title Hierarchical Configuration — System Context
+
+Person(dev, "Developer", "Configures CodeGenerator via CLI args, env vars, or .codegenerator.json")
+
+System(codegen, "CodeGenerator CLI", "Code generation framework with four-tier hierarchical configuration resolution")
+
+System_Ext(fs, "File System", "Contains .codegenerator.json project config files")
+System_Ext(env, "Operating System Environment", "CODEGEN_* environment variables")
+
+Rel(dev, codegen, "CLI arguments\n--config key=value")
+Rel(codegen, fs, "Discovers and reads\n.codegenerator.json\n(walk-up search)")
+Rel(codegen, env, "Reads CODEGEN_*\nenvironment variables")
+
+@enduml

@@ -1,0 +1,77 @@
+@startuml class_diagram
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 11
+
+title Dynamic Filename Placeholders — Class Diagram
+
+interface IFilenamePlaceholderResolver {
+    +Analyze(filename : string) : FilenamePlaceholderResult
+    +Resolve(filename : string, tokens : IDictionary<string, object>) : string
+    +ResolveIterated(filename : string, entities : IEnumerable<EntityModel>, baseTokens : IDictionary<string, object>) : List<string>
+}
+
+class FilenamePlaceholderResolver implements IFilenamePlaceholderResolver {
+    -{static} PlaceholderPattern : Regex
+    +Analyze(filename : string) : FilenamePlaceholderResult
+    +Resolve(filename : string, tokens : IDictionary<string, object>) : string
+    +ResolveIterated(filename : string, entities : IEnumerable<EntityModel>, baseTokens : IDictionary<string, object>) : List<string>
+    -IsIterationToken(tokenName : string) : bool
+    -ResolveToken(tokenName : string, tokens : IDictionary<string, object>) : string
+    -ApplyFilter(value : string, filter : string) : string
+}
+
+class FilenamePlaceholderResult {
+    +OriginalFilename : string
+    +Placeholders : List<FilenamePlaceholder>
+    +RequiresIteration : bool
+    +IterationTokenName : string
+}
+
+class FilenamePlaceholder {
+    +FullMatch : string
+    +TokenName : string
+    +Filter : string
+}
+
+class "SyntaxToken (existing)" as SyntaxToken {
+    +Value : string
+    +PascalCase() : string
+    +CamelCase() : string
+    +SnakeCase() : string
+    +PascalCasePlural() : string
+    +CamelCasePlural() : string
+    +SnakeCasePlural() : string
+    +TitleCase() : string
+}
+
+class "TokensBuilder (existing)" as TokensBuilder {
+    +With(propertyName : string, value : string) : TokensBuilder
+    +Build() : Dictionary<string, object>
+}
+
+class "ConventionBasedArtifact\nGenerationStrategy (DD-31)" as Strategy {
+    -_placeholderResolver : IFilenamePlaceholderResolver
+    +GenerateAsync(target : ConventionGenerationRequest) : Task
+}
+
+FilenamePlaceholderResolver ..> FilenamePlaceholderResult : creates
+FilenamePlaceholderResult *-- "0..*" FilenamePlaceholder
+FilenamePlaceholderResolver --> SyntaxToken : applies filters via
+Strategy --> IFilenamePlaceholderResolver : resolves filenames via
+Strategy --> TokensBuilder : builds tokens via
+
+note right of FilenamePlaceholderResolver
+  PlaceholderPattern = @"\{\{(\w+)(?:\|(\w+))?\}\}"
+  Matches: {{EntityName}}, {{EntityName|snake}},
+  {{ProjectName}}, {{FeatureName|camelPlural}}
+end note
+
+note bottom of FilenamePlaceholder
+  Examples:
+  FullMatch = "{{EntityName|snake}}"
+  TokenName = "EntityName"
+  Filter = "snake"
+end note
+
+@enduml

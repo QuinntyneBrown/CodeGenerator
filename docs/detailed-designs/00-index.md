@@ -38,3 +38,22 @@
 | 21 | [YAML Scaffold Command](21-yaml-scaffold-command/README.md) | Implemented | FR-19.1, FR-19.10, FR-19.11 | CLI `scaffold` command with --dry-run, --force, --validate, --export-schema, --init |
 | 22 | [YAML Configuration Schema](22-yaml-configuration-schema/README.md) | Implemented | FR-19.2, FR-19.3, FR-19.4, FR-19.8 | Schema definition, parsing, validation, type mapping, default file generation |
 | 23 | [YAML Scaffolding Engine](23-yaml-scaffolding-engine/README.md) | Implemented | FR-19.5, FR-19.6, FR-19.7, FR-19.9 | Architecture patterns, entity/DTO generation, test config, multi-solution/monorepo |
+
+### xregistry/codegen Pattern Adaptations
+
+| # | Feature | Status | Pattern Ref | Description |
+|---|---------|--------|-------------|-------------|
+| 24 | [Centralized Dependency Management](24-centralized-dependency-management/README.md) | Proposed | Pattern 14 | Central NuGet/npm version catalog for generated projects |
+| 25 | [Shared Template Macros](25-shared-template-macros/README.md) | Proposed | Pattern 3 | Reusable Liquid partials/macros across template libraries |
+| 26 | [Conditional File Generation](26-conditional-file-generation/README.md) | Proposed | Pattern 7 | Skip file output when template content is empty or exit tag hit |
+| 27 | [Additional Template Filters](27-additional-template-filters/README.md) | Proposed | Pattern 4 | Custom DotLiquid filters for naming, pluralization, type mapping |
+| 28 | [Cross-Template State](28-cross-template-state/README.md) | Proposed | Pattern 6 | Named stacks and dictionaries persisted across template renders |
+| 29 | [Resource Tracking](29-resource-tracking/README.md) | Proposed | Pattern 13 | mark_handled/is_handled to prevent duplicate generation |
+| 30 | [Template Metadata Sidecar](30-template-metadata-sidecar/README.md) | Proposed | Pattern 9 | .meta.json sidecar files for template configuration |
+| 31 | [Convention-Based Template Discovery](31-convention-based-template-discovery/README.md) | Proposed | Pattern 1 | Template directory structure mirrors output; auto-discovery |
+| 32 | [Language/Style Template Matrix](32-language-style-template-matrix/README.md) | Proposed | Pattern 2 | Two-level language/style template hierarchy |
+| 33 | [Dynamic Filename Placeholders](33-dynamic-filename-placeholders/README.md) | Proposed | Pattern 8 | Template filenames with {model} placeholders resolved at render time |
+| 34 | [Schema Normalization Pipeline](34-schema-normalization-pipeline/README.md) | Proposed | Pattern 10 | Normalize input schemas before generation |
+| 35 | [Underscore-Prefix Ordering](35-underscore-prefix-ordering/README.md) | Proposed | Pattern 5 | Templates prefixed with _ render after regular templates with enriched context |
+| 36 | [Hierarchical Configuration](36-hierarchical-configuration/README.md) | Proposed | Pattern 11 | Four-tier config: CLI > env vars > .codegenerator.json > defaults |
+| 37 | [Input Validation with JSON Schema](37-input-validation-json-schema/README.md) | Proposed | Pattern 12 | Validate YAML/JSON inputs against bundled JSON Schemas before generation |

@@ -1,0 +1,36 @@
+@startuml sequence_record_aggregate
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Strategy Records File → Post-Processor Reads Context
+
+participant "ArtifactGenerator" as ag
+participant "ClassFileGeneration\nStrategy" as strat1
+participant "IGenerationContext" as ctx
+participant "CsprojPostProcessing\nStrategy" as postStrat
+database "File System" as fs
+
+[-> ag : GenerateAsync(ClassModel)
+activate ag
+ag -> strat1 : GenerateAsync(classModel)
+activate strat1
+strat1 -> fs : Write Order.cs
+strat1 -> ctx : RecordGeneratedFile(\n  "src/Domain/Order.cs",\n  "ClassFileGenerationStrategy")
+deactivate strat1
+ag --> [
+deactivate ag
+
+...more strategies execute, each recording files...
+
+[-> ag : GenerateAsync(SolutionModel)
+activate ag
+ag -> postStrat : GenerateAsync(solutionModel)
+activate postStrat
+postStrat -> ctx : GeneratedFiles
+ctx --> postStrat : [PlannedFile("Order.cs", ...),\n PlannedFile("Customer.cs", ...)]
+postStrat -> fs : Update .csproj with\n discovered file entries
+deactivate postStrat
+ag --> [
+deactivate ag
+
+@enduml

@@ -1,0 +1,75 @@
+@startuml sequence_config_loading
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Configuration Loading at CLI Startup
+
+participant "Program.cs" as program
+participant "DefaultsProvider" as defaults
+participant "ConfigFileLocator" as locator
+participant "ConfigFileParser" as parser
+participant "EnvironmentVariable\nMapper" as env
+participant "ScaffoldCommand" as cli
+participant "CodeGenerator\nConfiguration" as config
+participant "DI Container" as di
+database "File System" as fs
+
+[-> program : CLI invoked
+activate program
+
+== Tier 4: Built-in Defaults ==
+
+program -> defaults : GetDefaults()
+defaults --> program : { defaultFramework: "dotnet",\nnamingConvention: "PascalCase", ... }
+
+== Tier 3: Project Config File ==
+
+program -> locator : FindConfigFile(currentDirectory)
+activate locator
+locator -> fs : Exists(".codegenerator.json")\nin current dir?
+fs --> locator : no
+locator -> fs : Exists(".codegenerator.json")\nin parent dir?
+fs --> locator : yes
+locator --> program : "/projects/myapp/.codegenerator.json"
+deactivate locator
+
+program -> fs : ReadAllText(configFilePath)
+fs --> program : JSON content
+
+program -> parser : Parse(json)
+parser --> program : { defaultFramework: "react",\nstyle: "vite", ... }
+
+== Tier 2: Environment Variables ==
+
+program -> env : ReadFromEnvironment()
+activate env
+env -> env : Filter CODEGEN_* vars\nMap to camelCase keys
+env --> program : { outputDirectory: "./out" }
+deactivate env
+
+== Tier 1: CLI Arguments ==
+
+program -> cli : ParseCliConfig(["style=custom"])
+cli --> program : { style: "custom" }
+
+== Merge and Register ==
+
+program -> config : new CodeGeneratorConfiguration(\ndefaults, fileConfig, envConfig, cliConfig)
+activate config
+config -> config : Merge in priority order:\ndefaults < file < env < CLI
+note right
+  Resolved:
+  defaultFramework = "react"  (from file)
+  namingConvention = "PascalCase" (from defaults)
+  outputDirectory = "./out"   (from env)
+  style = "custom"            (from CLI)
+end note
+config --> program : resolved configuration
+deactivate config
+
+program -> di : AddSingleton<ICodeGeneratorConfiguration>(config)
+
+[<-- program : Configuration ready
+deactivate program
+
+@enduml

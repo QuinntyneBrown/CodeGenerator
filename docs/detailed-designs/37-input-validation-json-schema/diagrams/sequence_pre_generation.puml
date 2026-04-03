@@ -1,0 +1,69 @@
+@startuml sequence_pre_generation
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Input Validation Before Generation
+
+participant "ScaffoldCommand" as cli
+participant "ScaffoldEngine" as engine
+participant "IInputValidator" as validator
+participant "ISchemaRegistry" as registry
+participant "IYamlConfigParser" as parser
+participant "IConfigValidator" as domain_validator
+
+[-> cli : Execute(configPath, outputPath)
+activate cli
+
+cli -> cli : yaml = File.ReadAllText(configPath)
+cli -> engine : ScaffoldAsync(yaml, outputPath)
+activate engine
+
+== Phase 1: JSON Schema Validation (structural) ==
+
+engine -> validator : ValidateInput(yaml, "scaffold-config", Yaml)
+activate validator
+
+validator -> validator : DetectFormat(content) -> Yaml
+validator -> registry : GetSchema("scaffold-config")
+registry --> validator : JsonSchema
+
+validator -> validator : ConvertYamlToJsonNode(yaml)
+note right
+  YAML -> YamlDotNet -> object
+  -> JsonCompatible serialize -> JsonNode
+end note
+
+validator -> validator : schema.Evaluate(jsonNode,\nOutputFormat.List)
+
+alt Schema validation fails
+    validator --> engine : ValidationResult { Errors: [...] }
+    engine --> cli : ScaffoldResult { errors }
+    [<-- cli : Exit code 1 with error messages
+else Schema validation passes
+    validator --> engine : ValidationResult { IsValid = true }
+    deactivate validator
+
+    == Phase 2: Parse YAML into domain model ==
+
+    engine -> parser : Parse(yaml)
+    parser --> engine : ScaffoldConfiguration
+
+    == Phase 3: Domain validation (semantic) ==
+
+    engine -> domain_validator : Validate(config)
+    domain_validator --> engine : ValidationResult
+
+    alt Domain validation fails
+        engine --> cli : ScaffoldResult { errors }
+        [<-- cli : Exit code 1 with error messages
+    else Domain validation passes
+        engine -> engine : Proceed with generation...
+        engine --> cli : ScaffoldResult { success }
+        [<-- cli : Exit code 0
+    end
+end
+
+deactivate engine
+deactivate cli
+
+@enduml

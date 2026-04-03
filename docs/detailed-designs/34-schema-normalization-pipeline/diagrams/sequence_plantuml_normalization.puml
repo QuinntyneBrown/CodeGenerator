@@ -1,0 +1,59 @@
+@startuml sequence_plantuml_normalization
+!theme plain
+skinparam sequenceMessageAlign center
+
+title PlantUML to NormalizedSchema — Detailed Mapping
+
+participant "PlantUmlSchema\nNormalizer" as normalizer
+participant "IPlantUmlParser\nService" as parser
+participant "NormalizedSchema" as schema
+
+[-> normalizer : NormalizeAsync(content, PlantUml)
+activate normalizer
+
+normalizer -> parser : ParseContent(content)
+activate parser
+
+note right of parser
+  Input PlantUML:
+  @startuml
+  class Order <<aggregate>> {
+    +Id : Guid
+    +Total : decimal
+    +CreatedAt : DateTime
+  }
+  class OrderItem <<entity>> {
+    +Id : Guid
+    +ProductName : string
+    +Quantity : int
+  }
+  Order "1" *-- "0..*" OrderItem
+  @enduml
+end note
+
+parser --> normalizer : PlantUmlDocumentModel(\n  Classes: [Order, OrderItem],\n  Relationships: [Order *-- OrderItem])
+deactivate parser
+
+normalizer -> normalizer : MapToNormalized()
+
+== Map Classes to Entities ==
+
+normalizer -> schema : Add NormalizedEntity(\n  Name="Order",\n  Stereotype=Aggregate,\n  Properties=[\n    {Name="Id", Type="Guid", IsRequired=true},\n    {Name="Total", Type="decimal", IsRequired=true},\n    {Name="CreatedAt", Type="DateTime", IsRequired=true}\n  ])
+
+normalizer -> schema : Add NormalizedEntity(\n  Name="OrderItem",\n  Stereotype=Entity,\n  Properties=[\n    {Name="Id", Type="Guid", IsRequired=true},\n    {Name="ProductName", Type="string", IsRequired=true},\n    {Name="Quantity", Type="int", IsRequired=true}\n  ])
+
+== Map Relationships ==
+
+normalizer -> schema : Add NormalizedRelationship(\n  SourceEntity="Order",\n  TargetEntity="OrderItem",\n  Type=Composition,\n  SourceCardinality="1",\n  TargetCardinality="0..*")
+
+== Map Endpoints (from components) ==
+
+note over normalizer
+  No components with CodeGeneratorSpec
+  in this example — Endpoints list empty
+end note
+
+[<-- normalizer : NormalizedSchema(\n  SourceFormat=PlantUml,\n  Entities=[Order, OrderItem],\n  Relationships=[Order *-- OrderItem],\n  Endpoints=[])
+deactivate normalizer
+
+@enduml

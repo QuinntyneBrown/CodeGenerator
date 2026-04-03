@@ -1,0 +1,51 @@
+@startuml class_diagram
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 11
+
+title Conditional File Generation — Class Diagram
+
+class SkipFileException extends Exception {
+    +SkipFileException()
+    +SkipFileException(reason : string)
+}
+
+class ExitTag extends "DotLiquid.Tag" {
+    +Render(context : Context, result : TextWriter) : void
+}
+
+class LiquidTemplateProcessor {
+    {static} +{static constructor}()
+    +Process(template : string, tokens : IDictionary) : string
+}
+
+class TemplatedFileArtifactGenerationStrategy {
+    -_logger : ILogger
+    -_templateProcessor : ITemplateProcessor
+    -_templateLocator : ITemplateLocator
+    -_artifactGenerator : IArtifactGenerator
+    +GenerateAsync(model : TemplatedFileModel) : Task
+}
+
+class ContentFileArtifactGenerationStrategy {
+    -fileSystem : IFileSystem
+    +GenerateAsync(model : ContentFileModel) : Task
+}
+
+ExitTag ..> SkipFileException : throws
+TemplatedFileArtifactGenerationStrategy ..> SkipFileException : catches
+TemplatedFileArtifactGenerationStrategy --> LiquidTemplateProcessor : calls Process()
+LiquidTemplateProcessor ..> ExitTag : registers "exit" tag
+
+note right of ExitTag
+  Registered once:
+  Template.RegisterTag<ExitTag>("exit")
+end note
+
+note bottom of TemplatedFileArtifactGenerationStrategy
+  Two skip conditions:
+  1. catch(SkipFileException) -> return
+  2. IsNullOrWhiteSpace(result) -> return
+end note
+
+@enduml

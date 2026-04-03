@@ -1,0 +1,74 @@
+@startuml class_diagram
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 11
+
+title Template Metadata Sidecar — Class Diagram
+
+package "CodeGenerator.Core.Templates" {
+    class TemplateSetInfo {
+        +Description : string
+        +Priority : int
+        +MainProjectName : string
+        +OutputDirectory : string
+        +DefaultTokens : Dictionary<string, string>
+        +RequiredTokens : List<string>
+        +SrcLayout : bool
+    }
+
+    interface ITemplateSetInfoLoader {
+        +Load(templateDirectory : string) : TemplateSetInfo?
+        +LoadOrDefault(templateDirectory : string) : TemplateSetInfo
+        +GetAll() : IReadOnlyDictionary<string, TemplateSetInfo>
+    }
+
+    class TemplateSetInfoLoader implements ITemplateSetInfoLoader {
+        -_cache : ConcurrentDictionary<string, TemplateSetInfo>
+        -_logger : ILogger<TemplateSetInfoLoader>
+    }
+
+    class NamingFilterParser {
+        -_converter : INamingConventionConverter
+        +Apply(pattern : string, tokens : Dictionary<string, object>) : string
+        -ApplyFilter(value : string, filter : string) : string
+    }
+}
+
+package "CodeGenerator.Core.Artifacts" {
+    abstract class "ConventionBasedArtifact\nGenerationStrategy<T>" as ConvStrat {
+        -_infoLoader : ITemplateSetInfoLoader
+        -_templateProcessor : ITemplateProcessor
+        -_filterParser : NamingFilterParser
+        -_cachedInfo : TemplateSetInfo?
+        #{abstract} TemplateDirectory : string
+        #Info : TemplateSetInfo
+        +GetPriority() : int
+        #ResolveOutputPath(tokens) : string
+        #ResolveProjectName(tokens) : string
+        #MergeTokens(strategyTokens) : Dictionary
+        -ValidateRequiredTokens(tokens) : void
+        +{abstract} CanHandle(model : object) : bool
+        +{abstract} GenerateAsync(target : T) : Task
+    }
+}
+
+package "CodeGenerator.Abstractions" {
+    interface INamingConventionConverter {
+        +Convert(to : NamingConvention, value : string) : string
+        +Convert(to : NamingConvention, value : string, pluralize : bool) : string
+    }
+
+    interface "IArtifactGenerationStrategy<T>" as IArtStrat {
+        +CanHandle(model : object) : bool
+        +GetPriority() : int
+        +GenerateAsync(target : T) : Task
+    }
+}
+
+ConvStrat ..|> IArtStrat
+ConvStrat --> ITemplateSetInfoLoader : loads metadata
+ConvStrat --> NamingFilterParser : resolves patterns
+TemplateSetInfoLoader --> TemplateSetInfo : caches
+NamingFilterParser --> INamingConventionConverter : applies filters
+
+@enduml

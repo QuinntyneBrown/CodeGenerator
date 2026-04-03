@@ -1,0 +1,42 @@
+@startuml c4_component
+!theme plain
+!include <C4/C4_Component>
+
+title Schema Normalization Pipeline — Component Diagram
+
+Container_Boundary(abstractions, "CodeGenerator.Abstractions") {
+    Component(iNormalizer, "ISchemaNormalizer", "Interface", "Format-specific normalization contract: Format, CanNormalize(), Normalize()")
+    Component(normalizedSchema, "NormalizedSchema", "Model", "Uniform model: Entities, Relationships, Endpoints, Metadata")
+    Component(schemaFormat, "SchemaFormat", "Enum", "PlantUml, OpenApi, JsonSchema, Avro, Proto")
+}
+
+Container_Boundary(core, "CodeGenerator.Core") {
+    Component(dispatcher, "SchemaNormalizer\nDispatcher", ".NET Service", "Routes input to correct normalizer via IEnumerable<ISchemaNormalizer> multi-dispatch")
+    Component(detector, "SchemaFormat\nDetector", ".NET Service", "Auto-detects format from file extension and content markers")
+    Component(pumlNorm, "PlantUmlSchema\nNormalizer", ".NET Service", "Wraps IPlantUmlParserService, maps PlantUmlDocumentModel to NormalizedSchema")
+    Component(openApiNorm, "OpenApiSchema\nNormalizer", ".NET Service", "Parses OpenAPI 3.x via Microsoft.OpenApi, maps to NormalizedSchema")
+    Component(jsonNorm, "JsonSchema\nNormalizer", ".NET Service", "Parses JSON Schema Draft 7 via System.Text.Json, maps definitions to entities")
+}
+
+Container_Boundary(dotnet, "CodeGenerator.DotNet") {
+    Component(pumlParser, "IPlantUmlParserService", "Existing Service", "Regex-based PlantUML parser producing PlantUmlDocumentModel")
+}
+
+Container_Boundary(generators, "Downstream Generators") {
+    Component(genStrategies, "IArtifactGenerationStrategy\nimplementations", "Existing", "Consume NormalizedSchema instead of format-specific models")
+}
+
+Rel(dispatcher, detector, "Detect format when no hint")
+Rel(dispatcher, pumlNorm, "Delegates PlantUml format")
+Rel(dispatcher, openApiNorm, "Delegates OpenApi format")
+Rel(dispatcher, jsonNorm, "Delegates JsonSchema format")
+Rel(pumlNorm, pumlParser, "Wraps existing parser")
+Rel(pumlNorm, normalizedSchema, "Produces")
+Rel(openApiNorm, normalizedSchema, "Produces")
+Rel(jsonNorm, normalizedSchema, "Produces")
+Rel(genStrategies, normalizedSchema, "Consumes")
+Rel(pumlNorm, iNormalizer, "Implements")
+Rel(openApiNorm, iNormalizer, "Implements")
+Rel(jsonNorm, iNormalizer, "Implements")
+
+@enduml

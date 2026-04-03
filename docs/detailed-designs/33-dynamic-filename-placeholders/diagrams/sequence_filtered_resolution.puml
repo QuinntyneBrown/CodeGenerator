@@ -1,0 +1,49 @@
+@startuml sequence_filtered_resolution
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Filtered Filename Placeholder Resolution
+
+participant "ConventionBasedArtifact\nGenerationStrategy" as strategy
+participant "FilenamePlaceholder\nResolver" as resolver
+participant "SyntaxToken" as syntaxToken
+participant "NamingConvention\nConverter" as naming
+
+[-> strategy : Process entry:\n"{{EntityName|snake}}_repository.py"\nfor entity "OrderItem"
+activate strategy
+
+strategy -> resolver : Analyze("{{EntityName|snake}}_repository.py")
+activate resolver
+resolver --> strategy : FilenamePlaceholderResult(\n  RequiresIteration = true,\n  Placeholders = [{TokenName="EntityName",\n  Filter="snake"}])
+deactivate resolver
+
+strategy -> resolver : Resolve("{{EntityName|snake}}_repository.py",\ntokens)
+activate resolver
+
+resolver -> resolver : ResolveToken("EntityName", tokens)\n→ "OrderItem"
+
+resolver -> syntaxToken : new SyntaxToken("OrderItem")
+activate syntaxToken
+
+resolver -> syntaxToken : SnakeCase()
+syntaxToken -> naming : Convert(SnakeCase, "OrderItem")
+naming --> syntaxToken : "order_item"
+syntaxToken --> resolver : "order_item"
+deactivate syntaxToken
+
+resolver -> resolver : Replace "{{EntityName|snake}}"\nwith "order_item"
+
+resolver --> strategy : "order_item_repository.py"
+deactivate resolver
+
+note over strategy
+  Similarly for other filters:
+  {{EntityName|camel}} → "orderItem"
+  {{EntityName|pascalPlural}} → "OrderItems"
+  {{EntityName|snakePlural}} → "order_items"
+end note
+
+[<-- strategy : File written:\norder_item_repository.py
+deactivate strategy
+
+@enduml

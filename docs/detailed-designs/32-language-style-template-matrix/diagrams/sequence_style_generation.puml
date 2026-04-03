@@ -1,0 +1,58 @@
+@startuml sequence_style_generation
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Style-Based Project Generation
+
+participant "ScaffoldOrchestrator" as orch
+participant "ProjectScaffolder" as proj
+participant "StyleResolver" as resolver
+participant "IStyleRegistry" as registry
+participant "ConventionTemplate\nDiscovery" as discovery
+participant "ConventionBasedArtifact\nGenerationStrategy" as strategy
+database "File System" as fs
+
+[-> orch : ScaffoldAsync(config)
+activate orch
+
+orch -> proj : ScaffoldAsync(project:\n  type=dotnet-webapi,\n  style=clean-architecture)
+activate proj
+
+proj -> resolver : ResolveTemplates("dotnet",\n"clean-architecture")
+activate resolver
+
+resolver -> registry : GetStyle("dotnet",\n"clean-architecture")
+registry --> resolver : StyleDefinition(\n  templateRoot="dotnet/clean-architecture",\n  commonRoot="dotnet/_common")
+
+resolver -> discovery : Discover("dotnet/_common",\nEmbeddedResource)
+discovery --> resolver : commonPlan (appsettings.json,\nappsettings.Development.json)
+
+resolver -> discovery : Discover("dotnet/clean-architecture",\nEmbeddedResource)
+discovery --> resolver : stylePlan (Domain/{{EntityName}}.cs,\nApi/Controllers/{{EntityName}}Controller.cs,\nApi/Program.cs, ...)
+
+resolver -> resolver : MergePlans(commonPlan, stylePlan)\nstyle entries override common\nat same relative path
+
+resolver --> proj : mergedPlan (TemplateFilePlan)
+deactivate resolver
+
+proj -> strategy : GenerateAsync(\n  ConventionGenerationRequest(\n    plan=mergedPlan,\n    entities=[Order, Product],\n    tokens={...}))
+activate strategy
+
+loop for each non-iterated entry
+    strategy -> fs : Write appsettings.json,\nProgram.cs, etc.
+end
+
+loop for each iterated entry x entity
+    strategy -> fs : Write OrderController.cs,\nProductController.cs,\nOrder.cs, Product.cs, etc.
+end
+
+strategy --> proj : done
+deactivate strategy
+
+proj --> orch : done
+deactivate proj
+
+[<-- orch : Scaffold complete
+deactivate orch
+
+@enduml

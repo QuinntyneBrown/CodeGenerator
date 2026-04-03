@@ -1,0 +1,21 @@
+@startuml c4_context
+!theme plain
+!include <C4/C4_Context>
+
+title Language/Style Template Matrix — System Context
+
+Person(dev, "Developer", "Selects a language and style for project generation via CLI or YAML config")
+
+System(codegen, "CodeGenerator with\nStyle Matrix", "Maintains a registry of styles per language, resolves template sets by merging common and style-specific templates, generates projects")
+
+System_Ext(fs, "File System", "Contains template directories and receives generated output")
+System_Ext(assemblies, "Language Assemblies", "CodeGenerator.DotNet, .React, .Angular, .Python, .Flask with embedded style templates")
+System_Ext(yaml, "YAML Configuration", "Scaffold config with per-project style selection")
+
+Rel(dev, codegen, "Selects style via", "CLI --style flag / YAML style: property")
+Rel(codegen, assemblies, "Discovers styles from", "embedded resources")
+Rel(codegen, fs, "Discovers styles from & writes output to", "filesystem")
+Rel(dev, yaml, "Writes scaffold config")
+Rel(yaml, codegen, "Parsed into ScaffoldConfiguration")
+
+@enduml

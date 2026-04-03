@@ -1,0 +1,79 @@
+@startuml sequence_normalization
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Schema Normalization — End to End
+
+participant "CLI / Scaffold\nEngine" as cli
+participant "SchemaNormalizer\nDispatcher" as dispatcher
+participant "SchemaFormat\nDetector" as detector
+participant "PlantUmlSchema\nNormalizer" as pumlNorm
+participant "OpenApiSchema\nNormalizer" as openApiNorm
+participant "JsonSchema\nNormalizer" as jsonNorm
+participant "Code Generators" as generators
+
+== PlantUML Input ==
+
+[-> cli : generate --input models.puml
+cli -> dispatcher : NormalizeAsync(content,\nformatHint=null,\nfilePath="models.puml")
+activate dispatcher
+
+dispatcher -> detector : Detect(content, "models.puml")
+detector --> dispatcher : SchemaFormat.PlantUml\n(detected from .puml extension)
+
+dispatcher -> pumlNorm : NormalizeAsync(content, PlantUml)
+activate pumlNorm
+pumlNorm -> pumlNorm : _parserService.ParseContent(content)\n→ PlantUmlDocumentModel
+pumlNorm -> pumlNorm : MapToNormalized()\n→ entities, relationships, endpoints
+pumlNorm --> dispatcher : NormalizedSchema
+deactivate pumlNorm
+
+dispatcher --> cli : NormalizedSchema
+deactivate dispatcher
+
+cli -> generators : GenerateAsync(NormalizedSchema)
+generators --> cli : generated files
+
+== OpenAPI Input ==
+
+[-> cli : generate --input api.yaml
+cli -> dispatcher : NormalizeAsync(content,\nformatHint=null,\nfilePath="api.yaml")
+activate dispatcher
+
+dispatcher -> detector : Detect(content, "api.yaml")
+detector --> dispatcher : SchemaFormat.OpenApi\n(detected from "openapi:" content)
+
+dispatcher -> openApiNorm : NormalizeAsync(content, OpenApi)
+activate openApiNorm
+openApiNorm -> openApiNorm : OpenApiStringReader.Read()\n→ OpenApiDocument
+openApiNorm -> openApiNorm : Map schemas → entities\nMap paths → endpoints
+openApiNorm --> dispatcher : NormalizedSchema
+deactivate openApiNorm
+
+dispatcher --> cli : NormalizedSchema
+deactivate dispatcher
+
+cli -> generators : GenerateAsync(NormalizedSchema)
+
+== JSON Schema Input ==
+
+[-> cli : generate --input schema.json
+cli -> dispatcher : NormalizeAsync(content,\nformatHint=null,\nfilePath="schema.json")
+activate dispatcher
+
+dispatcher -> detector : Detect(content, "schema.json")
+detector --> dispatcher : SchemaFormat.JsonSchema\n(detected from "$schema" content)
+
+dispatcher -> jsonNorm : NormalizeAsync(content, JsonSchema)
+activate jsonNorm
+jsonNorm -> jsonNorm : JsonDocument.Parse()\n→ JsonElement
+jsonNorm -> jsonNorm : Map definitions → entities\nResolve $ref types\nMap JSON types → aliases
+jsonNorm --> dispatcher : NormalizedSchema
+deactivate jsonNorm
+
+dispatcher --> cli : NormalizedSchema
+deactivate dispatcher
+
+cli -> generators : GenerateAsync(NormalizedSchema)
+
+@enduml

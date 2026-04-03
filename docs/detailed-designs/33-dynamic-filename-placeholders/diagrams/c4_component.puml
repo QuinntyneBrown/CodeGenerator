@@ -1,0 +1,29 @@
+@startuml c4_component
+!theme plain
+!include <C4/C4_Component>
+
+title Dynamic Filename Placeholders — Component Diagram
+
+Container_Boundary(core, "CodeGenerator.Core") {
+    Component(resolver, "FilenamePlaceholder\nResolver", ".NET Service", "Parses {{token|filter}} patterns, resolves tokens, applies naming filters, detects iteration triggers")
+    Component(strategy, "ConventionBasedArtifact\nGenerationStrategy", ".NET Strategy", "Calls resolver for each TemplateFileEntry, iterates when needed (DD-31)")
+    Component(tokensBuilder, "TokensBuilder", ".NET Service", "Generates 8 naming variants per token")
+    Component(syntaxToken, "SyntaxToken +\nSyntaxExtensions", ".NET", "PascalCase(), CamelCase(), SnakeCase(), etc. naming conversions")
+    Component(templateProc, "LiquidTemplate\nProcessor", ".NET Service", "Renders DotLiquid template content")
+    Component(fileService, "IFileGeneration\nService", ".NET Service", "Writes resolved output files to disk")
+}
+
+Container_Boundary(models, "Models") {
+    Component(result, "FilenamePlaceholder\nResult", "Model", "Analysis output: placeholders list, RequiresIteration flag")
+    Component(placeholder, "FilenamePlaceholder", "Model", "Single placeholder: TokenName, Filter, FullMatch")
+}
+
+Rel(strategy, resolver, "Analyze() + Resolve()")
+Rel(resolver, syntaxToken, "ApplyFilter() via")
+Rel(resolver, result, "Produces")
+Rel(result, placeholder, "Contains list of")
+Rel(strategy, tokensBuilder, "BuildTokens() per entity")
+Rel(strategy, templateProc, "ProcessAsync() for content")
+Rel(strategy, fileService, "WriteAsync() per resolved file")
+
+@enduml

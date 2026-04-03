@@ -1,0 +1,52 @@
+@startuml sequence_ordered_rendering
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Template Discovery, Partitioning, and Ordered Rendering
+
+participant "ConventionBased\nArtifactGenerationStrategy" as strategy
+participant "TemplatePartitioner\n(internal)" as partitioner
+participant "ITemplateProcessor" as tmpl
+participant "IGenerationContext" as ctx
+participant "EnrichedContext\nBuilder (internal)" as enricher
+database "File System" as fs
+
+[-> strategy : GenerateAsync(model, outputPath)
+activate strategy
+
+strategy -> fs : Walk template directory tree
+fs --> strategy : List<TemplateFile>
+
+strategy -> partitioner : PartitionTemplates(templates)
+partitioner --> strategy : (regularTemplates, postTemplates)
+
+== Phase 1: Regular Templates (alphabetical order) ==
+
+loop for each regular template
+    strategy -> tmpl : Process(template.Content, standardContext)
+    tmpl --> strategy : rendered content
+    strategy -> fs : Write to output path
+    strategy -> ctx : Record file in Result.GeneratedFiles
+end
+
+== Phase 2: Build Enriched Context ==
+
+strategy -> ctx : Read Result.GeneratedFiles
+ctx --> strategy : List<string> generatedFilePaths
+
+strategy -> enricher : BuildEnrichedContext(generationResult)
+enricher --> strategy : Hash with generated_files,\ngenerated_classes, generated_modules
+
+== Phase 3: Post-Processing Templates (alphabetical order) ==
+
+loop for each _-prefixed template
+    strategy -> tmpl : Process(template.Content, enrichedContext)
+    tmpl --> strategy : rendered content
+    strategy -> fs : Write to output path\n(underscore stripped from filename)
+    strategy -> ctx : Record file in Result.GeneratedFiles
+end
+
+[<-- strategy : Generation complete
+deactivate strategy
+
+@enduml

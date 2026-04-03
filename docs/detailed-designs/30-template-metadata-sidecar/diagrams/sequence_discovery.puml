@@ -1,0 +1,54 @@
+@startuml sequence_discovery
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Strategy Discovery and Metadata Loading
+
+participant "DI Container" as di
+participant "ConventionBased\nStrategy" as strat
+participant "ITemplateSetInfoLoader" as loader
+participant "TemplateSetInfoLoader" as impl
+database "File System" as fs
+
+[-> di : Build service provider
+di -> strat : Construct(infoLoader, templateProcessor, filterParser)
+activate strat
+note over strat : TemplateDirectory = \n"Templates/DotNet/WebApi"
+strat --> di : instance
+deactivate strat
+
+== Strategy selection (first access triggers lazy load) ==
+
+[-> strat : GetPriority()
+activate strat
+strat -> loader : LoadOrDefault("Templates/DotNet/WebApi")
+activate loader
+loader -> impl : Load("Templates/DotNet/WebApi")
+activate impl
+impl -> impl : _cache.GetOrAdd(dir, ...)
+note right: Cache miss on first call
+impl -> fs : File.Exists("Templates/DotNet/WebApi/_templateinfo.json")
+fs --> impl : true
+impl -> fs : File.ReadAllText(path)
+fs --> impl : JSON content
+impl -> impl : JsonSerializer.Deserialize<TemplateSetInfo>()
+impl --> loader : TemplateSetInfo { Priority = 10, ... }
+deactivate impl
+loader --> strat : TemplateSetInfo
+deactivate loader
+strat --> [ : 10
+deactivate strat
+
+== Subsequent calls use cache ==
+
+[-> strat : GetPriority()
+activate strat
+strat -> loader : LoadOrDefault(...)
+loader -> impl : Load(...)
+impl -> impl : _cache.GetOrAdd → cache hit
+impl --> loader : cached TemplateSetInfo
+loader --> strat : TemplateSetInfo
+strat --> [ : 10
+deactivate strat
+
+@enduml

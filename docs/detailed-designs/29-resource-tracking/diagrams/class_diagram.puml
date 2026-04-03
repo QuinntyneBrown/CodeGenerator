@@ -1,0 +1,51 @@
+@startuml class_diagram
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 11
+
+title Resource Tracking — Class Diagram
+
+package "CodeGenerator.Abstractions" {
+    interface IGenerationContext {
+        .. DD-28 methods ..
+        +Push(stackName : string, value : object) : void
+        +GetStack(stackName : string) : IReadOnlyList<object>
+        +Set(key : string, value : object) : void
+        +Get<T>(key : string) : T
+        +TryGet<T>(key : string, out value : T) : bool
+        +GeneratedFiles : IReadOnlyList<PlannedFile>
+        +RecordGeneratedFile(path : string, generatorName : string) : void
+        .. DD-29 resource tracking ..
+        +MarkHandled(resourceId : string, handlerName : string) : void
+        +IsHandled(resourceId : string) : bool
+        +GetHandler(resourceId : string) : string
+        +GetAllHandled() : IReadOnlyDictionary<string, string>
+    }
+
+    class ResourceId <<static>> {
+        +{static} For<T>(name : string) : string
+        +{static} For(model : object, name : string) : string
+    }
+}
+
+package "CodeGenerator.Core" {
+    class GenerationContext implements IGenerationContext {
+        -_handled : ConcurrentDictionary<string, string>
+        -_logger : ILogger<GenerationContext>
+    }
+}
+
+package "Strategy Example" {
+    class ControllerGenerationStrategy {
+        -_context : IGenerationContext
+        -_logger : ILogger
+        +CanHandle(model : object) : bool
+        +GetPriority() : int
+        +GenerateAsync(target : ClassModel) : Task
+    }
+}
+
+ControllerGenerationStrategy --> IGenerationContext : checks IsHandled\ncalls MarkHandled
+ControllerGenerationStrategy --> ResourceId : formats resource IDs
+
+@enduml

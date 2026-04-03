@@ -1,0 +1,69 @@
+@startuml class_diagram
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 11
+
+title Underscore-Prefix Template Ordering — Class Diagram
+
+class ConventionBasedArtifactGenerationStrategy {
+    -_templateProcessor : ITemplateProcessor
+    -_generationContext : IGenerationContext
+    -_logger : ILogger
+    +GenerateAsync(model : object, outputPath : string) : Task
+    -DiscoverTemplates(templateRoot : string) : List<TemplateFile>
+    -PartitionTemplates(templates : IEnumerable<TemplateFile>) : (List<TemplateFile>, List<TemplateFile>)
+    -ResolveOutputFilename(templateFilename : string) : string
+    -BuildEnrichedContext(result : GenerationResult) : Hash
+    -RenderTemplate(template : TemplateFile, context : Hash, outputPath : string) : Task
+}
+
+class TemplateFile {
+    +RelativePath : string
+    +FullPath : string
+    +Content : string
+    +IsPostProcessing : bool
+}
+
+class GeneratedFileInfo {
+    +RelativePath : string
+    +FileName : string
+    +FileNameWithoutExtension : string
+    +Extension : string
+    +Directory : string
+}
+
+interface IGenerationContext {
+    +DryRun : bool
+    +Result : GenerationResult
+    +FileSystem : IFileSystem
+    +CommandService : ICommandService
+}
+
+class GenerationResult {
+    +GeneratedFiles : List<string>
+    +Errors : List<string>
+}
+
+interface ITemplateProcessor {
+    +Process(templateContent : string, context : Hash) : string
+}
+
+ConventionBasedArtifactGenerationStrategy --> IGenerationContext : reads GeneratedFiles\nafter regular phase
+ConventionBasedArtifactGenerationStrategy --> ITemplateProcessor : renders templates
+ConventionBasedArtifactGenerationStrategy ..> TemplateFile : discovers and partitions
+ConventionBasedArtifactGenerationStrategy ..> GeneratedFileInfo : builds for enriched context
+IGenerationContext --> GenerationResult : provides
+
+note right of TemplateFile
+  IsPostProcessing is true when
+  filename starts with "_"
+end note
+
+note bottom of GeneratedFileInfo
+  Derived from GenerationResult.GeneratedFiles
+  after the regular rendering phase completes.
+  Passed to post-processing templates as
+  "generated_files" context variable.
+end note
+
+@enduml

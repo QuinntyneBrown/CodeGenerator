@@ -1,0 +1,30 @@
+@startuml c4_component
+!theme plain
+!include <C4/C4_Component>
+
+title Cross-Template State — Component Diagram
+
+Container_Boundary(abstractions, "CodeGenerator.Abstractions") {
+    Component(iCtx, "IGenerationContext", "Interface", "Stacks, key-value store, file registry")
+    Component(plannedFile, "PlannedFile", "Record", "Immutable record: Path, GeneratorName, GeneratedAt")
+}
+
+Container_Boundary(core, "CodeGenerator.Core") {
+    Component(ctx, "GenerationContext", "Class", "ConcurrentDictionary-backed implementation")
+    Component(artGen, "ArtifactGenerator", "Class", "Dispatches to strategies via CanHandle/GetPriority")
+    Component(di, "ConfigureServices", "DI Registration", "Registers GenerationContext as Scoped")
+}
+
+Container_Boundary(strategies, "Strategy Projects (DotNet, Angular, etc.)") {
+    Component(fileStrat, "File Generation Strategies", "IArtifactGenerationStrategy<T>", "Generate files, record in context")
+    Component(postStrat, "Post-Processing Strategies", "IArtifactGenerationStrategy<T>", "Read context, generate aggregate files")
+}
+
+Rel(ctx, iCtx, "implements")
+Rel(di, ctx, "registers as Scoped")
+Rel(artGen, fileStrat, "dispatches to")
+Rel(artGen, postStrat, "dispatches to")
+Rel(fileStrat, iCtx, "RecordGeneratedFile, Push, Set")
+Rel(postStrat, iCtx, "GeneratedFiles, GetStack, Get")
+
+@enduml

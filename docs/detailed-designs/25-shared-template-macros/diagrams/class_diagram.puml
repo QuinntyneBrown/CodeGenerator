@@ -1,0 +1,43 @@
+@startuml class_diagram
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 11
+
+title Shared Template Macros — Class Diagram
+
+interface "DotLiquid.FileSystems.IFileSystem" as IFileSystem {
+    +ReadTemplateFile(context : Context, templateName : string) : string
+}
+
+class SharedTemplateFileSystem implements IFileSystem {
+    -_assemblies : List<Assembly>
+    -_cache : ConcurrentDictionary<string, string>
+    +SharedTemplateFileSystem(assemblies : IEnumerable<Assembly>)
+    +ReadTemplateFile(context : Context, templateName : string) : string
+    -ResolveFromEmbeddedResources(templateName : string) : string
+    -ReadResource(assembly : Assembly, resourceName : string) : string
+}
+
+class LiquidTemplateProcessor {
+    -_fileSystem : SharedTemplateFileSystem
+    +Process(template : string, tokens : IDictionary) : string
+    +ProcessAsync(template : string, tokens : IDictionary) : Task<string>
+}
+
+interface ITemplateProcessor {
+    +Process(template : string, tokens : IDictionary) : string
+    +ProcessAsync(template : string, tokens : IDictionary) : Task<string>
+}
+
+LiquidTemplateProcessor ..|> ITemplateProcessor
+LiquidTemplateProcessor --> SharedTemplateFileSystem : uses
+SharedTemplateFileSystem --> "Assembly[]" : searches embedded resources
+
+note bottom of SharedTemplateFileSystem
+  Search order:
+  1. Language assembly (e.g., CodeGenerator.DotNet)
+  2. Core assembly (CodeGenerator.Core)
+  First match wins.
+end note
+
+@enduml

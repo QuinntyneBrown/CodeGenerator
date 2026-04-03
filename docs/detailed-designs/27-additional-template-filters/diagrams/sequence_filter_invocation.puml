@@ -1,0 +1,34 @@
+@startuml sequence_filter_invocation
+!theme plain
+
+title Filter Invocation Sequence
+
+participant "Template" as T
+participant "DotLiquid Engine" as E
+participant "CodeGeneratorFilters" as F
+participant "INamingConventionConverter" as C
+participant "Humanizer" as H
+
+T -> E : Render("{{ EntityName | pascal }}", tokens)
+E -> E : Resolve EntityName = "order_item"
+E -> F : Pascal("order_item")
+F -> C : Convert(NamingConvention.PascalCase, "order_item")
+C --> F : "OrderItem"
+F --> E : "OrderItem"
+E -> E : Output "OrderItem"
+
+== Chained filters ==
+
+T -> E : Render("{{ EntityName | pluralize | snake }}", tokens)
+E -> E : Resolve EntityName = "OrderItem"
+E -> F : Pluralize("OrderItem")
+F -> H : InflectorExtensions.Pluralize("OrderItem")
+H --> F : "OrderItems"
+F --> E : "OrderItems"
+E -> F : Snake("OrderItems")
+F -> C : Convert(NamingConvention.SnakeCase, "OrderItems")
+C --> F : "order_items"
+F --> E : "order_items"
+E -> E : Output "order_items"
+
+@enduml

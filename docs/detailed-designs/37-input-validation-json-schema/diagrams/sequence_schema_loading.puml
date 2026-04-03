@@ -1,0 +1,40 @@
+@startuml sequence_schema_loading
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Schema Loading from Embedded Resources
+
+participant "DI Container" as di
+participant "SchemaRegistry" as registry
+participant "Assembly\n(CodeGenerator.Core)" as assembly
+
+di -> registry : new SchemaRegistry()
+activate registry
+
+registry -> assembly : GetManifestResourceNames()
+assembly --> registry : ["CodeGenerator.Core.Schemas.scaffold-config.schema.json",\n"CodeGenerator.Core.Schemas.codegenerator-config.schema.json",\n... other resources]
+
+loop for each *.schema.json resource
+    registry -> assembly : GetManifestResourceStream(resourceName)
+    assembly --> registry : Stream
+
+    registry -> registry : Read stream to string
+    registry -> registry : JsonSchema.FromText(json)
+    registry -> registry : Extract name from resource path\n"scaffold-config.schema.json" -> "scaffold-config"
+    registry -> registry : _schemas["scaffold-config"] = schema
+end
+
+registry --> di : SchemaRegistry (2 schemas loaded)
+deactivate registry
+
+note right of registry
+  Schemas loaded at construction:
+  - "scaffold-config" (validates scaffold.yaml)
+  - "codegenerator-config" (validates .codegenerator.json)
+
+  Additional schemas can be added by
+  embedding new .schema.json files in
+  CodeGenerator.Core/Schemas/
+end note
+
+@enduml

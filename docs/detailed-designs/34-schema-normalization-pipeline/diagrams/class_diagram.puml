@@ -1,0 +1,148 @@
+@startuml class_diagram
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 10
+
+title Schema Normalization Pipeline — Class Diagram
+
+interface ISchemaNormalizer {
+    +Format : SchemaFormat
+    +CanNormalize(content : string, filePath : string) : bool
+    +Normalize(content : string, format : SchemaFormat) : NormalizedSchema
+    +NormalizeAsync(content : string, format : SchemaFormat, ct : CancellationToken) : Task<NormalizedSchema>
+}
+
+interface ISchemaFormatDetector {
+    +Detect(content : string, filePath : string) : SchemaFormat
+}
+
+class SchemaNormalizerDispatcher {
+    -_normalizers : IEnumerable<ISchemaNormalizer>
+    -_formatDetector : ISchemaFormatDetector
+    -_logger : ILogger
+    +NormalizeAsync(content : string, formatHint : SchemaFormat?, filePath : string, ct : CancellationToken) : Task<NormalizedSchema>
+}
+
+class SchemaFormatDetector implements ISchemaFormatDetector {
+    +Detect(content : string, filePath : string) : SchemaFormat
+}
+
+class PlantUmlSchemaNormalizer implements ISchemaNormalizer {
+    -_parserService : IPlantUmlParserService
+    +Format : SchemaFormat = PlantUml
+    -MapToNormalized(doc : PlantUmlDocumentModel) : NormalizedSchema
+    -MapStereotype(s : PlantUmlStereotype) : EntityStereotype
+    -MapRelationshipType(t : string) : RelationshipType
+}
+
+class OpenApiSchemaNormalizer implements ISchemaNormalizer {
+    +Format : SchemaFormat = OpenApi
+    -MapSchemaToEntity(name : string, schema : OpenApiSchema) : NormalizedEntity
+    -ExtractRequestType(op : OpenApiOperation) : string
+    -ExtractResponseType(op : OpenApiOperation) : string
+    -ExtractParameters(op : OpenApiOperation) : List<NormalizedEndpointParameter>
+}
+
+class JsonSchemaNormalizer implements ISchemaNormalizer {
+    +Format : SchemaFormat = JsonSchema
+    -MapDefinitionToEntity(name : string, def : JsonElement) : NormalizedEntity
+    -MapPropertiesToEntity(name : string, root : JsonElement) : NormalizedEntity
+    -MapJsonSchemaType(schema : JsonElement) : string
+}
+
+enum SchemaFormat {
+    PlantUml
+    OpenApi
+    JsonSchema
+    Avro
+    Proto
+}
+
+class NormalizedSchema {
+    +SourceFormat : SchemaFormat
+    +Entities : List<NormalizedEntity>
+    +Relationships : List<NormalizedRelationship>
+    +Endpoints : List<NormalizedEndpoint>
+    +Metadata : Dictionary<string, object>
+}
+
+class NormalizedEntity {
+    +Name : string
+    +Namespace : string
+    +Stereotype : EntityStereotype
+    +Properties : List<NormalizedProperty>
+    +Methods : List<NormalizedMethod>
+    +Description : string
+}
+
+class NormalizedProperty {
+    +Name : string
+    +Type : string
+    +IsRequired : bool
+    +IsCollection : bool
+    +CollectionItemType : string
+    +DefaultValue : string
+    +Description : string
+    +AccessModifier : string
+}
+
+class NormalizedRelationship {
+    +SourceEntity : string
+    +TargetEntity : string
+    +Type : RelationshipType
+    +Label : string
+    +SourceCardinality : string
+    +TargetCardinality : string
+}
+
+class NormalizedEndpoint {
+    +Path : string
+    +HttpMethod : string
+    +OperationId : string
+    +Description : string
+    +RequestType : string
+    +ResponseType : string
+    +RequiresAuthentication : bool
+    +Parameters : List<NormalizedEndpointParameter>
+}
+
+enum EntityStereotype {
+    None
+    Entity
+    Aggregate
+    ValueObject
+    Enum
+    Interface
+}
+
+enum RelationshipType {
+    Association
+    Aggregation
+    Composition
+    Inheritance
+    Implementation
+    Dependency
+}
+
+enum ParameterLocation {
+    Query
+    Path
+    Header
+    Cookie
+    Body
+}
+
+SchemaNormalizerDispatcher --> ISchemaFormatDetector : detects format via
+SchemaNormalizerDispatcher o-- "1..*" ISchemaNormalizer : multi-dispatch
+PlantUmlSchemaNormalizer ..> NormalizedSchema : creates
+OpenApiSchemaNormalizer ..> NormalizedSchema : creates
+JsonSchemaNormalizer ..> NormalizedSchema : creates
+NormalizedSchema *-- "0..*" NormalizedEntity
+NormalizedSchema *-- "0..*" NormalizedRelationship
+NormalizedSchema *-- "0..*" NormalizedEndpoint
+NormalizedEntity *-- "0..*" NormalizedProperty
+NormalizedEntity --> EntityStereotype
+NormalizedRelationship --> RelationshipType
+NormalizedSchema --> SchemaFormat
+
+@enduml

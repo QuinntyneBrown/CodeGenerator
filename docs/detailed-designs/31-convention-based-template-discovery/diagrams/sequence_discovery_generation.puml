@@ -1,0 +1,63 @@
+@startuml sequence_discovery_generation
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Convention-Based Template Discovery and Generation
+
+participant "ConventionBased\nArtifactGenerationStrategy" as strategy
+participant "ConventionTemplate\nDiscovery" as discovery
+participant "TemplateFilePlan" as plan
+participant "TokensBuilder" as tokens
+participant "LiquidTemplate\nProcessor" as liquid
+participant "IFileGeneration\nService" as fileService
+database "File System /\nEmbedded Resources" as fs
+
+[-> strategy : GenerateAsync(request)
+activate strategy
+
+strategy -> discovery : Discover(styleRoot, sourceType)
+activate discovery
+
+discovery -> fs : Enumerate .liquid files\n(filesystem directory tree)
+fs --> discovery : filesystem templates
+
+discovery -> fs : Enumerate .liquid resources\n(embedded in assembly)
+fs --> discovery : embedded templates
+
+discovery -> discovery : MergeWithPrecedence()\n(filesystem wins on conflict)
+
+discovery -> discovery : ExtractPlaceholders()\nfor each entry filename
+
+discovery --> strategy : TemplateFilePlan
+deactivate discovery
+
+loop for each TemplateFileEntry where RequiresIteration == false
+    strategy -> tokens : BuildTokens(request)
+    tokens --> strategy : tokenDictionary
+
+    strategy -> strategy : ResolvePath(entry.OutputRelativePath, tokens)
+
+    strategy -> liquid : ProcessAsync(entry.TemplateContent, tokens)
+    liquid --> strategy : renderedContent
+
+    strategy -> fileService : WriteAsync(outputRoot + resolvedPath, content)
+end
+
+loop for each TemplateFileEntry where RequiresIteration == true
+    loop for each entity in request.Entities
+        strategy -> tokens : BuildTokens(request, entity)\nwith entity-specific naming variants
+        tokens --> strategy : tokenDictionary
+
+        strategy -> strategy : ResolvePath(entry.OutputRelativePath, tokens)\ne.g. {{EntityName}}Controller.cs → UserController.cs
+
+        strategy -> liquid : ProcessAsync(entry.TemplateContent, tokens)
+        liquid --> strategy : renderedContent
+
+        strategy -> fileService : WriteAsync(outputRoot + resolvedPath, content)
+    end
+end
+
+[<-- strategy : Generation complete
+deactivate strategy
+
+@enduml

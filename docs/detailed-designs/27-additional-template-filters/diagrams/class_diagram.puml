@@ -1,0 +1,48 @@
+@startuml class_diagram
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 11
+
+title Additional Template Filters — Class Diagram
+
+class CodeGeneratorFilters <<static>> {
+    -{static} _converter : INamingConventionConverter
+    +{static} Initialize(converter : INamingConventionConverter) : void
+    +{static} Pascal(input : string) : string
+    +{static} Camel(input : string) : string
+    +{static} Snake(input : string) : string
+    +{static} Kebab(input : string) : string
+    +{static} Title(input : string) : string
+    +{static} Allcaps(input : string) : string
+    +{static} Namespace(input : string) : string
+    +{static} Strip_namespace(input : string) : string
+    +{static} Pluralize(input : string) : string
+    +{static} Singularize(input : string) : string
+    +{static} Schema_type(context : Context, input : string) : string
+}
+
+class TypeMapper <<internal, static>> {
+    -{static} Mappings : Dictionary<string, Dictionary<string, string>>
+    +{static} Map(schemaType : string, language : string) : string
+}
+
+interface INamingConventionConverter {
+    +Convert(to : NamingConvention, value : string) : string
+    +Convert(from : NamingConvention, to : NamingConvention, value : string) : string
+}
+
+class LiquidTemplateProcessor {
+    {static} +{static constructor}()
+}
+
+CodeGeneratorFilters --> INamingConventionConverter : delegates naming
+CodeGeneratorFilters --> TypeMapper : delegates type mapping
+LiquidTemplateProcessor ..> CodeGeneratorFilters : Template.RegisterFilter(typeof(...))
+
+note right of CodeGeneratorFilters
+  DotLiquid convention: public static methods
+  become filters named by method (lowercased).
+  {{ "Order" | pascal }} calls Pascal("Order")
+end note
+
+@enduml

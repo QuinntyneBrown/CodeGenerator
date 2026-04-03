@@ -1,0 +1,43 @@
+@startuml sequence_value_resolution
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Configuration Value Resolution
+
+participant "ArtifactGeneration\nStrategy" as consumer
+participant "ICodeGenerator\nConfiguration" as iconfig
+participant "CodeGenerator\nConfiguration" as config
+
+[-> consumer : Generate artifact
+activate consumer
+
+consumer -> iconfig : GetValue<string>("defaultFramework")
+activate iconfig
+iconfig -> config : _resolved["defaultFramework"]
+note right
+  Resolved dictionary already contains
+  the highest-priority value from merge.
+  No cascading lookup at read time.
+end note
+config --> iconfig : "react"
+iconfig --> consumer : "react"
+deactivate iconfig
+
+consumer -> iconfig : GetValue<bool>("dryRun", false)
+activate iconfig
+iconfig -> config : _resolved["dryRun"]
+config --> iconfig : not found
+iconfig --> consumer : false (default)
+deactivate iconfig
+
+consumer -> iconfig : GetSection("globalVariables")
+activate iconfig
+iconfig -> config : Filter keys starting\nwith "globalVariables."
+config --> iconfig : { companyName: "Contoso",\ncopyrightYear: "2026" }
+iconfig --> consumer : section dictionary
+deactivate iconfig
+
+[<-- consumer : Use resolved values
+deactivate consumer
+
+@enduml

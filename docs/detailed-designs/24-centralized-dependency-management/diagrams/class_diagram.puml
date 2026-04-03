@@ -1,0 +1,40 @@
+@startuml class_diagram
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 11
+
+title Centralized Dependency Management — Class Diagram
+
+interface IDependencyResolver {
+    +GetVersion(framework : string, packageName : string) : string
+    +GetAllPackages(framework : string) : IReadOnlyDictionary<string, string>
+}
+
+class DependencyResolver implements IDependencyResolver {
+    -_cache : ConcurrentDictionary<string, DependencyManifest>
+    -_logger : ILogger<DependencyResolver>
+    +GetVersion(framework : string, packageName : string) : string
+    +GetAllPackages(framework : string) : IReadOnlyDictionary<string, string>
+    -GetOrLoadManifest(framework : string) : DependencyManifest
+    -LoadFromDisk(framework : string) : DependencyManifest?
+    -LoadFromEmbeddedResource(framework : string) : DependencyManifest?
+}
+
+class DependencyManifest {
+    +Packages : Dictionary<string, string>
+}
+
+class CoreProjectEnsureArtifactGenerationStrategy {
+    -_dependencyResolver : IDependencyResolver
+    +GenerateAsync(target) : Task
+}
+
+DependencyResolver --> DependencyManifest : caches
+CoreProjectEnsureArtifactGenerationStrategy --> IDependencyResolver : injects
+
+note right of DependencyManifest
+  Deserialized from JSON:
+  { "packages": { "MediatR": "12.2.0" } }
+end note
+
+@enduml

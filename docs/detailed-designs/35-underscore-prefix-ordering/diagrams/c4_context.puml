@@ -1,0 +1,18 @@
+@startuml c4_context
+!theme plain
+!include <C4/C4_Context>
+
+title Underscore-Prefix Template Ordering — System Context
+
+Person(dev, "Template Author", "Places templates in convention directory with optional _ prefix for post-processing")
+
+System(codegen, "CodeGenerator", "Convention-based template discovery with underscore-prefix ordering for post-processing templates")
+
+System_Ext(fs, "File System", "Template directory (input) and generated output directory")
+System_Ext(liquid, "DotLiquid Engine", "Renders .liquid templates with context variables")
+
+Rel(dev, codegen, "Provides template directory\nwith regular and _-prefixed templates")
+Rel(codegen, fs, "Reads templates, writes generated files")
+Rel(codegen, liquid, "Renders templates with\nstandard and enriched context")
+
+@enduml

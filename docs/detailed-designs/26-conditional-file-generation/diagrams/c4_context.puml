@@ -1,0 +1,16 @@
+@startuml c4_context
+!theme plain
+!include <C4/C4_Context>
+
+title Conditional File Generation — System Context
+
+Person(author, "Template Author", "Writes DotLiquid templates with conditional exit logic")
+
+System(codegen, "CodeGenerator", "Code generation engine that conditionally skips file output based on template logic")
+
+System_Ext(fs, "File System", "Only files with meaningful content are written")
+
+Rel(author, codegen, "Provides templates with {% exit %} tags")
+Rel(codegen, fs, "Writes files (skips empty/exited)")
+
+@enduml
