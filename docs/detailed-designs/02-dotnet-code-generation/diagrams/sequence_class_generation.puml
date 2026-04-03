@@ -1,0 +1,38 @@
+@startuml sequence_class_generation
+!theme plain
+
+title Sequence — C# Class Generation
+
+actor Client
+participant "ISyntaxGenerator" as gen
+participant "ClassSyntaxGenerationStrategy" as strategy
+participant "INamingConventionConverter" as naming
+
+Client -> gen : GenerateAsync<ClassModel>(model)
+activate gen
+
+gen -> gen : Find strategy where\nCanHandle(model) == true
+gen -> strategy : GenerateAsync(classModel, ct)
+activate strategy
+
+strategy -> naming : Convert member names
+activate naming
+naming --> strategy : Converted names
+deactivate naming
+
+strategy -> strategy : Generate access modifier\n(public, internal, etc.)
+strategy -> strategy : Generate class keyword\n(static, sealed, abstract, partial)
+strategy -> strategy : Generate name + base class\n+ interface implementations
+strategy -> strategy : Generate attributes\n([ApiController], [Route], etc.)
+strategy -> strategy : Generate fields
+strategy -> strategy : Generate constructors\nwith parameter initialization
+strategy -> strategy : Generate properties\n(get; set;)
+strategy -> strategy : Generate methods\nwith bodies
+
+strategy --> gen : C# class string
+deactivate strategy
+
+gen --> Client : C# class string
+deactivate gen
+
+@enduml

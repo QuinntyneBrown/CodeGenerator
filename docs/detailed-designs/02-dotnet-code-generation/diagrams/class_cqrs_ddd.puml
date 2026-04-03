@@ -1,0 +1,73 @@
+@startuml class_cqrs_ddd
+!theme plain
+
+title CQRS / DDD Models
+
+class CommandModel {
+    + Name : string
+    + Properties : List<PropertyModel>
+}
+
+class QueryModel {
+    + Name : string
+    + Properties : List<PropertyModel>
+}
+
+class RequestHandlerModel {
+    + RequestType : string
+    + ResponseType : string
+    + EntityName : string
+}
+
+class ResponseModel {
+    + Name : string
+    + Properties : List<PropertyModel>
+}
+
+class RequestValidatorModel {
+    + Name : string
+    + RequestType : string
+}
+
+class EntityModel {
+    + Name : string
+    + Properties : List<PropertyModel>
+}
+
+class AggregateModel {
+    + Name : string
+    + Properties : List<PropertyModel>
+    + Commands : List<CommandModel>
+    + Queries : List<QueryModel>
+}
+
+class DbContextModel {
+    + Name : string
+    + Entities : List<string>
+}
+
+class DbContextInterfaceModel {
+    + Name : string
+    + Entities : List<string>
+}
+
+note as N1
+  CommandModel and QueryModel implement
+  MediatR IRequest<T> pattern.
+  RequestHandlerModel implements
+  IRequestHandler<TRequest, TResponse>.
+end note
+
+AggregateModel *-- "0..*" CommandModel : Commands
+AggregateModel *-- "0..*" QueryModel : Queries
+AggregateModel o-- EntityModel : root entity
+
+CommandModel .. RequestHandlerModel : handled by >
+QueryModel .. RequestHandlerModel : handled by >
+RequestHandlerModel .. ResponseModel : returns >
+CommandModel .. RequestValidatorModel : validated by >
+
+DbContextModel *-- "1..*" EntityModel : DbSet<T>
+DbContextInterfaceModel .. DbContextModel : interface for >
+
+@enduml

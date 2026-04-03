@@ -1,0 +1,24 @@
+@startuml c4_context
+!theme plain
+!include <C4/C4_Context>
+
+title System Context — CodeGenerator.DotNet
+
+Person(dev, "Developer", "Uses the code generation framework to scaffold .NET solutions and generate C# code")
+
+System(codegen, "CodeGenerator.DotNet", "C# code generation package providing syntax generation, solution scaffolding, CQRS/DDD patterns, PlantUML parsing, and Git integration")
+
+System_Ext(hostApp, "Host Application", "Console app, CLI tool, or IDE extension that hosts the code generation framework via DI")
+System_Ext(fileSystem, "File System", "Target directory where generated .sln, .csproj, and .cs files are written")
+System_Ext(git, "Git / GitHub", "Source control for automated branch creation and pull request submission via LibGit2Sharp and Octokit")
+System_Ext(msbuild, "MSBuild / Roslyn", "Provides project analysis, compilation workspace, and code formatting services")
+System_Ext(dotnetCli, ".NET CLI", "Executes dotnet new, dotnet sln, and dotnet add commands during project scaffolding")
+
+Rel(dev, hostApp, "Configures and invokes")
+Rel(hostApp, codegen, "Registers services via AddDotNetServices() and calls ISyntaxGenerator / IArtifactGenerator")
+Rel(codegen, fileSystem, "Writes generated .sln, .csproj, .cs, .feature files")
+Rel(codegen, git, "Creates branches, commits, and pull requests")
+Rel(codegen, msbuild, "Opens projects for analysis and code formatting")
+Rel(codegen, dotnetCli, "Runs dotnet commands for project creation")
+
+@enduml

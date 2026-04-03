@@ -1,0 +1,69 @@
+@startuml class_syntax_models
+!theme plain
+
+title Syntax Models — Core Type Hierarchy
+
+abstract class SyntaxModel {
+    + Parent : SyntaxModel
+    + Usings : List<UsingModel>
+    + GetChildren() : IEnumerable<SyntaxModel>
+    + GetDescendants() : List<SyntaxModel>
+}
+
+class TypeDeclarationModel {
+    + Name : string
+    + Properties : List<PropertyModel>
+    + UsingAs : List<UsingAsModel>
+}
+
+class InterfaceModel {
+    + Implements : List<string>
+    + Methods : List<MethodModel>
+}
+
+class ClassModel {
+    + AccessModifier : AccessModifier
+    + Static : bool
+    + Sealed : bool
+    + BaseClass : string
+    + Fields : List<FieldModel>
+    + Constructors : List<ConstructorModel>
+    + Attributes : List<AttributeModel>
+}
+
+class RecordModel {
+    + Name : string
+    + Type : RecordType
+}
+
+class ControllerModel {
+    - namingConventionConverter : INamingConventionConverter
+    - entity : ClassModel
+}
+
+class DocumentModel {
+    + Name : string
+    + RootNamespace : string
+    + Namespace : string
+    + Code : List<SyntaxModel>
+}
+
+class PropertyModel {
+    + Name : string
+    + Type : string
+    + AccessModifier : AccessModifier
+}
+
+SyntaxModel <|-- TypeDeclarationModel
+TypeDeclarationModel <|-- InterfaceModel
+InterfaceModel <|-- ClassModel
+ClassModel <|-- ControllerModel
+SyntaxModel <|-- RecordModel
+SyntaxModel <|-- DocumentModel
+SyntaxModel <|-- PropertyModel
+
+ClassModel *-- "0..*" PropertyModel : Properties
+ClassModel *-- "0..*" FieldModel : Fields
+DocumentModel o-- "0..*" SyntaxModel : Code
+
+@enduml

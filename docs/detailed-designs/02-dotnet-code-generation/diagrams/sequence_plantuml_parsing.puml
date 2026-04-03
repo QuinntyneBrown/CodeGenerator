@@ -1,0 +1,44 @@
+@startuml sequence_plantuml_parsing
+!theme plain
+
+title Sequence — PlantUML Parsing to Solution Model
+
+actor Client
+participant "IPlantUmlParserService" as parser
+participant "PlantUmlDocumentModel" as docModel
+participant "ISequenceToSolution\nPlantUmlService" as seqSvc
+
+== Class Diagram Parsing ==
+
+Client -> parser : ParseFileAsync(filePath, ct)
+activate parser
+
+parser -> parser : Read .puml file content
+parser -> parser : Parse class definitions\n(name, visibility, properties, methods)
+parser -> parser : Parse enum definitions\n(name, values)
+parser -> parser : Parse relationships\n(inheritance, composition, aggregation)
+
+parser -> docModel ** : Create PlantUmlDocumentModel
+activate docModel
+docModel -> docModel : Populate Classes:\n List<PlantUmlClassModel>
+docModel -> docModel : Populate Enums:\n List<PlantUmlEnumModel>
+docModel -> docModel : Populate Relationships:\n List<PlantUmlRelationshipModel>
+deactivate docModel
+
+parser --> Client : PlantUmlDocumentModel
+deactivate parser
+
+== Sequence Diagram to Solution ==
+
+Client -> seqSvc : GenerateSolutionPlantUml(\nsequenceDiagramContent, solutionName)
+activate seqSvc
+
+seqSvc -> seqSvc : Parse participants\nand messages
+seqSvc -> seqSvc : Identify classes\nfrom participants
+seqSvc -> seqSvc : Derive methods\nfrom message interactions
+seqSvc -> seqSvc : Generate solution-level\nPlantUML specification
+
+seqSvc --> Client : Solution PlantUML string
+deactivate seqSvc
+
+@enduml

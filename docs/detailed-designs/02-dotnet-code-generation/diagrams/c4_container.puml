@@ -1,0 +1,32 @@
+@startuml c4_container
+!theme plain
+!include <C4/C4_Container>
+
+title Container Diagram — CodeGenerator.DotNet
+
+Person(dev, "Developer", "Invokes code generation via host application")
+
+System_Boundary(dotnet, "CodeGenerator.DotNet Package") {
+    Container(syntaxEngine, "Syntax Engine", "C# / Strategy Pattern", "Generates C# syntax strings from models: classes, interfaces, records, controllers, CQRS, DDD entities")
+    Container(artifactEngine, "Artifact Engine", "C# / Strategy Pattern", "Generates file-system artifacts: .sln, .csproj, .cs files, templates")
+    Container(solutionFactory, "Solution Factory", "C# / Factory Pattern", "Creates pre-configured SolutionModel structures: Minimal API, Clean Architecture Microservice")
+    Container(plantUmlParser, "PlantUML Parser", "C# / Regex + State Machine", "Parses .puml class and sequence diagrams into structured models")
+    Container(codeAnalysis, "Code Analysis Service", "C# / MSBuild + Roslyn", "Opens .csproj projects, inspects solution structures, detects NuGet/npm packages")
+    Container(gitService, "Git Service", "C# / LibGit2Sharp + Octokit", "Automates branch creation, commits, and GitHub pull requests")
+    Container(diService, "DI Automation Service", "C# / Roslyn SyntaxTree", "Generates and updates ConfigureServices.cs with service registrations")
+}
+
+System_Ext(core, "CodeGenerator.Core", "Base framework: ISyntaxGenerator, IArtifactGenerator, strategy dispatch, SyntaxModel, ArtifactModel")
+
+Rel(dev, syntaxEngine, "Calls ISyntaxGenerator.GenerateAsync<T>()")
+Rel(dev, artifactEngine, "Calls IArtifactGenerator.GenerateAsync()")
+Rel(dev, solutionFactory, "Calls ISolutionFactory.CleanArchitectureMicroservice()")
+
+Rel(syntaxEngine, core, "Implements ISyntaxGenerationStrategy<T>")
+Rel(artifactEngine, core, "Implements IArtifactGenerationStrategy<T>")
+Rel(artifactEngine, syntaxEngine, "Uses syntax generation for file content")
+Rel(solutionFactory, artifactEngine, "Produces SolutionModel for artifact generation")
+Rel(plantUmlParser, solutionFactory, "Transforms parsed diagrams into SolutionModel")
+Rel(diService, codeAnalysis, "Reads existing registrations to prevent duplicates")
+
+@enduml

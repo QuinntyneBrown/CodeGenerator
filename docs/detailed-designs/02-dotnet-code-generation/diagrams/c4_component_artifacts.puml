@@ -1,0 +1,30 @@
+@startuml c4_component_artifacts
+!theme plain
+!include <C4/C4_Component>
+
+title Component Diagram — Artifact Engine & Supporting Services
+
+Container_Boundary(artifactEngine, "Artifact Engine & Services") {
+    Component(artifactGen, "IArtifactGenerator", "Interface", "Dispatches GenerateAsync() calls to matching IArtifactGenerationStrategy<T> implementations")
+    Component(solutionGen, "SolutionGenerationStrategy", "Strategy", "Generates .sln files with project entries and solution folders")
+    Component(projectGen, "ProjectGenerationStrategy", "Strategy", "Generates .csproj files via dotnet new with package and project references")
+    Component(fileGen, "FileGenerationStrategy", "Strategy", "Writes generated .cs files to disk with template processing")
+    Component(fullStackGen, "FullStackGenerationStrategy", "Strategy", "Orchestrates end-to-end solution generation across all layers")
+    Component(solutionFactory, "SolutionFactory", "Factory", "Creates pre-configured SolutionModel: Minimal(), CleanArchitectureMicroservice(), DddCreateAsync()")
+    Component(projectFactory, "ProjectFactory", "Factory", "Creates ProjectModel instances with correct DotNetProjectType, packages, and references")
+    Component(fileFactory, "FileFactory", "Factory", "Creates FileModel instances for generated code files")
+    Component(diService, "DependencyInjectionService", "Service", "Generates/updates ConfigureServices.cs, prevents duplicate registrations")
+    Component(gitService, "GitService", "Service", "LibGit2Sharp + Octokit: branch creation, commits, pull requests")
+}
+
+Rel(artifactGen, solutionGen, "Dispatches SolutionModel")
+Rel(artifactGen, projectGen, "Dispatches ProjectModel")
+Rel(artifactGen, fileGen, "Dispatches FileModel")
+Rel(artifactGen, fullStackGen, "Dispatches FullStackModel")
+Rel(solutionFactory, projectFactory, "Creates projects for solution")
+Rel(projectFactory, fileFactory, "Creates files for project")
+Rel(fullStackGen, solutionFactory, "Builds solution structure")
+Rel(fileGen, diService, "Registers generated services")
+Rel(fullStackGen, gitService, "Commits and creates PR")
+
+@enduml

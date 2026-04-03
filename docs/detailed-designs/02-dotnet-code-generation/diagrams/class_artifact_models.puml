@@ -1,0 +1,56 @@
+@startuml class_artifact_models
+!theme plain
+
+title Artifact Models — Solution & Project Hierarchy
+
+abstract class ArtifactModel {
+    + Parent : ArtifactModel
+    + GetChildren() : IEnumerable<ArtifactModel>
+    + GetDescendants() : List<ArtifactModel>
+}
+
+class SolutionModel {
+    + Name : string
+    + Directory : string
+    + SolutionDirectory : string
+    + SrcDirectory : string
+    + TestDirectory : string
+    + Projects : List<ProjectModel>
+    + DependOns : List<DependOn>
+    + Files : List<FileModel>
+    + Folders : List<FolderModel>
+    + SolutionPath : string
+}
+
+class ProjectModel {
+    + Name : string
+    + Directory : string
+    + Path : string
+    + Namespace : string
+    + DotNetProjectType : DotNetProjectType
+    + Files : List<FileModel>
+    + Packages : List<PackageModel>
+    + References : List<ProjectReferenceModel>
+    + TargetFramework : string
+}
+
+class FileModel {
+    + Name : string
+    + Directory : string
+    + Content : string
+    + Extension : string
+}
+
+class FullStackModel {
+}
+
+ArtifactModel <|-- SolutionModel
+ArtifactModel <|-- ProjectModel
+ArtifactModel <|-- FileModel
+ArtifactModel <|-- FullStackModel
+
+SolutionModel *-- "1..*" ProjectModel : Projects
+SolutionModel *-- "0..*" FileModel : Files
+ProjectModel *-- "0..*" FileModel : Files
+
+@enduml

@@ -1,0 +1,31 @@
+@startuml c4_component
+!theme plain
+!include <C4/C4_Component>
+
+title Component Diagram — Syntax Engine
+
+Container_Boundary(syntaxEngine, "Syntax Engine") {
+    Component(syntaxGen, "ISyntaxGenerator", "Interface", "Dispatches GenerateAsync<T> calls to matching ISyntaxGenerationStrategy<T> implementations")
+    Component(classGen, "ClassSyntaxGenerationStrategy", "Strategy", "Generates C# class declarations with modifiers, inheritance, fields, constructors, methods, properties, attributes")
+    Component(interfaceGen, "InterfaceSyntaxGenerationStrategy", "Strategy", "Generates C# interface declarations with method signatures and generic constraints")
+    Component(controllerGen, "ControllerSyntaxGenerationStrategy", "Strategy", "Generates ASP.NET Core controllers with [ApiController], route attributes, CRUD action methods")
+    Component(cqrsGen, "CQRS Strategies", "Strategy Group", "CommandSyntaxGenerationStrategy, QuerySyntaxGenerationStrategy, RequestHandlerSyntaxGenerationStrategy, ResponseSyntaxGenerationStrategy, RequestValidatorSyntaxGenerationStrategy")
+    Component(dddGen, "DDD Strategies", "Strategy Group", "EntitySyntaxGenerationStrategy, AggregateSyntaxGenerationStrategy, DbContextSyntaxGenerationStrategy, DbContextInterfaceSyntaxGenerationStrategy")
+    Component(docGen, "DocumentSyntaxGenerationStrategy", "Strategy", "Generates complete C# files with namespace, usings, and type declaration")
+    Component(routeGen, "RouteHandlerSyntaxGenerationStrategy", "Strategy", "Generates Minimal API route handlers with MediatR dispatch")
+    Component(specFlowGen, "SpecFlow Strategies", "Strategy Group", "SpecFlowFeatureSyntaxGenerationStrategy and SpecFlowStepsSyntaxGenerationStrategy")
+    Component(namingConv, "INamingConventionConverter", "Service", "Converts names between PascalCase, camelCase, kebab-case for code generation")
+}
+
+Rel(syntaxGen, classGen, "Dispatches ClassModel")
+Rel(syntaxGen, interfaceGen, "Dispatches InterfaceModel")
+Rel(syntaxGen, controllerGen, "Dispatches ControllerModel")
+Rel(syntaxGen, cqrsGen, "Dispatches Command/Query/Handler models")
+Rel(syntaxGen, dddGen, "Dispatches Entity/Aggregate/DbContext models")
+Rel(syntaxGen, docGen, "Dispatches DocumentModel")
+Rel(syntaxGen, routeGen, "Dispatches RouteHandlerModel")
+Rel(syntaxGen, specFlowGen, "Dispatches SpecFlow models")
+Rel(classGen, namingConv, "Uses for member naming")
+Rel(controllerGen, namingConv, "Uses for route/method naming")
+
+@enduml

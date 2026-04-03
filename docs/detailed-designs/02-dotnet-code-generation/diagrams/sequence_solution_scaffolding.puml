@@ -1,0 +1,60 @@
+@startuml sequence_solution_scaffolding
+!theme plain
+
+title Sequence — Clean Architecture Solution Scaffolding
+
+actor Client
+participant "ISolutionFactory" as factory
+participant "IArtifactGenerator" as artifactGen
+participant "SolutionGenerationStrategy" as slnGen
+participant "ProjectGenerationStrategy" as projGen
+participant "FileGenerationStrategy" as fileGen
+participant "DependencyInjectionService" as diSvc
+
+Client -> factory : CleanArchitectureMicroservice(options)
+activate factory
+
+factory -> factory : Create SolutionModel\n(Name, Directory)
+factory -> factory : Add Domain project
+factory -> factory : Add Application project\n(refs: Domain)
+factory -> factory : Add Infrastructure project\n(refs: Domain)
+factory -> factory : Add Api project\n(refs: Application, Infrastructure)
+factory --> Client : SolutionModel
+deactivate factory
+
+Client -> artifactGen : GenerateAsync(solutionModel)
+activate artifactGen
+
+artifactGen -> slnGen : GenerateAsync(solutionModel)
+activate slnGen
+slnGen -> slnGen : Create .sln file\nwith project entries
+slnGen --> artifactGen
+deactivate slnGen
+
+loop for each ProjectModel
+    artifactGen -> projGen : GenerateAsync(projectModel)
+    activate projGen
+    projGen -> projGen : dotnet new classlib/webapi
+    projGen -> projGen : Add PackageReferences
+    projGen -> projGen : Add ProjectReferences
+    projGen --> artifactGen
+    deactivate projGen
+
+    loop for each FileModel in project
+        artifactGen -> fileGen : GenerateAsync(fileModel)
+        activate fileGen
+        fileGen -> fileGen : Process template\nand write .cs file
+        fileGen -> diSvc : Add service registration
+        activate diSvc
+        diSvc -> diSvc : Check for duplicates\nUpdate ConfigureServices.cs
+        diSvc --> fileGen
+        deactivate diSvc
+        fileGen --> artifactGen
+        deactivate fileGen
+    end
+end
+
+artifactGen --> Client : Solution generated
+deactivate artifactGen
+
+@enduml
