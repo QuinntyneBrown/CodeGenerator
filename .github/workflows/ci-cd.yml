@@ -1,0 +1,146 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore CodeGenerator.sln
+
+      - name: Build
+        run: dotnet build CodeGenerator.sln --configuration Release --no-restore
+
+      - name: Run Unit Tests
+        run: dotnet test tests/CodeGenerator.Core.UnitTests/CodeGenerator.Core.UnitTests.csproj --configuration Release --no-build --verbosity normal
+
+  publish:
+    name: Version Bump & Publish
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+
+      - name: Detect changed packages and bump versions
+        id: changes
+        run: |
+          changed_projects=""
+
+          # Get files changed in the last commit
+          changed_files=$(git diff --name-only HEAD~1 HEAD)
+
+          echo "Changed files:"
+          echo "$changed_files"
+
+          # Map of source directories to .csproj paths
+          declare -A project_map
+          for csproj in src/*//*.csproj; do
+            dir=$(dirname "$csproj")
+            project_name=$(basename "$dir")
+            project_map["$project_name"]="$csproj"
+          done
+
+          # Check which projects have changes
+          for project_name in "${!project_map[@]}"; do
+            csproj="${project_map[$project_name]}"
+            dir=$(dirname "$csproj")
+
+            if echo "$changed_files" | grep -q "^${dir}/"; then
+              # Skip non-packable projects
+              if grep -q '<IsPackable>false</IsPackable>' "$csproj" 2>/dev/null; then
+                continue
+              fi
+              if ! grep -q '<PackageId>' "$csproj" 2>/dev/null; then
+                continue
+              fi
+
+              echo "Change detected in: $project_name"
+
+              # Read current version
+              current_version=$(grep -oP '<Version>\K[^<]+' "$csproj" | head -1)
+              if [ -z "$current_version" ]; then
+                current_version="1.0.0"
+              fi
+
+              # Bump patch version
+              IFS='.' read -r major minor patch <<< "$current_version"
+              new_version="${major}.${minor}.$((patch + 1))"
+
+              echo "  Version: $current_version -> $new_version"
+
+              # Update version in .csproj
+              sed -i "s|<Version>${current_version}</Version>|<Version>${new_version}</Version>|g" "$csproj"
+              sed -i "s|<AssemblyVersion>${current_version}</AssemblyVersion>|<AssemblyVersion>${new_version}</AssemblyVersion>|g" "$csproj"
+              sed -i "s|<FileVersion>${current_version}</FileVersion>|<FileVersion>${new_version}</FileVersion>|g" "$csproj"
+
+              changed_projects="${changed_projects}${csproj}\n"
+            fi
+          done
+
+          if [ -z "$changed_projects" ]; then
+            echo "No packable projects changed."
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+          else
+            echo -e "$changed_projects" > /tmp/changed_projects.txt
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Restore dependencies
+        if: steps.changes.outputs.has_changes == 'true'
+        run: dotnet restore CodeGenerator.sln
+
+      - name: Pack changed projects
+        if: steps.changes.outputs.has_changes == 'true'
+        run: |
+          mkdir -p artifacts
+          while IFS= read -r csproj; do
+            [ -z "$csproj" ] && continue
+            echo "Packing: $csproj"
+            dotnet pack "$csproj" --configuration Release --output artifacts --no-restore
+          done < /tmp/changed_projects.txt
+
+      - name: Publish to NuGet
+        if: steps.changes.outputs.has_changes == 'true'
+        run: |
+          for nupkg in artifacts/*.nupkg; do
+            [ -f "$nupkg" ] || continue
+            echo "Publishing: $(basename "$nupkg")"
+            dotnet nuget push "$nupkg" \
+              --api-key ${{ secrets.NUGET_API_KEY }} \
+              --source https://api.nuget.org/v3/index.json \
+              --skip-duplicate
+          done
+
+      - name: Commit version bumps
+        if: steps.changes.outputs.has_changes == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "src/**/*.csproj"
+          git diff --cached --quiet || git commit -m "chore: bump package versions [skip ci]"
+          git push
