@@ -64,3 +64,50 @@ public class CliTemplateException : CliException
     public CliTemplateException(string message, Exception innerException)
         : base(message, CliExitCodes.TemplateError, innerException) { }
 }
+
+public class CliConfigurationException : CliException
+{
+    public CliConfigurationException(string message)
+        : base(message, CliExitCodes.ConfigurationError) { }
+
+    public CliConfigurationException(string message, Exception innerException)
+        : base(message, CliExitCodes.ConfigurationError, innerException) { }
+}
+
+public class CliPluginException : CliException
+{
+    public CliPluginException(string message)
+        : base(message, CliExitCodes.PluginError) { }
+
+    public CliPluginException(string message, Exception innerException)
+        : base(message, CliExitCodes.PluginError, innerException) { }
+}
+
+public class CliSchemaException : CliException
+{
+    public CliSchemaException(string message)
+        : base(message, CliExitCodes.SchemaError) { }
+
+    public CliSchemaException(string message, Exception innerException)
+        : base(message, CliExitCodes.SchemaError, innerException) { }
+}
+
+public class CliCancelledException : CliException
+{
+    public CliCancelledException(string message)
+        : base(message, CliExitCodes.Cancelled) { }
+}
+
+public class CliAggregateException : CliException
+{
+    public IReadOnlyList<CliException> InnerExceptions { get; }
+
+    public CliAggregateException(IEnumerable<CliException> innerExceptions)
+        : this("Multiple errors occurred.", innerExceptions.ToList().AsReadOnly()) { }
+
+    public CliAggregateException(string message, IReadOnlyList<CliException> innerExceptions)
+        : base(message, innerExceptions.Count > 0 ? innerExceptions.Max(e => e.ExitCode) : CliExitCodes.UnexpectedError)
+    {
+        InnerExceptions = innerExceptions;
+    }
+}
