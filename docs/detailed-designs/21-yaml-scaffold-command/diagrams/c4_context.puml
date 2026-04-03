@@ -1,0 +1,20 @@
+@startuml c4_context
+!theme plain
+!include <C4/C4_Context>
+
+title YAML Scaffold Command — System Context
+
+Person(dev, "Developer", "Scaffolds codebases from YAML configuration files")
+
+System(cli, "codegen scaffold", "CLI subcommand that parses YAML configs and generates complete codebases with post-scaffold automation")
+
+System_Ext(fs, "File System", "Source YAML files and generated output directories")
+System_Ext(dotnet, ".NET SDK", "dotnet new, dotnet sln, dotnet restore, dotnet build")
+System_Ext(npm, "npm / pip / other CLIs", "Post-scaffold commands: npm install, pip install, etc.")
+
+Rel(dev, cli, "Invokes", "codegen scaffold -c scaffold.yaml")
+Rel(cli, fs, "Reads YAML config, writes generated files")
+Rel(cli, dotnet, "Post-scaffold: dotnet restore, dotnet build")
+Rel(cli, npm, "Post-scaffold: npm install, pip install")
+
+@enduml

@@ -1,0 +1,111 @@
+@startuml class_diagram
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 11
+
+title YAML Scaffolding Engine — Class Diagram
+
+interface IScaffoldOrchestrator {
+    +ScaffoldAsync(config : ScaffoldConfiguration) : Task
+}
+
+interface IArchitectureResolver {
+    +Resolve(architecture : string, layers : List<LayerDefinition>) : ResolvedArchitecture
+}
+
+interface IProjectScaffolder {
+    +ScaffoldAsync(project : ProjectDefinition, context : ScaffoldContext) : Task
+}
+
+interface IEntityGenerator {
+    +GenerateAsync(entity : EntityDefinition, language : TargetLanguage, outputPath : string) : Task
+}
+
+interface IDtoGenerator {
+    +GenerateAsync(dto : DtoDefinition, language : TargetLanguage, outputPath : string) : Task
+}
+
+interface ITestProjectScaffolder {
+    +ScaffoldAsync(project : ProjectDefinition, context : ScaffoldContext) : Task
+}
+
+interface ISolutionScaffolder {
+    +ScaffoldAsync(solution : SolutionDefinition, projects : List<ProjectDefinition>) : Task
+}
+
+interface ICrossProjectReferenceResolver {
+    +ResolveAsync(projects : List<ProjectDefinition>, outputPath : string) : Task
+}
+
+class ScaffoldOrchestrator implements IScaffoldOrchestrator {
+    -_architectureResolver : IArchitectureResolver
+    -_projectScaffolder : IProjectScaffolder
+    -_solutionScaffolder : ISolutionScaffolder
+    -_referenceResolver : ICrossProjectReferenceResolver
+    -_commandService : ICommandService
+    -_logger : ILogger
+}
+
+class ArchitectureResolver implements IArchitectureResolver
+class ProjectScaffolder implements IProjectScaffolder {
+    -_artifactGenerator : IArtifactGenerator
+    -_commandService : ICommandService
+    -_templateProcessor : ITemplateProcessor
+    -_entityGenerator : IEntityGenerator
+    -_dtoGenerator : IDtoGenerator
+    -_testScaffolder : ITestProjectScaffolder
+}
+
+class EntityGenerator implements IEntityGenerator {
+    -_syntaxGenerator : ISyntaxGenerator
+    -_artifactGenerator : IArtifactGenerator
+}
+
+class DtoGenerator implements IDtoGenerator {
+    -_entityGenerator : IEntityGenerator
+}
+
+class TestProjectScaffolder implements ITestProjectScaffolder {
+    -_artifactGenerator : IArtifactGenerator
+    -_syntaxGenerator : ISyntaxGenerator
+    -_templateProcessor : ITemplateProcessor
+}
+
+class SolutionScaffolder implements ISolutionScaffolder {
+    -_commandService : ICommandService
+    -_artifactGenerator : IArtifactGenerator
+}
+
+class CrossProjectReferenceResolver implements ICrossProjectReferenceResolver {
+    -_artifactGenerator : IArtifactGenerator
+}
+
+class ResolvedArchitecture {
+    +Layers : List<ResolvedLayer>
+}
+
+class ResolvedLayer {
+    +Name : string
+    +ProjectType : string
+    +References : List<string>
+    +Entities : List<EntityDefinition>
+    +Services : List<ServiceDefinition>
+}
+
+enum TargetLanguage {
+    CSharp
+    Python
+    TypeScript
+}
+
+ScaffoldOrchestrator --> ArchitectureResolver
+ScaffoldOrchestrator --> ProjectScaffolder
+ScaffoldOrchestrator --> SolutionScaffolder
+ScaffoldOrchestrator --> CrossProjectReferenceResolver
+ProjectScaffolder --> EntityGenerator
+ProjectScaffolder --> DtoGenerator
+ProjectScaffolder --> TestProjectScaffolder
+ArchitectureResolver ..> ResolvedArchitecture : creates
+EntityGenerator ..> TargetLanguage : uses
+
+@enduml

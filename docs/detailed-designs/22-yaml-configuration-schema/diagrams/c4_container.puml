@@ -1,0 +1,29 @@
+@startuml c4_container
+!theme plain
+!include <C4/C4_Container>
+
+title YAML Configuration Schema — Container Diagram
+
+Person(dev, "Developer", "Authors YAML config")
+
+System_Boundary(sb, "CodeGenerator.Scaffolding") {
+    Container(parser, "YamlConfigParser", "YamlDotNet", "Deserializes YAML into ScaffoldConfiguration model")
+    Container(validator, "ConfigValidator", ".NET Service", "Validates parsed configuration against schema rules")
+    Container(type_mapper, "TypeMapper", ".NET Service", "Maps cross-platform type aliases to language-native types")
+    Container(default_gen, "DefaultFileGenerator", ".NET Service", "Produces implicit files per project type")
+    Container(models, "Configuration Models", ".NET Classes", "ScaffoldConfiguration, ProjectDefinition, EntityDefinition, etc.")
+}
+
+System_Ext(core, "CodeGenerator.Core", "ITemplateProcessor, INamingConventionConverter, TokensBuilder")
+System_Ext(cli, "Scaffold Command", "CLI entry point that orchestrates parsing, validation, and generation")
+
+Rel(dev, cli, "scaffold -c scaffold.yaml")
+Rel(cli, parser, "Passes YAML content to")
+Rel(parser, models, "Produces")
+Rel(cli, validator, "Validates parsed config")
+Rel(validator, models, "Inspects")
+Rel(cli, type_mapper, "Resolves property types via")
+Rel(cli, default_gen, "Generates implicit files via")
+Rel(default_gen, core, "Uses ITemplateProcessor for rendering")
+
+@enduml

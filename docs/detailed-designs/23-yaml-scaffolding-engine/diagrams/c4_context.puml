@@ -1,0 +1,22 @@
+@startuml c4_context
+!theme plain
+!include <C4/C4_Context>
+
+title YAML Scaffolding Engine — System Context
+
+Person(dev, "Developer", "Provides YAML scaffold configuration")
+
+System(engine, "YAML Scaffolding Engine", "Transforms ScaffoldConfiguration into a generated codebase with projects, entities, tests, and solutions")
+
+System_Ext(fs, "File System", "Target directory where all generated files are written")
+System_Ext(dotnet_sdk, ".NET SDK", "dotnet new sln, dotnet sln add, dotnet new")
+System_Ext(node, "Node.js / npm", "npm init, package.json generation")
+System_Ext(python, "Python / pip", "pyproject.toml, requirements.txt")
+
+Rel(dev, engine, "Provides ScaffoldConfiguration", "parsed YAML")
+Rel(engine, fs, "Creates directories and writes files")
+Rel(engine, dotnet_sdk, "Executes dotnet CLI commands")
+Rel(engine, node, "Generates npm configs")
+Rel(engine, python, "Generates Python configs")
+
+@enduml

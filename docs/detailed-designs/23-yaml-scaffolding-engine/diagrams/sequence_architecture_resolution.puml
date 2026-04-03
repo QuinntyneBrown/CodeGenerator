@@ -1,0 +1,61 @@
+@startuml sequence_architecture_resolution
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Clean Architecture Scaffolding
+
+participant "ScaffoldOrchestrator" as orch
+participant "ArchitectureResolver" as arch
+participant "ProjectScaffolder" as proj
+participant "EntityGenerator" as entity
+participant "CrossProjectRef\nResolver" as refs
+database "File System" as fs
+
+[-> orch : project with architecture: clean-architecture
+activate orch
+
+orch -> arch : Resolve("clean-architecture")
+activate arch
+arch -> arch : Create Domain layer (no refs)
+arch -> arch : Create Application layer (refs: Domain)
+arch -> arch : Create Infrastructure layer\n(refs: Application, Domain)
+arch -> arch : Create API layer (refs: Application)
+arch --> orch : ResolvedArchitecture (4 layers)
+deactivate arch
+
+orch -> proj : ScaffoldAsync(Domain)
+proj -> fs : Create {Name}.Domain.csproj
+opt entities defined
+    proj -> entity : GenerateAsync(entities)
+    entity -> fs : Write entity classes
+end
+proj --> orch : done
+
+orch -> proj : ScaffoldAsync(Application)
+proj -> fs : Create {Name}.Application.csproj
+opt services defined
+    proj -> fs : Write service interfaces
+end
+proj --> orch : done
+
+orch -> proj : ScaffoldAsync(Infrastructure)
+proj -> fs : Create {Name}.Infrastructure.csproj
+opt services defined
+    proj -> fs : Write service implementations
+end
+proj --> orch : done
+
+orch -> proj : ScaffoldAsync(API)
+proj -> fs : Create {Name}.API.csproj
+opt endpoints defined
+    proj -> fs : Write controller stubs
+end
+proj --> orch : done
+
+orch -> refs : ResolveAsync(4 layer projects)
+refs -> fs : Add <ProjectReference> to each .csproj
+refs --> orch : done
+
+deactivate orch
+
+@enduml

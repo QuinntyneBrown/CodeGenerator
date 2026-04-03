@@ -1,0 +1,49 @@
+@startuml sequence_export_schema
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Export Schema and Init Starter YAML Workflows
+
+actor Developer as dev
+participant "ScaffoldCommand" as cmd
+participant "ISchemaExporter" as exporter
+participant "IFileSystem" as fsys
+database "File System" as fs
+
+== Export JSON Schema (--export-schema) ==
+
+dev -> cmd : codegen scaffold --export-schema
+activate cmd
+
+cmd -> exporter : ExportJsonSchema()
+activate exporter
+exporter --> cmd : jsonSchemaString
+deactivate exporter
+
+alt -o specified
+    cmd -> fsys : File.WriteAllTextAsync(outputPath, jsonSchema)
+    fsys -> fs : Write schema.json
+    cmd --> dev : "Schema written to {outputPath}"
+else no -o (stdout)
+    cmd --> dev : << JSON Schema output to stdout >>
+end
+
+deactivate cmd
+
+== Generate Starter YAML (--init) ==
+
+dev -> cmd : codegen scaffold --init
+activate cmd
+
+cmd -> exporter : GenerateStarterYaml()
+activate exporter
+exporter --> cmd : starterYamlString
+deactivate exporter
+
+cmd -> fsys : File.WriteAllTextAsync("scaffold.yaml", starterYaml)
+fsys -> fs : Write scaffold.yaml
+
+cmd --> dev : "Created scaffold.yaml"
+deactivate cmd
+
+@enduml

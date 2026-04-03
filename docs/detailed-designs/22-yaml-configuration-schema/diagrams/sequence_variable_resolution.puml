@@ -1,0 +1,51 @@
+@startuml sequence_variable_resolution
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Variable Resolution and Naming Variants
+
+participant "Scaffold\nCommand" as cli
+participant "ScaffoldConfiguration" as config
+participant "INamingConvention\nConverter" as naming
+participant "TokensBuilder" as tokens
+participant "ITemplateProcessor" as template
+
+cli -> config : Read globalVariables
+activate cli
+
+note over config
+    globalVariables:
+      companyName: "Acme"
+      dbProvider: "PostgreSQL"
+end note
+
+cli -> naming : Convert config.Name ("Clarity")\nto all naming conventions
+activate naming
+naming --> cli : PascalCase: "Clarity"\ncamelCase: "clarity"\nsnake_case: "clarity"\nkebab-case: "clarity"
+deactivate naming
+
+cli -> tokens : Build(config.Name)
+activate tokens
+tokens --> cli : { name: "Clarity",\n  namePascalCase: "Clarity",\n  nameCamelCase: "clarity",\n  nameSnakeCase: "clarity",\n  nameKebabCase: "clarity" }
+deactivate tokens
+
+loop for each project in config.Projects
+    cli -> cli : Merge globalVariables\nwith project.Variables\n(project takes precedence)
+
+    cli -> naming : Convert project.Name\nto all naming conventions
+    naming --> cli : Naming variants for project
+
+    cli -> tokens : Build(project.Name)
+    tokens --> cli : Project-level naming tokens
+
+    cli -> cli : Combine all tokens:\nglobal + project + naming variants
+
+    loop for each file with content/template
+        cli -> template : Render(template, mergedTokens)
+        template --> cli : Rendered content with\nall variables substituted
+    end
+end
+
+deactivate cli
+
+@enduml

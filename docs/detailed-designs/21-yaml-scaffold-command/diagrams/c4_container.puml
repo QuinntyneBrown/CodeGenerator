@@ -1,0 +1,25 @@
+@startuml c4_container
+!theme plain
+!include <C4/C4_Container>
+
+title YAML Scaffold Command — Container Diagram
+
+Person(dev, "Developer", "Runs codegen scaffold")
+
+System_Boundary(sb, "CodeGenerator CLI (.NET Global Tool)") {
+    Container(cli_app, "CLI Application", "System.CommandLine", "Parses args, routes to ScaffoldCommand handler")
+    Container(scaffold, "Scaffold Module", "YamlDotNet, System.Text.Json", "YAML parsing, validation, schema export, scaffold orchestration, post-scaffold execution")
+    Container(core, "CodeGenerator.Core", ".NET Library", "IArtifactGenerator, ICommandService, ITemplateProcessor, DI registration")
+    Container(dotnet_lib, "CodeGenerator.DotNet", ".NET Library", "SolutionModel, ProjectModel, ContentFileModel, INamingConventionConverter")
+}
+
+System_Ext(fs, "File System", "YAML configs and output directories")
+
+Rel(dev, cli_app, "Invokes", "CLI args")
+Rel(cli_app, scaffold, "Delegates to ScaffoldEngine / SchemaExporter")
+Rel(scaffold, core, "Uses IArtifactGenerator, ICommandService, ITemplateProcessor")
+Rel(scaffold, dotnet_lib, "Uses INamingConventionConverter, ContentFileModel")
+Rel(scaffold, fs, "Reads YAML, writes generated files")
+Rel(core, fs, "Writes files via ArtifactGenerator")
+
+@enduml

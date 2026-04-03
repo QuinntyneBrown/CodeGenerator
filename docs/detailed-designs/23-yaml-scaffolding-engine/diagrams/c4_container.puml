@@ -1,0 +1,30 @@
+@startuml c4_container
+!theme plain
+!include <C4/C4_Container>
+
+title YAML Scaffolding Engine — Container Diagram
+
+Person(dev, "Developer", "Provides scaffold.yaml")
+
+System_Boundary(sb, "CodeGenerator") {
+    Container(engine, "Scaffolding Engine", ".NET Library", "ScaffoldOrchestrator, ArchitectureResolver, ProjectScaffolder, EntityGenerator, DtoGenerator, TestProjectScaffolder, SolutionScaffolder")
+    Container(core, "CodeGenerator.Core", ".NET Library", "IArtifactGenerator, ISyntaxGenerator, ICommandService, ITemplateProcessor")
+    Container(dotnet_lib, "CodeGenerator.DotNet", ".NET Library", "SolutionModel, ProjectModel, ClassModel, DotNet strategies")
+    Container(py_lib, "CodeGenerator.Python", ".NET Library", "Python ClassModel, Flask models")
+    Container(react_lib, "CodeGenerator.React", ".NET Library", "React WorkspaceModel, component models")
+    Container(pw_lib, "CodeGenerator.Playwright", ".NET Library", "PageObjectModel, spec models")
+}
+
+System_Ext(fs, "File System", "Output directory")
+System_Ext(sdk, ".NET SDK / Node.js / Python", "External toolchains")
+
+Rel(dev, engine, "ScaffoldConfiguration")
+Rel(engine, core, "IArtifactGenerator, ISyntaxGenerator, ICommandService")
+Rel(engine, dotnet_lib, "SolutionModel, ProjectModel, ClassModel")
+Rel(engine, py_lib, "Python.ClassModel")
+Rel(engine, react_lib, "React.WorkspaceModel")
+Rel(engine, pw_lib, "PageObjectModel")
+Rel(core, fs, "Writes files")
+Rel(core, sdk, "Executes commands")
+
+@enduml

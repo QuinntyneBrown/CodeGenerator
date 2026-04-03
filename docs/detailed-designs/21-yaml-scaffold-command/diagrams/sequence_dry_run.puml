@@ -1,0 +1,47 @@
+@startuml sequence_dry_run
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Dry-Run Mode Workflow
+
+actor Developer as dev
+participant "ScaffoldCommand" as cmd
+participant "IScaffoldEngine" as engine
+participant "IYamlConfigParser" as parser
+participant "IFileSystem" as fsys
+
+dev -> cmd : codegen scaffold -c scaffold.yaml --dry-run
+activate cmd
+
+cmd -> engine : ScaffoldAsync(options { DryRun = true })
+activate engine
+
+engine -> fsys : File.ReadAllTextAsync(configPath)
+fsys --> engine : yamlContent
+
+engine -> parser : Parse(yamlContent)
+parser --> engine : ScaffoldConfiguration
+
+engine -> parser : Validate(config)
+parser --> engine : [] (no errors)
+
+engine -> engine : Resolve output path
+
+engine -> engine : Build file plan
+
+engine -> fsys : Check for existing files
+fsys --> engine : conflictingFiles
+
+note right of engine
+  DryRun = true
+  Skip file generation
+  Skip post-scaffold commands
+end note
+
+engine --> cmd : ScaffoldResult {\n  Success = true,\n  PlannedFiles = [...],\n  ConflictingFiles = [...]\n}
+deactivate engine
+
+cmd -> dev : [dry-run] Would create:\n  src/Api/Program.cs\n  src/Api/Api.csproj\n  ...\n[dry-run] Would execute:\n  dotnet restore\n  npm install
+deactivate cmd
+
+@enduml

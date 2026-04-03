@@ -1,0 +1,36 @@
+@startuml c4_component
+!theme plain
+!include <C4/C4_Component>
+
+title YAML Scaffolding Engine — Component Diagram
+
+Container_Boundary(engine, "Scaffolding Engine") {
+    Component(orchestrator, "ScaffoldOrchestrator", "IScaffoldOrchestrator", "Top-level orchestration: iterates projects, coordinates generation")
+    Component(arch_resolver, "ArchitectureResolver", "IArchitectureResolver", "Maps architecture patterns to layer definitions")
+    Component(proj_scaffolder, "ProjectScaffolder", "IProjectScaffolder", "Generates a single project with directories and files")
+    Component(entity_gen, "EntityGenerator", "IEntityGenerator", "Generates entity classes per target language")
+    Component(dto_gen, "DtoGenerator", "IDtoGenerator", "Generates DTO/request/response classes")
+    Component(test_scaffolder, "TestProjectScaffolder", "ITestProjectScaffolder", "Generates Playwright/Detox test projects")
+    Component(sln_scaffolder, "SolutionScaffolder", "ISolutionScaffolder", "Generates .sln files and npm workspaces")
+    Component(ref_resolver, "CrossProjectReferenceResolver", "ICrossProjectReferenceResolver", "Wires inter-project references")
+}
+
+Component(artifact_gen, "IArtifactGenerator", "Core", "Writes files to disk")
+Component(syntax_gen, "ISyntaxGenerator", "Core", "Generates code strings")
+Component(cmd_svc, "ICommandService", "Core", "Executes shell commands")
+Component(tmpl, "ITemplateProcessor", "Core", "DotLiquid template rendering")
+
+Rel(orchestrator, arch_resolver, "Resolves architecture")
+Rel(orchestrator, proj_scaffolder, "Scaffolds each project")
+Rel(orchestrator, sln_scaffolder, "Generates solutions")
+Rel(orchestrator, ref_resolver, "Resolves references")
+Rel(proj_scaffolder, entity_gen, "Generates entities")
+Rel(proj_scaffolder, dto_gen, "Generates DTOs")
+Rel(proj_scaffolder, test_scaffolder, "Delegates test projects")
+Rel(entity_gen, syntax_gen, "Generates code")
+Rel(proj_scaffolder, artifact_gen, "Writes files")
+Rel(proj_scaffolder, tmpl, "Renders templates")
+Rel(sln_scaffolder, cmd_svc, "dotnet sln commands")
+Rel(ref_resolver, artifact_gen, "Updates .csproj/tsconfig")
+
+@enduml

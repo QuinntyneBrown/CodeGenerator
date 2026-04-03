@@ -1,0 +1,20 @@
+@startuml c4_context
+!theme plain
+!include <C4/C4_Context>
+
+title YAML Configuration Schema — System Context
+
+Person(dev, "Developer", "Authors YAML scaffold configurations and runs the scaffold command")
+
+System(schema, "YAML Configuration Schema", "Defines the structure and validation rules for scaffold YAML files that describe multi-project codebases")
+
+System_Ext(cli, "CodeGenerator CLI", "scaffold command parses and validates YAML configurations")
+System_Ext(editor, "YAML Editor", "Provides autocompletion and inline validation via exported JSON Schema")
+System_Ext(fs, "File System", "Source YAML files and generated output")
+
+Rel(dev, schema, "Authors scaffold.yaml conforming to")
+Rel(cli, schema, "Parses and validates YAML against")
+Rel(schema, editor, "Exports JSON Schema for")
+Rel(cli, fs, "Reads YAML from, writes scaffolded output to")
+
+@enduml

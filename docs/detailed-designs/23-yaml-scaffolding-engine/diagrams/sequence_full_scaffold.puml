@@ -1,0 +1,49 @@
+@startuml sequence_full_scaffold
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Full Scaffold Orchestration
+
+participant "ScaffoldOrchestrator" as orch
+participant "ArchitectureResolver" as arch
+participant "ProjectScaffolder" as proj
+participant "SolutionScaffolder" as sln
+participant "CrossProjectRef\nResolver" as refs
+participant "ICommandService" as cmd
+database "File System" as fs
+
+[-> orch : ScaffoldAsync(config)
+activate orch
+
+orch -> fs : CreateDirectory(outputPath)
+
+loop for each project with architecture
+    orch -> arch : Resolve(architecture)
+    arch --> orch : ResolvedArchitecture (layers)
+end
+
+loop for each project (incl. expanded layers)
+    orch -> proj : ScaffoldAsync(project, context)
+    proj -> fs : Create directories, write files
+    proj --> orch : done
+end
+
+loop for each solution definition
+    orch -> sln : ScaffoldAsync(solution, projects)
+    sln -> cmd : dotnet new sln / npm init
+    sln -> cmd : dotnet sln add (per project)
+    sln --> orch : done
+end
+
+orch -> refs : ResolveAsync(allProjects, outputPath)
+refs -> fs : Update .csproj / tsconfig.json
+refs --> orch : done
+
+loop for each postScaffoldCommand
+    orch -> cmd : Start(command, workingDir)
+end
+
+[<-- orch : Scaffold complete
+deactivate orch
+
+@enduml

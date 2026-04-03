@@ -1,0 +1,68 @@
+@startuml sequence_scaffold
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Scaffold from YAML — Main Workflow
+
+actor Developer as dev
+participant "ScaffoldCommand" as cmd
+participant "IScaffoldEngine" as engine
+participant "IYamlConfigParser" as parser
+participant "IFileSystem" as fsys
+participant "IArtifactGenerator" as artgen
+participant "IPostScaffoldExecutor" as postexec
+database "File System" as fs
+
+dev -> cmd : codegen scaffold -c scaffold.yaml -o ./output
+activate cmd
+
+cmd -> fsys : File.Exists(configPath)
+fsys --> cmd : true
+
+cmd -> engine : ScaffoldAsync(options)
+activate engine
+
+engine -> fsys : File.ReadAllTextAsync(configPath)
+fsys --> engine : yamlContent
+
+engine -> parser : Parse(yamlContent)
+parser --> engine : ScaffoldConfiguration
+
+engine -> parser : Validate(config)
+parser --> engine : [] (no errors)
+
+engine -> engine : Resolve output path\n(-o override or config.OutputPath)
+
+engine -> engine : Build file plan\n(iterate projects, dirs, files)
+
+engine -> fsys : Check for existing files
+fsys --> engine : conflictingFiles = []
+
+loop for each planned file
+    engine -> artgen : GenerateAsync(ContentFileModel)
+    artgen -> fs : Write file
+end
+
+engine -> postexec : ExecuteAsync(config, outputPath)
+activate postexec
+
+loop for each root postScaffoldCommand
+    postexec -> fs : Execute command in outputDir
+end
+
+loop for each project with postScaffoldCommands
+    loop for each command
+        postexec -> fs : Execute command in projectDir
+    end
+end
+
+postexec --> engine : List<CommandResult>
+deactivate postexec
+
+engine --> cmd : ScaffoldResult { Success = true }
+deactivate engine
+
+cmd --> dev : "Scaffold complete. Created {n} files."
+deactivate cmd
+
+@enduml

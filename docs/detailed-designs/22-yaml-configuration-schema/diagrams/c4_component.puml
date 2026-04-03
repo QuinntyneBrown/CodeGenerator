@@ -1,0 +1,27 @@
+@startuml c4_component
+!theme plain
+!include <C4/C4_Component>
+
+title YAML Configuration Schema — Component Diagram
+
+Container_Boundary(scaffolding, "CodeGenerator.Scaffolding") {
+    Component(parser, "YamlConfigParser", "IYamlConfigParser", "Deserializes YAML string into ScaffoldConfiguration using YamlDotNet")
+    Component(validator, "ConfigValidator", "IConfigValidator", "Validates required fields, enum values, duplicate names, unresolved references")
+    Component(type_mapper, "TypeMapper", "ITypeMapper", "Maps cross-platform aliases (string, int, uuid, list<T>) to native language types")
+    Component(default_gen, "DefaultFileGenerator", "IDefaultFileGenerator", "Generates implicit files per ProjectType (Program.cs, package.json, etc.)")
+    Component(models, "Schema Models", "POCOs", "ScaffoldConfiguration, ProjectDefinition, FileDefinition, EntityDefinition, etc.")
+}
+
+Component(template, "ITemplateProcessor", "Core", "DotLiquid template rendering with token substitution")
+Component(naming, "INamingConventionConverter", "Core", "Converts names between PascalCase, camelCase, snake_case, kebab-case")
+Component(tokens, "TokensBuilder", "Core", "Generates naming convention variant tokens automatically")
+
+Rel(parser, models, "Produces")
+Rel(validator, models, "Validates")
+Rel(type_mapper, models, "Resolves types in EntityDefinition/PropertyDefinition")
+Rel(default_gen, models, "Reads ProjectDefinition.Type")
+Rel(default_gen, template, "Renders file content via")
+Rel(parser, naming, "Generates naming variants for globalVariables")
+Rel(parser, tokens, "Builds token dictionaries with")
+
+@enduml

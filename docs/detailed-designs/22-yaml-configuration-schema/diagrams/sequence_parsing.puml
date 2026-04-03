@@ -1,0 +1,54 @@
+@startuml sequence_parsing
+!theme plain
+skinparam sequenceMessageAlign center
+
+title YAML Parsing and Validation Workflow
+
+actor Developer as dev
+participant "Scaffold\nCommand" as cli
+participant "IYamlConfigParser" as parser
+participant "IConfigValidator" as validator
+participant "ScaffoldConfiguration" as config
+
+dev -> cli : scaffold -c scaffold.yaml
+activate cli
+
+cli -> cli : Read YAML file from disk
+
+cli -> parser : Parse(yamlContent)
+activate parser
+parser -> parser : YamlDotNet Deserialize<ScaffoldConfiguration>
+parser -> parser : Resolve ProjectType enums\nfrom kebab-case strings
+parser -> config : Create ScaffoldConfiguration\nwith nested models
+parser --> cli : ScaffoldConfiguration
+deactivate parser
+
+cli -> validator : Validate(config)
+activate validator
+
+validator -> validator : Check required fields:\nname, version, projects
+
+validator -> validator : Check each ProjectDefinition:\nname, type, path required
+
+validator -> validator : Check FileDefinition:\nexactly one of content/template/source
+
+validator -> validator : Check enum values:\nProjectType is valid
+
+validator -> validator : Check duplicate project names
+
+validator -> validator : Check references:\nall point to existing project names
+
+validator -> validator : Check template references:\nresolvable via template locator
+
+alt validation errors found
+    validator --> cli : ValidationResult(Errors)
+    cli --> dev : Print errors, exit code 1
+else valid
+    validator --> cli : ValidationResult(Valid)
+    deactivate validator
+    cli --> dev : "Configuration is valid"
+end
+
+deactivate cli
+
+@enduml

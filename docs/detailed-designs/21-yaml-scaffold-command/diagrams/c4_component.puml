@@ -1,0 +1,31 @@
+@startuml c4_component
+!theme plain
+!include <C4/C4_Component>
+
+title YAML Scaffold Command — Component Diagram
+
+Container_Boundary(cli, "CodeGenerator CLI") {
+    Component(scaffold_cmd, "ScaffoldCommand", "Command", "Options: -c, -o, --dry-run, --force, --validate, --export-schema, --init")
+    Component(scaffold_engine, "ScaffoldEngine", "IScaffoldEngine", "Orchestrates parse, validate, plan, generate, post-scaffold execution")
+    Component(yaml_parser, "YamlConfigParser", "IYamlConfigParser", "Deserializes YAML to ScaffoldConfiguration, validates schema")
+    Component(schema_exporter, "SchemaExporter", "ISchemaExporter", "Exports JSON Schema, generates starter YAML")
+    Component(post_executor, "PostScaffoldExecutor", "IPostScaffoldExecutor", "Runs post-scaffold commands sequentially")
+}
+
+Component(artifact_gen, "IArtifactGenerator", "Core", "Writes ContentFileModel instances to disk")
+Component(cmd_svc, "ICommandService", "Core", "Executes shell commands cross-platform")
+Component(template_proc, "ITemplateProcessor", "Core", "DotLiquid template rendering with variable substitution")
+Component(naming_conv, "INamingConventionConverter", "DotNet", "Converts between PascalCase, camelCase, snake_case, kebab-case")
+Component(file_sys, "IFileSystem", "System.IO.Abstractions", "File system abstraction for reading and writing")
+
+Rel(scaffold_cmd, scaffold_engine, "ScaffoldAsync(options)")
+Rel(scaffold_cmd, schema_exporter, "ExportJsonSchema() / GenerateStarterYaml()")
+Rel(scaffold_engine, yaml_parser, "Parse(yamlContent) / Validate(config)")
+Rel(scaffold_engine, artifact_gen, "GenerateAsync(model)")
+Rel(scaffold_engine, template_proc, "Process(template, variables)")
+Rel(scaffold_engine, naming_conv, "Convert(name, convention)")
+Rel(scaffold_engine, file_sys, "ReadAllTextAsync / Exists")
+Rel(scaffold_engine, post_executor, "ExecuteAsync(config, outputPath)")
+Rel(post_executor, cmd_svc, "Start(command, workingDir)")
+
+@enduml

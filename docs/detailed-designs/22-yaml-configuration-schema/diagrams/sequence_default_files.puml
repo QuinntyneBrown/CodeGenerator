@@ -1,0 +1,72 @@
+@startuml sequence_default_files
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Default File Generation per Project Type
+
+participant "Scaffold\nCommand" as cli
+participant "IDefaultFileGenerator" as gen
+participant "ITemplateProcessor" as template
+participant "ITypeMapper" as mapper
+
+cli -> gen : GenerateDefaultFiles(project)
+activate gen
+
+alt project.Type == dotnet-webapi
+    gen -> template : Render Program.cs (builder/app pattern)
+    gen -> template : Render {name}.csproj (WebSdk, packages)
+    gen -> template : Render appsettings.json
+    gen -> template : Render appsettings.Development.json
+
+else project.Type == react-app
+    gen -> template : Render package.json (deps, scripts)
+    gen -> template : Render tsconfig.json
+    gen -> template : Render vite.config.ts
+    gen -> template : Render index.html
+    gen -> template : Render src/App.tsx
+    gen -> template : Render src/main.tsx
+
+else project.Type == angular-app
+    gen -> template : Render angular.json
+    gen -> template : Render package.json
+    gen -> template : Render tsconfig.json
+    gen -> template : Render src/app/app.module.ts
+    gen -> template : Render src/app/app.component.ts
+
+else project.Type == python-app
+    gen -> template : Render pyproject.toml
+    gen -> template : Render __init__.py
+    gen -> template : Render main.py
+
+else project.Type == flask-app
+    gen -> template : Render requirements.txt
+    gen -> template : Render config.py
+    gen -> template : Render app/__init__.py (factory)
+
+else project.Type == playwright-tests
+    gen -> template : Render package.json
+    gen -> template : Render playwright.config.ts
+    gen -> template : Render tsconfig.json
+
+else project.Type == custom
+    gen -> gen : No implicit files generated
+end
+
+note right of gen
+    For entity generation, TypeMapper
+    is used to resolve property types
+    to the target language.
+end note
+
+opt project has entities
+    loop each entity
+        gen -> mapper : MapType(property.Type, targetLanguage)
+        mapper --> gen : Native type string
+        gen -> template : Render entity class/interface
+    end
+end
+
+gen --> cli : List<FileDefinition> (implicit + entity files)
+deactivate gen
+
+@enduml

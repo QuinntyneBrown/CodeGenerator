@@ -1,0 +1,42 @@
+@startuml sequence_entity_generation
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Entity Generation Across Languages
+
+participant "ProjectScaffolder" as proj
+participant "EntityGenerator" as gen
+participant "ISyntaxGenerator" as syntax
+participant "IArtifactGenerator" as artifact
+database "File System" as fs
+
+[-> gen : GenerateAsync(entity: "Order", language, outputPath)
+activate gen
+
+gen -> gen : Map cross-platform types\n(int->int/int/number,\ndatetime->DateTime/datetime/Date, ...)
+
+alt C# (.NET project)
+    gen -> gen : Build DotNet.ClassModel("Order")\nwith PropertyModel for each property
+    gen -> syntax : GenerateAsync(ClassModel)
+    syntax --> gen : "public class Order { ... }"
+    gen -> artifact : GenerateAsync(ContentFileModel:\nOrder.cs)
+    artifact -> fs : Write Order.cs
+
+else Python project
+    gen -> gen : Build Python.ClassModel("Order")\nwith typed properties
+    gen -> syntax : GenerateAsync(Python.ClassModel)
+    syntax --> gen : "class Order:\n    id: int\n    ..."
+    gen -> artifact : GenerateAsync(ContentFileModel:\norder.py)
+    artifact -> fs : Write order.py
+
+else TypeScript project
+    gen -> gen : Build TypeScript interface string
+    gen -> syntax : GenerateAsync(InterfaceModel)
+    syntax --> gen : "export interface Order { ... }"
+    gen -> artifact : GenerateAsync(ContentFileModel:\norder.ts)
+    artifact -> fs : Write order.ts
+end
+
+deactivate gen
+
+@enduml

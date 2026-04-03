@@ -1,0 +1,140 @@
+@startuml class_diagram
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 11
+
+title YAML Configuration Schema — Class Diagram
+
+enum ProjectType {
+    DotnetWebapi
+    DotnetClasslib
+    DotnetConsole
+    AngularApp
+    AngularLib
+    ReactApp
+    ReactLib
+    ReactNativeApp
+    PythonApp
+    PythonLib
+    FlaskApp
+    PlaywrightTests
+    DetoxTests
+    StaticSite
+    Custom
+}
+
+class ScaffoldConfiguration <<IValidatable>> {
+    +Name : string {required}
+    +Version : string {required, semver}
+    +OutputPath : string {default "."}
+    +Description : string
+    +GlobalVariables : Dictionary<string, string>
+    +GitInit : bool {default false}
+    +PostScaffoldCommands : List<string>
+    +Projects : List<ProjectDefinition> {required}
+    +Solutions : List<SolutionDefinition>
+    +Validate() : ValidationResult
+}
+
+class ProjectDefinition <<IValidatable>> {
+    +Name : string {required}
+    +Type : ProjectType {required}
+    +Path : string {required}
+    +Framework : string
+    +Variables : Dictionary<string, string>
+    +Dependencies : List<string>
+    +DevDependencies : List<string>
+    +Directories : List<DirectoryDefinition>
+    +Files : List<FileDefinition>
+    +References : List<string>
+    +Features : List<string>
+    +Architecture : string
+    +Layers : List<LayerDefinition>
+    +Entities : List<EntityDefinition>
+    +Dtos : List<EntityDefinition>
+    +Endpoints : List<EndpointDefinition>
+    +Services : List<ServiceDefinition>
+    +PageObjects : List<PageObjectDefinition>
+    +Specs : List<SpecDefinition>
+    +Fixtures : List<FixtureDefinition>
+    +Validate() : ValidationResult
+}
+
+class DirectoryDefinition {
+    +Path : string {required}
+    +Files : List<FileDefinition>
+}
+
+class FileDefinition <<IValidatable>> {
+    +Name : string {required}
+    +Content : string
+    +Template : string
+    +Source : string
+    +Encoding : string {default "utf-8"}
+    +Validate() : ValidationResult
+}
+
+class EntityDefinition {
+    +Name : string {required}
+    +Properties : List<PropertyDefinition>
+}
+
+class PropertyDefinition {
+    +Name : string {required}
+    +Type : string {required}
+    +Required : bool {default false}
+    +Default : string
+    +Description : string
+}
+
+class LayerDefinition {
+    +Name : string {required}
+    +Type : string
+    +References : List<string>
+    +Entities : List<EntityDefinition>
+    +Services : List<ServiceDefinition>
+    +Endpoints : List<EndpointDefinition>
+}
+
+class SolutionDefinition {
+    +Name : string {required}
+    +Path : string
+    +Projects : List<string>
+}
+
+class ServiceDefinition {
+    +Name : string {required}
+    +Methods : List<MethodDefinition>
+}
+
+class EndpointDefinition {
+    +Name : string {required}
+    +Route : string
+    +Methods : List<MethodDefinition>
+}
+
+class MethodDefinition {
+    +Name : string {required}
+    +Parameters : List<PropertyDefinition>
+    +ReturnType : string
+}
+
+ScaffoldConfiguration "1" *-- "0..*" ProjectDefinition : projects
+ScaffoldConfiguration "1" *-- "0..*" SolutionDefinition : solutions
+ProjectDefinition "1" *-- "0..*" DirectoryDefinition : directories
+ProjectDefinition "1" *-- "0..*" FileDefinition : files
+ProjectDefinition "1" *-- "0..*" EntityDefinition : entities / dtos
+ProjectDefinition "1" *-- "0..*" LayerDefinition : layers
+ProjectDefinition "1" *-- "0..*" ServiceDefinition : services
+ProjectDefinition "1" *-- "0..*" EndpointDefinition : endpoints
+DirectoryDefinition "1" *-- "0..*" FileDefinition : files
+EntityDefinition "1" *-- "0..*" PropertyDefinition : properties
+LayerDefinition "1" *-- "0..*" EntityDefinition : entities
+LayerDefinition "1" *-- "0..*" ServiceDefinition : services
+LayerDefinition "1" *-- "0..*" EndpointDefinition : endpoints
+ServiceDefinition "1" *-- "0..*" MethodDefinition : methods
+EndpointDefinition "1" *-- "0..*" MethodDefinition : methods
+MethodDefinition "1" *-- "0..*" PropertyDefinition : parameters
+ProjectDefinition --> ProjectType : type
+
+@enduml

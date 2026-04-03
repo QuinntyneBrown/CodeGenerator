@@ -1,0 +1,93 @@
+@startuml class_model_mapping
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 10
+
+title YAML Config to CodeGenerator Model Mapping
+
+package "YAML Configuration (Input)" {
+    class ScaffoldConfiguration {
+        +name : string
+        +projects : List<ProjectDefinition>
+        +solutions : List<SolutionDefinition>
+        +workspaces : WorkspaceConfig
+    }
+
+    class ProjectDefinition {
+        +name : string
+        +type : ProjectType
+        +path : string
+        +architecture : string
+        +entities : List<EntityDefinition>
+        +dtos : List<DtoDefinition>
+        +pageObjects : List<PageObjectDefinition>
+        +specs : List<SpecDefinition>
+    }
+
+    class EntityDefinition {
+        +name : string
+        +properties : List<PropertyDefinition>
+    }
+
+    class PageObjectDefinition {
+        +name : string
+        +locators : List<LocatorDefinition>
+        +actions : List<ActionDefinition>
+    }
+}
+
+package "CodeGenerator Models (Output)" {
+    class "DotNet.SolutionModel" as SlnModel {
+        +Name : string
+        +Projects : List<ProjectModel>
+    }
+
+    class "DotNet.ProjectModel" as DotNetProj {
+        +Name : string
+        +ProjectType : ProjectType
+    }
+
+    class "DotNet.ClassModel" as DotNetClass {
+        +Name : string
+        +Properties : List<PropertyModel>
+    }
+
+    class "Python.ClassModel" as PyClass {
+        +Name : string
+        +Properties : List<PropertyModel>
+    }
+
+    class "React.WorkspaceModel" as ReactWs {
+        +Name : string
+        +Projects : List<ProjectModel>
+    }
+
+    class "Flask.ProjectModel" as FlaskProj {
+        +Name : string
+    }
+
+    class "Playwright.ProjectModel" as PwProj {
+        +Name : string
+    }
+
+    class "Playwright.PageObjectModel" as PwPage {
+        +Name : string
+        +Locators : List<LocatorModel>
+    }
+
+    class "Detox.ProjectModel" as DetoxProj {
+        +Name : string
+    }
+}
+
+ScaffoldConfiguration ..> SlnModel : "solutions[] ->"
+ProjectDefinition ..> DotNetProj : "type: dotnet-* ->"
+ProjectDefinition ..> ReactWs : "type: react-app ->"
+ProjectDefinition ..> FlaskProj : "type: flask-app ->"
+ProjectDefinition ..> PwProj : "type: playwright-tests ->"
+ProjectDefinition ..> DetoxProj : "type: detox-tests ->"
+EntityDefinition ..> DotNetClass : "C# target ->"
+EntityDefinition ..> PyClass : "Python target ->"
+PageObjectDefinition ..> PwPage : "playwright ->"
+
+@enduml

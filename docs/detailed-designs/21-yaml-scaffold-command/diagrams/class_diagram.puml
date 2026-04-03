@@ -1,0 +1,161 @@
+@startuml class_diagram
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 12
+
+title YAML Scaffold Command — Class Diagram
+
+class ScaffoldCommand <<Command>> {
+    -_serviceProvider : IServiceProvider
+    +ScaffoldCommand(sp : IServiceProvider)
+    -HandleAsync(config, output, dryRun, force, validate, exportSchema, init) : Task
+    __options__
+    -c / --config : string
+    -o / --output : string
+    --dry-run : bool [default: false]
+    --force : bool [default: false]
+    --validate : bool [default: false]
+    --export-schema : bool [default: false]
+    --init : bool [default: false]
+}
+
+class ScaffoldConfiguration {
+    +Name : string
+    +Version : string
+    +OutputPath : string
+    +Description : string
+    +GlobalVariables : Dictionary<string, string>
+    +GitInit : bool
+    +PostScaffoldCommands : List<string>
+    +Projects : List<ProjectDefinition>
+}
+
+class ProjectDefinition {
+    +Name : string
+    +Type : ProjectType
+    +Path : string
+    +Framework : string
+    +Variables : Dictionary<string, string>
+    +Dependencies : List<string>
+    +DevDependencies : List<string>
+    +Directories : List<DirectoryDefinition>
+    +Files : List<FileDefinition>
+    +References : List<string>
+    +Features : List<string>
+    +PostScaffoldCommands : List<string>
+}
+
+class DirectoryDefinition {
+    +Path : string
+    +Files : List<FileDefinition>
+}
+
+class FileDefinition {
+    +Name : string
+    +Content : string
+    +Template : string
+    +Source : string
+    +Encoding : string
+}
+
+enum ProjectType {
+    DotnetWebapi
+    DotnetClasslib
+    DotnetConsole
+    AngularApp
+    AngularLib
+    ReactApp
+    ReactLib
+    ReactNativeApp
+    PythonApp
+    PythonLib
+    FlaskApp
+    PlaywrightTests
+    DetoxTests
+    StaticSite
+    Custom
+}
+
+class ScaffoldOptions {
+    +ConfigPath : string
+    +OutputPath : string
+    +DryRun : bool
+    +Force : bool
+    +ValidateOnly : bool
+}
+
+class ScaffoldResult {
+    +Success : bool
+    +PlannedFiles : List<string>
+    +ConflictingFiles : List<string>
+    +ValidationErrors : List<string>
+    +PostCommandResults : List<CommandResult>
+}
+
+class CommandResult {
+    +Command : string
+    +ExitCode : int
+    +Output : string
+    +WorkingDirectory : string
+}
+
+interface IScaffoldEngine {
+    +ScaffoldAsync(options : ScaffoldOptions) : Task<ScaffoldResult>
+}
+
+interface IYamlConfigParser {
+    +Parse(yamlContent : string) : ScaffoldConfiguration
+    +Validate(config : ScaffoldConfiguration) : List<string>
+}
+
+interface ISchemaExporter {
+    +ExportJsonSchema() : string
+    +GenerateStarterYaml() : string
+}
+
+interface IPostScaffoldExecutor {
+    +ExecuteAsync(config : ScaffoldConfiguration, outputPath : string) : Task<List<CommandResult>>
+}
+
+interface IArtifactGenerator {
+    +GenerateAsync(model) : Task
+}
+
+interface ICommandService {
+    +Start(command, workingDir) : void
+}
+
+ScaffoldCommand ..> IScaffoldEngine : resolves from DI
+ScaffoldCommand ..> ISchemaExporter : resolves from DI
+IScaffoldEngine <|.. ScaffoldEngine : implements
+IYamlConfigParser <|.. YamlConfigParser : implements
+ISchemaExporter <|.. SchemaExporter : implements
+IPostScaffoldExecutor <|.. PostScaffoldExecutor : implements
+
+ScaffoldEngine ..> IYamlConfigParser : uses
+ScaffoldEngine ..> IArtifactGenerator : uses
+ScaffoldEngine ..> IPostScaffoldExecutor : uses
+
+ScaffoldEngine ..> ScaffoldOptions : receives
+ScaffoldEngine ..> ScaffoldResult : returns
+
+ScaffoldConfiguration *-- "0..*" ProjectDefinition : projects
+ProjectDefinition *-- "0..*" DirectoryDefinition : directories
+ProjectDefinition *-- "0..*" FileDefinition : files
+DirectoryDefinition *-- "0..*" FileDefinition : files
+ProjectDefinition --> ProjectType : type
+
+PostScaffoldExecutor ..> ICommandService : uses
+PostScaffoldExecutor ..> CommandResult : returns
+
+class ScaffoldEngine <<IScaffoldEngine>>
+class YamlConfigParser <<IYamlConfigParser>>
+class SchemaExporter <<ISchemaExporter>>
+class PostScaffoldExecutor <<IPostScaffoldExecutor>>
+
+hide ScaffoldEngine members
+hide YamlConfigParser members
+hide SchemaExporter members
+hide PostScaffoldExecutor members
+
+@enduml

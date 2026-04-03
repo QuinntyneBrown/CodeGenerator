@@ -92,6 +92,10 @@ The framework shall automatically generate and update `ConfigureServices.cs` fil
 
 The framework shall execute shell commands cross-platform (Windows/Unix) for operations like `dotnet new`, `npm init`, `pip install`, and other CLI tools used during project scaffolding.
 
+### FR-19: YAML-Driven Codebase Scaffolding
+
+The CLI shall provide a command that scaffolds any codebase from a comprehensive YAML configuration file. The YAML schema shall be technology-agnostic, supporting .NET, Python, Angular, React, SPA (with Playwright Page Object Model testing), Flask, and any other technology stack. The command shall generate the complete initial project structure—directories, files, project configurations, dependency manifests, and boilerplate code—without business logic. The intent is that a user defines requirements, creates a detailed software design, scaffolds the initial codebase via this command, and then fills in specific logic, minimizing token usage when working with AI assistants. The configuration schema shall be comprehensive enough to describe complex multi-project codebases such as those found in production repositories.
+
 ## 4. Non-Functional Requirements
 
 ### NFR-01: Extensibility

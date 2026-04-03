@@ -1,0 +1,72 @@
+@startuml class_type_mapping
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 11
+
+title TypeMapper — Cross-Platform Type Mapping
+
+interface ITypeMapper {
+    +MapType(alias : string, language : string) : string
+    +GetSupportedAliases() : IEnumerable<string>
+    +GetSupportedLanguages() : IEnumerable<string>
+}
+
+class TypeMapper {
+    -_typeMappings : Dictionary<string, Dictionary<string, string>>
+    +MapType(alias : string, language : string) : string
+    +GetSupportedAliases() : IEnumerable<string>
+    +GetSupportedLanguages() : IEnumerable<string>
+}
+
+ITypeMapper <|.. TypeMapper
+
+class "Cross-Platform Aliases" as aliases <<table>> {
+    string
+    int
+    float
+    bool
+    datetime
+    uuid
+    list<T>
+    map<K,V>
+}
+
+class "C# Mappings" as csharp <<table>> {
+    string -> string
+    int -> int
+    float -> double
+    bool -> bool
+    datetime -> DateTime
+    uuid -> Guid
+    list<T> -> List<T>
+    map<K,V> -> Dictionary<K,V>
+}
+
+class "TypeScript Mappings" as typescript <<table>> {
+    string -> string
+    int -> number
+    float -> number
+    bool -> boolean
+    datetime -> Date
+    uuid -> string
+    list<T> -> T[]
+    map<K,V> -> Record<K,V>
+}
+
+class "Python Mappings" as python <<table>> {
+    string -> str
+    int -> int
+    float -> float
+    bool -> bool
+    datetime -> datetime
+    uuid -> UUID
+    list<T> -> list[T]
+    map<K,V> -> dict[K,V]
+}
+
+TypeMapper --> aliases : reads alias
+TypeMapper --> csharp : maps to C#
+TypeMapper --> typescript : maps to TypeScript
+TypeMapper --> python : maps to Python
+
+@enduml

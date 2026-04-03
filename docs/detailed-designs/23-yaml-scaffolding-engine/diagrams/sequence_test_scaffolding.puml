@@ -1,0 +1,54 @@
+@startuml sequence_test_scaffolding
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Playwright Test Project Scaffolding
+
+participant "ProjectScaffolder" as proj
+participant "TestProjectScaffolder" as test
+participant "IArtifactGenerator" as artifact
+participant "ITemplateProcessor" as tmpl
+database "File System" as fs
+
+proj -> test : ScaffoldAsync(playwrightProject)
+activate test
+
+test -> fs : CreateDirectory(pages/, specs/, fixtures/)
+
+test -> artifact : GenerateAsync(playwright.config.ts)
+artifact -> fs : Write playwright.config.ts
+test -> artifact : GenerateAsync(package.json)
+artifact -> fs : Write package.json
+test -> artifact : GenerateAsync(tsconfig.json)
+artifact -> fs : Write tsconfig.json
+
+loop for each pageObject definition
+    test -> test : Build PageObjectModel\nfrom YAML definition
+    test -> test : Generate constructor(page: Page)
+    test -> test : Generate locator fields:\nthis.btn = page.getByTestId('submit')\nthis.input = page.getByRole('textbox')
+    test -> test : Generate action methods:\nasync clickSubmit() { ... }
+    test -> test : Generate query methods:\ngetHeaderText() { ... }
+    test -> artifact : GenerateAsync({Name}Page.ts)
+    artifact -> fs : Write pages/{Name}Page.ts
+end
+
+loop for each spec definition
+    test -> test : Build spec structure:\ntest.describe(name, () => { ... })
+    loop for each test case
+        test -> test : Generate test block:\ntest(testName, async ({ page }) => { ... })
+    end
+    test -> artifact : GenerateAsync({name}.spec.ts)
+    artifact -> fs : Write specs/{name}.spec.ts
+end
+
+loop for each fixture definition
+    test -> tmpl : Render fixture template
+    tmpl --> test : Rendered fixture content
+    test -> artifact : GenerateAsync({name}.ts)
+    artifact -> fs : Write fixtures/{name}.ts
+end
+
+test --> proj : done
+deactivate test
+
+@enduml
