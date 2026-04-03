@@ -10,6 +10,7 @@ public class TypeScriptInterfaceModel : SyntaxModel
         Name = name;
         Properties = [];
         Extends = [];
+        SubInterfaces = [];
     }
 
     public string Name { get; set; }
@@ -17,4 +18,6 @@ public class TypeScriptInterfaceModel : SyntaxModel
     public List<PropertyModel> Properties { get; set; }
 
     public List<string> Extends { get; set; }
+
+    public List<TypeScriptInterfaceModel> SubInterfaces { get; set; }
 }

@@ -47,7 +47,16 @@ public class StoreSyntaxGenerationStrategy : ISyntaxGenerationStrategy<StoreMode
 
         foreach (var action in model.Actions)
         {
-            builder.AppendLine($"{namingConventionConverter.Convert(NamingConvention.CamelCase, action)}: () => void;".Indent(1, 2));
+            var actionName = namingConventionConverter.Convert(NamingConvention.CamelCase, action);
+
+            if (model.ActionImplementations.TryGetValue(action, out var impl))
+            {
+                builder.AppendLine($"{actionName}: (...args: any[]) => void;".Indent(1, 2));
+            }
+            else
+            {
+                builder.AppendLine($"{actionName}: () => void;".Indent(1, 2));
+            }
         }
 
         builder.AppendLine("}");
@@ -60,6 +69,20 @@ public class StoreSyntaxGenerationStrategy : ISyntaxGenerationStrategy<StoreMode
             var propertyName = namingConventionConverter.Convert(NamingConvention.CamelCase, property.Name);
             var defaultValue = GetDefaultValue(property.Type.Name);
             builder.AppendLine($"{propertyName}: {defaultValue},".Indent(1, 2));
+        }
+
+        foreach (var action in model.Actions)
+        {
+            var actionName = namingConventionConverter.Convert(NamingConvention.CamelCase, action);
+
+            if (model.ActionImplementations.TryGetValue(action, out var impl))
+            {
+                builder.AppendLine($"{actionName}: {impl},".Indent(1, 2));
+            }
+            else
+            {
+                builder.AppendLine($"{actionName}: () => set({{}}),".Indent(1, 2));
+            }
         }
 
         builder.AppendLine("}));");

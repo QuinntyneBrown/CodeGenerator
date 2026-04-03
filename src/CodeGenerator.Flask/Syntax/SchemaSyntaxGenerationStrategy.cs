@@ -29,7 +29,15 @@ public class SchemaSyntaxGenerationStrategy : ISyntaxGenerationStrategy<SchemaMo
 
         // Collect all imports and deduplicate by module
         var importsByModule = new Dictionary<string, HashSet<string>>();
-        importsByModule["marshmallow"] = new HashSet<string> { "Schema", "fields", "validate" };
+        if (model.BaseClass.Contains("SQLAlchemy"))
+        {
+            importsByModule["marshmallow_sqlalchemy"] = new HashSet<string> { model.BaseClass };
+            importsByModule["marshmallow"] = new HashSet<string> { "fields", "validate" };
+        }
+        else
+        {
+            importsByModule["marshmallow"] = new HashSet<string> { model.BaseClass, "fields", "validate" };
+        }
 
         foreach (var import in model.Imports)
         {
@@ -66,7 +74,7 @@ public class SchemaSyntaxGenerationStrategy : ISyntaxGenerationStrategy<SchemaMo
             ? className
             : $"{className}Schema";
 
-        builder.AppendLine($"class {schemaClassName}(Schema):");
+        builder.AppendLine($"class {schemaClassName}({model.BaseClass}):");
 
         if (model.Fields.Count == 0)
         {
@@ -75,10 +83,20 @@ public class SchemaSyntaxGenerationStrategy : ISyntaxGenerationStrategy<SchemaMo
         else
         {
             // Meta class
-            if (!string.IsNullOrEmpty(model.ModelReference))
+            if (!string.IsNullOrEmpty(model.ModelReference) || model.MetaOptions.Count > 0)
             {
                 builder.AppendLine("    class Meta:");
-                builder.AppendLine($"        model = {model.ModelReference}");
+
+                if (!string.IsNullOrEmpty(model.ModelReference))
+                {
+                    builder.AppendLine($"        model = {model.ModelReference}");
+                }
+
+                foreach (var option in model.MetaOptions)
+                {
+                    builder.AppendLine($"        {option.Key} = {option.Value}");
+                }
+
                 builder.AppendLine();
             }
 
@@ -112,6 +130,47 @@ public class SchemaSyntaxGenerationStrategy : ISyntaxGenerationStrategy<SchemaMo
                 var args = fieldArgs.Count > 0 ? string.Join(", ", fieldArgs) : string.Empty;
 
                 builder.AppendLine($"    {fieldName} = fields.{field.FieldType}({args})");
+            }
+        }
+
+        foreach (var subSchema in model.SubSchemas)
+        {
+            builder.AppendLine();
+            builder.AppendLine();
+
+            var subClassName = namingConventionConverter.Convert(NamingConvention.PascalCase, subSchema.Name);
+            if (!subClassName.EndsWith("Schema", StringComparison.OrdinalIgnoreCase))
+            {
+                subClassName += "Schema";
+            }
+
+            builder.AppendLine($"class {subClassName}({subSchema.BaseClass}):");
+
+            if (subSchema.Fields.Count == 0)
+            {
+                builder.AppendLine("    pass");
+            }
+            else
+            {
+                foreach (var field in subSchema.Fields)
+                {
+                    var fieldName = namingConventionConverter.Convert(NamingConvention.KebobCase, field.Name);
+                    var fieldArgs = new List<string>();
+
+                    if (field.Required)
+                    {
+                        fieldArgs.Add("required=True");
+                    }
+
+                    foreach (var validation in field.Validations)
+                    {
+                        var validationExpr = validation.StartsWith("validate.") ? validation : $"validate.{validation}";
+                        fieldArgs.Add($"validate={validationExpr}");
+                    }
+
+                    var args = fieldArgs.Count > 0 ? string.Join(", ", fieldArgs) : string.Empty;
+                    builder.AppendLine($"    {fieldName} = fields.{field.FieldType}({args})");
+                }
             }
         }
 

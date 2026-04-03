@@ -10,6 +10,7 @@ public class StoreModel : SyntaxModel
         Name = name;
         StateProperties = [];
         Actions = [];
+        ActionImplementations = new();
     }
 
     public string Name { get; set; }
@@ -17,4 +18,8 @@ public class StoreModel : SyntaxModel
     public List<PropertyModel> StateProperties { get; set; }
 
     public List<string> Actions { get; set; }
+
+    public Dictionary<string, string> ActionImplementations { get; set; }
+
+    public string? EntityName { get; set; }
 }

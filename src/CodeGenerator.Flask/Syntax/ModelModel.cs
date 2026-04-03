@@ -61,6 +61,16 @@ public class ColumnModel
     public bool Nullable { get; set; } = true;
 
     public string? DefaultValue { get; set; }
+
+    public bool Unique { get; set; }
+
+    public bool Index { get; set; }
+
+    public bool Autoincrement { get; set; }
+
+    public string? OnUpdate { get; set; }
+
+    public bool PrimaryKey { get; set; }
 }
 
 public class RelationshipModel
@@ -77,7 +87,13 @@ public class RelationshipModel
 
     public string? BackRef { get; set; }
 
+    public string? BackPopulates { get; set; }
+
     public bool Lazy { get; set; } = true;
 
+    public string? LazyMode { get; set; }
+
     public bool Uselist { get; set; } = true;
+
+    public string? Cascade { get; set; }
 }

@@ -26,6 +26,12 @@ public class SchemaModel : SyntaxModel
     public List<ImportModel> Imports { get; set; }
 
     public string? ModelReference { get; set; }
+
+    public string BaseClass { get; set; } = "Schema";
+
+    public Dictionary<string, string> MetaOptions { get; set; } = new();
+
+    public List<SchemaModel> SubSchemas { get; set; } = [];
 }
 
 public class SchemaFieldModel

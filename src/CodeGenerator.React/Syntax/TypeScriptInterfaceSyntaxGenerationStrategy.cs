@@ -35,10 +35,34 @@ public class TypeScriptInterfaceSyntaxGenerationStrategy : ISyntaxGenerationStra
 
         foreach (var property in model.Properties)
         {
-            builder.AppendLine($"{namingConventionConverter.Convert(NamingConvention.CamelCase, property.Name)}?: {namingConventionConverter.Convert(NamingConvention.CamelCase, property.Type.Name)};".Indent(1, 2));
+            var propName = namingConventionConverter.Convert(NamingConvention.CamelCase, property.Name);
+            var typeName = property.Type.Name;
+            var optionalMarker = property.IsOptional ? "?" : "";
+            builder.AppendLine($"{propName}{optionalMarker}: {typeName};".Indent(1, 2));
         }
 
         builder.AppendLine("}");
+
+        foreach (var sub in model.SubInterfaces)
+        {
+            builder.AppendLine();
+
+            var subExtendsClause = sub.Extends.Count > 0
+                ? $" extends {string.Join(", ", sub.Extends)}"
+                : string.Empty;
+
+            builder.AppendLine($"export interface {namingConventionConverter.Convert(NamingConvention.PascalCase, sub.Name)}{subExtendsClause}" + " {");
+
+            foreach (var property in sub.Properties)
+            {
+                var propName = namingConventionConverter.Convert(NamingConvention.CamelCase, property.Name);
+                var typeName = property.Type.Name;
+                var optionalMarker = property.IsOptional ? "?" : "";
+                builder.AppendLine($"{propName}{optionalMarker}: {typeName};".Indent(1, 2));
+            }
+
+            builder.AppendLine("}");
+        }
 
         return StringBuilderCache.GetStringAndRelease(builder);
     }

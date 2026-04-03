@@ -118,6 +118,26 @@ public class ModelSyntaxGenerationStrategy : ISyntaxGenerationStrategy<ModelMode
                     }
                 }
 
+                if (column.PrimaryKey)
+                {
+                    colDef += ", primary_key=True";
+                }
+
+                if (column.Autoincrement)
+                {
+                    colDef += ", autoincrement=True";
+                }
+
+                if (column.Unique)
+                {
+                    colDef += ", unique=True";
+                }
+
+                if (column.Index)
+                {
+                    colDef += ", index=True";
+                }
+
                 if (!column.Nullable)
                 {
                     colDef += ", nullable=False";
@@ -126,6 +146,11 @@ public class ModelSyntaxGenerationStrategy : ISyntaxGenerationStrategy<ModelMode
                 if (column.DefaultValue != null)
                 {
                     colDef += $", default={column.DefaultValue}";
+                }
+
+                if (column.OnUpdate != null)
+                {
+                    colDef += $", onupdate={column.OnUpdate}";
                 }
 
                 colDef += ")";
@@ -142,12 +167,20 @@ public class ModelSyntaxGenerationStrategy : ISyntaxGenerationStrategy<ModelMode
                     var relName = namingConventionConverter.Convert(NamingConvention.KebobCase, relationship.Name);
                     var relDef = $"db.relationship('{relationship.Target}'";
 
-                    if (!string.IsNullOrEmpty(relationship.BackRef))
+                    if (!string.IsNullOrEmpty(relationship.BackPopulates))
+                    {
+                        relDef += $", back_populates='{relationship.BackPopulates}'";
+                    }
+                    else if (!string.IsNullOrEmpty(relationship.BackRef))
                     {
                         relDef += $", backref='{relationship.BackRef}'";
                     }
 
-                    if (relationship.Lazy)
+                    if (!string.IsNullOrEmpty(relationship.LazyMode))
+                    {
+                        relDef += $", lazy=\"{relationship.LazyMode}\"";
+                    }
+                    else if (relationship.Lazy)
                     {
                         relDef += ", lazy=True";
                     }
@@ -155,6 +188,11 @@ public class ModelSyntaxGenerationStrategy : ISyntaxGenerationStrategy<ModelMode
                     if (!relationship.Uselist)
                     {
                         relDef += ", uselist=False";
+                    }
+
+                    if (!string.IsNullOrEmpty(relationship.Cascade))
+                    {
+                        relDef += $", cascade=\"{relationship.Cascade}\"";
                     }
 
                     relDef += ")";
