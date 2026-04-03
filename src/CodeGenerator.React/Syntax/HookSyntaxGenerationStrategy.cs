@@ -60,9 +60,12 @@ public class HookSyntaxGenerationStrategy : ISyntaxGenerationStrategy<HookModel>
 
         builder.AppendLine($"export function {hookName}{typeParams}({paramsString}){returnTypeClause}" + " {");
 
-        foreach (var line in model.Body.Split(Environment.NewLine))
+        if (!string.IsNullOrEmpty(model.Body))
         {
-            builder.AppendLine(line.Indent(1, 2));
+            foreach (var line in model.Body.Split(Environment.NewLine))
+            {
+                builder.AppendLine(line.Indent(1, 2));
+            }
         }
 
         foreach (var effect in model.Effects)

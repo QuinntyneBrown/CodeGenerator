@@ -45,7 +45,10 @@ public class FunctionSyntaxGenerationStrategy : ISyntaxGenerationStrategy<Functi
         var returnTypeStr = !string.IsNullOrEmpty(model.ReturnType) ? $": {model.ReturnType}" : "";
         builder.AppendLine($"export function {funcName}({paramsStr}){returnTypeStr}" + " {");
 
-        builder.AppendLine(model.Body.Indent(1, 2));
+        if (!string.IsNullOrEmpty(model.Body))
+        {
+            builder.AppendLine(model.Body.Indent(1, 2));
+        }
 
         builder.AppendLine("};");
 

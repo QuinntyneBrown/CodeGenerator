@@ -29,7 +29,7 @@ public class SchemaSyntaxGenerationStrategy : ISyntaxGenerationStrategy<SchemaMo
 
         // Collect all imports and deduplicate by module
         var importsByModule = new Dictionary<string, HashSet<string>>();
-        if (model.BaseClass.Contains("SQLAlchemy"))
+        if (!string.IsNullOrEmpty(model.BaseClass) && model.BaseClass.Contains("SQLAlchemy"))
         {
             importsByModule["marshmallow_sqlalchemy"] = new HashSet<string> { model.BaseClass };
             importsByModule["marshmallow"] = new HashSet<string> { "fields", "validate" };

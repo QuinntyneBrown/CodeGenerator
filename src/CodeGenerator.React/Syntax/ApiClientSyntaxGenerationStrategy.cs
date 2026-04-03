@@ -65,7 +65,7 @@ public class ApiClientSyntaxGenerationStrategy : ISyntaxGenerationStrategy<ApiCl
             foreach (var method in model.Methods)
             {
                 var methodName = namingConventionConverter.Convert(NamingConvention.CamelCase, method.Name);
-                var httpMethod = method.HttpMethod.ToLowerInvariant();
+                var httpMethod = (method.HttpMethod ?? "GET").ToLowerInvariant();
                 var axiosClient = model.UseSharedInstance ? "apiClient" : "axios";
 
                 // Build params
@@ -154,7 +154,7 @@ public class ApiClientSyntaxGenerationStrategy : ISyntaxGenerationStrategy<ApiCl
             foreach (var method in model.Methods)
             {
                 var methodName = namingConventionConverter.Convert(NamingConvention.CamelCase, method.Name);
-                var httpMethod = method.HttpMethod.ToLowerInvariant();
+                var httpMethod = (method.HttpMethod ?? "GET").ToLowerInvariant();
 
                 // Extract route parameters (e.g., ${id} -> id: string)
                 var routeParams = new List<string>();

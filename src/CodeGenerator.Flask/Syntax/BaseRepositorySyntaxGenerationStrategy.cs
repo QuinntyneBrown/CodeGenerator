@@ -156,8 +156,9 @@ public class BaseRepositorySyntaxGenerationStrategy : ISyntaxGenerationStrategy<
                 builder.AppendLine("    def delete(self, entity):");
             }
 
-            builder.AppendLine($"        \"\"\"Soft-delete by setting {model.SoftDeleteColumn} flag.\"\"\"");
-            builder.AppendLine($"        entity.{model.SoftDeleteColumn} = True");
+            var softDeleteCol = string.IsNullOrEmpty(model.SoftDeleteColumn) ? "is_deleted" : model.SoftDeleteColumn;
+            builder.AppendLine($"        \"\"\"Soft-delete by setting {softDeleteCol} flag.\"\"\"");
+            builder.AppendLine($"        entity.{softDeleteCol} = True");
             builder.AppendLine("        db.session.commit()");
         }
         else
