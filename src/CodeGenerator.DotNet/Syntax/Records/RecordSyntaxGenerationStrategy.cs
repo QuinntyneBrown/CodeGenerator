@@ -37,6 +37,12 @@ public class RecordSyntaxGenerationStrategy : ISyntaxGenerationStrategy<RecordMo
 
         sb.Append($"{typeKeyword} {model.Name}");
 
+        if (model.PrimaryConstructorParams.Count > 0)
+        {
+            var paramStrings = await Task.WhenAll(model.PrimaryConstructorParams.Select(async p => await _syntaxGenerator.GenerateAsync(p)));
+            sb.Append($"({string.Join(", ", paramStrings)})");
+        }
+
         if (model.Implements.Count > 0)
         {
             var implementNames = await Task.WhenAll(model.Implements.Select(async x => await _syntaxGenerator.GenerateAsync(x)));
@@ -56,6 +62,11 @@ public class RecordSyntaxGenerationStrategy : ISyntaxGenerationStrategy<RecordMo
         foreach (var property in model.Properties)
         {
             sb.AppendLine(((string)await _syntaxGenerator.GenerateAsync(property)).Indent(1));
+
+            if (property != model.Properties.Last())
+            {
+                sb.AppendLine();
+            }
         }
 
         sb.AppendLine("}");

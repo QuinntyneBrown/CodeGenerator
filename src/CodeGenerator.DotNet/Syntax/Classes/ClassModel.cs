@@ -83,24 +83,29 @@ public class ClassModel : InterfaceModel
 
     public override IEnumerable<SyntaxModel> GetChildren()
     {
+        foreach (var field in Fields)
+        {
+            yield return field;
+        }
+
+        foreach (var constructor in Constructors)
+        {
+            yield return constructor;
+        }
+
+        foreach (var property in Properties)
+        {
+            yield return property;
+        }
+
         foreach (var method in Methods)
         {
             yield return method;
         }
 
-        foreach (var method in Fields)
+        foreach (var attribute in Attributes)
         {
-            yield return method;
-        }
-
-        foreach (var method in Constructors)
-        {
-            yield return method;
-        }
-
-        foreach (var method in Attributes)
-        {
-            yield return method;
+            yield return attribute;
         }
 
         foreach (var implements in Implements)

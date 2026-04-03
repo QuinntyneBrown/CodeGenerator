@@ -88,7 +88,11 @@ public class MethodSyntaxGenerationStrategy : ISyntaxGenerationStrategy<MethodMo
             }
         }
 
-        if (model.ExpressionBody && model.Body != null)
+        if (model.Interface && model.Body == null)
+        {
+            builder.Append(';');
+        }
+        else if (model.ExpressionBody && model.Body != null)
         {
             string body = await _syntaxGenerator.GenerateAsync(model.Body);
             builder.AppendLine();

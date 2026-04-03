@@ -32,7 +32,7 @@ public class PropertiesSyntaxGenerationStrategy : ISyntaxGenerationStrategy<List
 
         foreach (var property in model)
         {
-            builder.Append(await syntaxGenerator.GenerateAsync(property));
+            builder.AppendLine(await syntaxGenerator.GenerateAsync(property));
 
             if (property != model.Last())
             {

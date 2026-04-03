@@ -38,6 +38,11 @@ public class TypeSyntaxGenerationStrategy : ISyntaxGenerationStrategy<TypeModel>
             builder.Append('>');
         }
 
+        if (model.Nullable)
+        {
+            builder.Append('?');
+        }
+
         return StringBuilderCache.GetStringAndRelease(builder);
     }
 }

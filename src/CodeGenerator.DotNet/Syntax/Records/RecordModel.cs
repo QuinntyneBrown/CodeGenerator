@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
+using CodeGenerator.DotNet.Syntax.Params;
 using CodeGenerator.DotNet.Syntax.Properties;
 
 namespace CodeGenerator.DotNet.Syntax.Records;
@@ -14,6 +15,7 @@ public class RecordModel : SyntaxModel
     {
         Properties = [];
         Implements = [];
+        PrimaryConstructorParams = [];
     }
 
     public RecordModel(string name) : this()
@@ -23,11 +25,13 @@ public class RecordModel : SyntaxModel
 
     public string Name { get; set; }
 
-    public RecordType Type { get; set; } = RecordType.Struct;
+    public RecordType Type { get; set; } = RecordType.Record;
 
     public AccessModifier AccessModifier { get; set; } = AccessModifier.Public;
 
     public List<PropertyModel> Properties { get; set; }
 
     public List<TypeModel> Implements { get; set; }
+
+    public List<ParamModel> PrimaryConstructorParams { get; set; }
 }

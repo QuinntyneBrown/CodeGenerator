@@ -5,6 +5,7 @@ namespace CodeGenerator.DotNet.Syntax.Records;
 
 public enum RecordType
 {
+    Record,
     Class,
     Struct,
 }

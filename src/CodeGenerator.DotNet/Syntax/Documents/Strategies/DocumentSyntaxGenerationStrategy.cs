@@ -13,8 +13,9 @@ public class DocumentGenerationStrategy : ISyntaxGenerationStrategy<DocumentMode
     private readonly ILogger<DocumentGenerationStrategy> logger;
     private readonly ISyntaxGenerator syntaxGenerator;
 
-    public DocumentGenerationStrategy(ILogger<DocumentGenerationStrategy> logger)
+    public DocumentGenerationStrategy(ISyntaxGenerator syntaxGenerator, ILogger<DocumentGenerationStrategy> logger)
     {
+        this.syntaxGenerator = syntaxGenerator ?? throw new ArgumentNullException(nameof(syntaxGenerator));
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
