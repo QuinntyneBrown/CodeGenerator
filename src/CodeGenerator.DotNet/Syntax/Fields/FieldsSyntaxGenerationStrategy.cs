@@ -50,14 +50,21 @@ public class FieldsSyntaxGenerationStrategy : ISyntaxGenerationStrategy<List<Fie
 
         builder.Append(await syntaxGenerator.GenerateAsync(model.AccessModifier));
 
-        if (model.Static)
+        if (model.Const)
         {
-            builder.Append(" static");
+            builder.Append(" const");
         }
-
-        if (model.ReadOnly)
+        else
         {
-            builder.Append(" readonly");
+            if (model.Static)
+            {
+                builder.Append(" static");
+            }
+
+            if (model.ReadOnly)
+            {
+                builder.Append(" readonly");
+            }
         }
 
         if (!string.IsNullOrEmpty(model.DefaultValue))

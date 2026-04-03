@@ -11,6 +11,7 @@ public class AttributeModel : SyntaxModel
     public AttributeModel()
     {
         Properties = [];
+        RawProperties = [];
         Params = [];
     }
 
@@ -19,6 +20,7 @@ public class AttributeModel : SyntaxModel
         Type = type;
         Name = name;
         Properties = properties;
+        RawProperties = [];
     }
 
     public AttributeType Type { get; init; }
@@ -26,6 +28,8 @@ public class AttributeModel : SyntaxModel
     public string Name { get; init; }
 
     public Dictionary<string, string> Properties { get; init; }
+
+    public Dictionary<string, string> RawProperties { get; init; }
 
     public List<ParamModel> Params { get; set; }
 

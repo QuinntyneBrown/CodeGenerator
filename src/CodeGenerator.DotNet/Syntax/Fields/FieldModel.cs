@@ -27,6 +27,8 @@ public class FieldModel : SyntaxModel
 
     public bool ReadOnly { get; set; }
 
+    public bool Const { get; set; }
+
     public string DefaultValue { get; set; }
 
     public bool Static { get; set; } = false;

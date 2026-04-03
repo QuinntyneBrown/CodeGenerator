@@ -40,19 +40,21 @@ public class PropertyModel : SyntaxModel
 
     public bool ForceAccessModifier { get; set; }
 
-    public AccessModifier AccessModifier { get; private set; }
+    public bool Static { get; set; }
 
-    public TypeModel Type { get; private set; }
+    public AccessModifier AccessModifier { get; set; }
 
-    public List<PropertyAccessorModel> Accessors { get; private set; } = [];
+    public TypeModel Type { get; set; }
+
+    public List<PropertyAccessorModel> Accessors { get; set; } = [];
 
     public List<AttributeModel> Attributes { get; set; } = [];
 
-    public string Name { get; private set; }
+    public string Name { get; set; }
 
-    public bool Required { get; private set; }
+    public bool Required { get; set; }
 
-    public bool Id { get; private set; }
+    public bool Id { get; set; }
 
     public bool Interface { get; set; }
 

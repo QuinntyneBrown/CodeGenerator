@@ -24,9 +24,10 @@ public class DocumentGenerationStrategy : ISyntaxGenerationStrategy<DocumentMode
 
         StringBuilder stringBuilder = new();
 
-        foreach (var @using in model.GetDescendants().SelectMany(x => x.Usings.Select(x => x.Name)).Distinct())
+        foreach (var @using in model.GetDescendants().SelectMany(x => x.Usings).DistinctBy(x => x.Name))
         {
-            stringBuilder.AppendLine($"using {@using};");
+            var globalPrefix = @using.Global ? "global " : "";
+            stringBuilder.AppendLine($"{globalPrefix}using {@using.Name};");
         }
 
         stringBuilder.AppendLine();

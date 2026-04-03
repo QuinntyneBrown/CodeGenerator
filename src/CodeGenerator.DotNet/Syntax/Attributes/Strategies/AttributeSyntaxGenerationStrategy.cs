@@ -1,6 +1,7 @@
 // Copyright (c) Quinntyne Brown. All Rights Reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Microsoft.Extensions.Logging;
@@ -28,47 +29,32 @@ public class AttributeSyntaxGenerationStrategy : ISyntaxGenerationStrategy<Attri
 
         builder.Append(target.Name);
 
-        if (target.Template != null && target.Properties.Count == 0)
+        var allProps = new List<string>();
+
+        if (target.Template != null)
         {
-            builder.Append($"({target.Template})");
+            allProps.Add(target.Template);
         }
 
-        if (target.Properties != null && target.Properties.Count == 1)
+        if (target.Properties != null)
         {
-            builder.Append('(');
-
-            if (target.Template != null)
-            {
-                builder.Append($"{target.Template}, ");
-            }
-
             foreach (var property in target.Properties)
             {
-                builder.Append($"{property.Key} = \"{property.Value}\"");
+                allProps.Add($"{property.Key} = \"{property.Value}\"");
             }
-
-            builder.Append(')');
         }
 
-        if (target.Properties != null && target.Properties.Count > 1)
+        if (target.RawProperties != null)
         {
-            builder.AppendLine("(");
-
-            foreach (var property in target.Properties)
+            foreach (var property in target.RawProperties)
             {
-                var propertyKeyValuePair = StringBuilderCache.Acquire();
-
-                propertyKeyValuePair.Append($"{property.Key} = \"{property.Value}\"");
-
-                if (property.Key != target.Properties.Last().Key)
-                {
-                    propertyKeyValuePair.Append(',');
-                }
-
-                builder.AppendLine($"{propertyKeyValuePair}".Indent(1));
+                allProps.Add($"{property.Key} = {property.Value}");
             }
+        }
 
-            builder.Append(')');
+        if (allProps.Count > 0)
+        {
+            builder.Append($"({string.Join(", ", allProps)})");
         }
 
         builder.Append(']');

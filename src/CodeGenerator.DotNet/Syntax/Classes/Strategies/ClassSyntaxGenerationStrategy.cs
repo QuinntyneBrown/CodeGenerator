@@ -1,6 +1,7 @@
 // Copyright (c) Quinntyne Brown. All Rights Reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using CodeGenerator.DotNet.Services;
@@ -56,16 +57,58 @@ public class ClassSyntaxGenerationStrategy : ISyntaxGenerationStrategy<ClassMode
             builder.Append(" static");
         }
 
+        if (model.Abstract)
+        {
+            builder.Append(" abstract");
+        }
+
+        if (model.Sealed)
+        {
+            builder.Append(" sealed");
+        }
+
         builder.Append($" class {model.Name}");
+
+        if (model.GenericTypeParameters.Count > 0)
+        {
+            builder.Append($"<{string.Join(", ", model.GenericTypeParameters)}>");
+        }
+
+        if (model.PrimaryConstructorParams.Count > 0)
+        {
+            var paramStrings = await Task.WhenAll(model.PrimaryConstructorParams.Select(async p => await _syntaxGenerator.GenerateAsync(p)));
+            builder.Append($"({string.Join(", ", paramStrings)})");
+        }
+
+        var baseTypes = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(model.BaseClass))
+        {
+            baseTypes.Add(model.BaseClass);
+        }
 
         if (model.Implements.Count > 0)
         {
-            builder.Append(": ");
-
-            builder.Append(string.Join(',', await Task.WhenAll(model.Implements.Select(async x => await _syntaxGenerator.GenerateAsync(x)))));
+            var implementNames = await Task.WhenAll(model.Implements.Select(async x => await _syntaxGenerator.GenerateAsync(x)));
+            baseTypes.AddRange(implementNames);
         }
 
-        if (model.Properties.Count + model.Methods.Count + model.Constructors.Count + model.Fields.Count == 0)
+        if (baseTypes.Count > 0)
+        {
+            builder.Append(" : ");
+            builder.Append(string.Join(", ", baseTypes));
+        }
+
+        if (model.GenericConstraints.Count > 0)
+        {
+            foreach (var constraint in model.GenericConstraints)
+            {
+                builder.AppendLine();
+                builder.Append($"    {constraint}");
+            }
+        }
+
+        if (model.Properties.Count + model.Methods.Count + model.Constructors.Count + model.Fields.Count + model.InnerClasses.Count == 0)
         {
             builder.Append(" { }");
 
@@ -98,6 +141,14 @@ public class ClassSyntaxGenerationStrategy : ISyntaxGenerationStrategy<ClassMode
             _context.Set(new MethodModel() { Interface = false });
 
             builder.AppendLine(((string)await _syntaxGenerator.GenerateAsync(model.Methods)).Indent(1));
+        }
+
+        if (model.InnerClasses.Count > 0)
+        {
+            foreach (var innerClass in model.InnerClasses)
+            {
+                builder.AppendLine(((string)await _syntaxGenerator.GenerateAsync(innerClass)).Indent(1));
+            }
         }
 
         builder.AppendLine("}");

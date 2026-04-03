@@ -8,6 +8,7 @@ using CodeGenerator.DotNet.Syntax.Constructors;
 using CodeGenerator.DotNet.Syntax.Fields;
 using CodeGenerator.DotNet.Syntax.Interfaces;
 using CodeGenerator.DotNet.Syntax.Methods;
+using CodeGenerator.DotNet.Syntax.Params;
 
 namespace CodeGenerator.DotNet.Syntax.Classes;
 
@@ -18,6 +19,7 @@ public class ClassModel : InterfaceModel
         Fields = [];
         Constructors = [];
         Attributes = [];
+        PrimaryConstructorParams = [];
         AccessModifier = AccessModifier.Public;
     }
 
@@ -31,6 +33,7 @@ public class ClassModel : InterfaceModel
         Fields = [];
         Constructors = [];
         Attributes = [];
+        PrimaryConstructorParams = [];
         AccessModifier = AccessModifier.Public;
     }
 
@@ -42,11 +45,21 @@ public class ClassModel : InterfaceModel
 
     public List<AttributeModel> Attributes { get; set; }
 
+    public List<ParamModel> PrimaryConstructorParams { get; set; }
+
+    public List<string> GenericTypeParameters { get; set; } = [];
+
+    public List<string> GenericConstraints { get; set; } = [];
+
     public bool Static { get; set; }
+
+    public bool Abstract { get; set; }
 
     public bool Sealed { get; set; }
 
     public string BaseClass { get; set; }
+
+    public List<ClassModel> InnerClasses { get; set; } = [];
 
     public override ValidationResult Validate()
     {
@@ -93,6 +106,11 @@ public class ClassModel : InterfaceModel
         foreach (var implements in Implements)
         {
             yield return implements;
+        }
+
+        foreach (var innerClass in InnerClasses)
+        {
+            yield return innerClass;
         }
     }
 }

@@ -43,17 +43,31 @@ public class PropertySyntaxGenerationStrategy : ISyntaxGenerationStrategy<Proper
 
             builder.Append(" ");
 
+            if (model.Static)
+            {
+                builder.Append("static ");
+            }
+
             if (model.Required)
             {
                 builder.Append("required ");
             }
         }
 
-        builder.Append($"{await _syntaxGenerator.GenerateAsync(model.Type)} {model.Name} {await _syntaxGenerator.GenerateAsync(model.Accessors)}");
+        builder.Append($"{await _syntaxGenerator.GenerateAsync(model.Type)} {model.Name}");
 
-        if (model.IsClassProperty && !string.IsNullOrEmpty(model.DefaultValue))
+        if (model.Body != null)
         {
-            builder.Append($" = {model.DefaultValue};");
+            builder.Append($" => {await _syntaxGenerator.GenerateAsync(model.Body)};");
+        }
+        else
+        {
+            builder.Append($" {await _syntaxGenerator.GenerateAsync(model.Accessors)}");
+
+            if (model.IsClassProperty && !string.IsNullOrEmpty(model.DefaultValue))
+            {
+                builder.Append($" = {model.DefaultValue};");
+            }
         }
 
         return StringBuilderCache.GetStringAndRelease(builder);

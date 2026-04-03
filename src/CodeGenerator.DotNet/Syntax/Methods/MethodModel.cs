@@ -36,6 +36,8 @@ public class MethodModel : SyntaxModel
 
     public string Name { get; set; }
 
+    public bool Virtual { get; set; }
+
     public bool Override { get; set; }
 
     public TypeModel ReturnType { get; set; }
@@ -53,4 +55,6 @@ public class MethodModel : SyntaxModel
     public bool ImplicitOperator { get; set; } = false;
 
     public bool ExplicitOperator { get; set; } = false;
+
+    public bool ExpressionBody { get; set; }
 }

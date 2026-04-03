@@ -33,6 +33,16 @@ public class MethodSyntaxGenerationStrategy : ISyntaxGenerationStrategy<MethodMo
 
         builder.Append(await _syntaxGenerator.GenerateAsync(model.AccessModifier));
 
+        if (model.Params.SingleOrDefault(x => x.ExtensionMethodParam) != null || model.Static)
+        {
+            builder.Append(" static");
+        }
+
+        if (model.Virtual)
+        {
+            builder.Append(" virtual");
+        }
+
         if (model.Override)
         {
             builder.Append(" override");
@@ -41,11 +51,6 @@ public class MethodSyntaxGenerationStrategy : ISyntaxGenerationStrategy<MethodMo
         if (model.Async)
         {
             builder.Append(" async");
-        }
-
-        if (model.Params.SingleOrDefault(x => x.ExtensionMethodParam) != null || model.Static)
-        {
-            builder.Append(" static");
         }
 
         if (model.ImplicitOperator)
@@ -63,13 +68,33 @@ public class MethodSyntaxGenerationStrategy : ISyntaxGenerationStrategy<MethodMo
 
         builder.Append($" {model.Name}");
 
+        if (model.GenericTypeParameters.Count > 0)
+        {
+            builder.Append($"<{string.Join(", ", model.GenericTypeParameters)}>");
+        }
+
         builder.Append('(');
 
-        builder.Append(string.Join(',', await Task.WhenAll(model.Params.Select(async x => await _syntaxGenerator.GenerateAsync(x)))));
+        builder.Append(string.Join(", ", await Task.WhenAll(model.Params.Select(async x => await _syntaxGenerator.GenerateAsync(x)))));
 
         builder.Append(')');
 
-        if (model.Body == null)
+        if (model.GenericConstraints.Count > 0)
+        {
+            foreach (var constraint in model.GenericConstraints)
+            {
+                builder.AppendLine();
+                builder.Append($"    {constraint}");
+            }
+        }
+
+        if (model.ExpressionBody && model.Body != null)
+        {
+            string body = await _syntaxGenerator.GenerateAsync(model.Body);
+            builder.AppendLine();
+            builder.Append($"    => {body};");
+        }
+        else if (model.Body == null)
         {
             builder.AppendLine();
             builder.AppendLine("{");

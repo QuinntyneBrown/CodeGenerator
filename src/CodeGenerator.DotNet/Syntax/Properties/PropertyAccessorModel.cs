@@ -36,9 +36,11 @@ public class PropertyAccessorModel
 
     public static List<PropertyAccessorModel> GetInit => new List<PropertyAccessorModel>() { Get, Init };
 
-    public string AccessModifier { get; private set; }
+    public string AccessModifier { get; set; }
 
-    public PropertyAccessorType Type { get; private set; }
+    public PropertyAccessorType Type { get; set; }
+
+    public string Body { get; set; }
 
     public static bool IsGetPrivateSet(List<PropertyAccessorModel> accessors)
     {

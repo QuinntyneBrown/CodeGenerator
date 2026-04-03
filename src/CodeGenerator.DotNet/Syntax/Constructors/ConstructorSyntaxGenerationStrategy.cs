@@ -39,13 +39,15 @@ public class ConstructorSyntaxGenerationStrategy : ISyntaxGenerationStrategy<Con
 
         builder.Append('(');
 
-        builder.Append(string.Join(',', await Task.WhenAll(model.Params.Select(async x => await _syntaxGenerator.GenerateAsync(x)))));
+        builder.Append(string.Join(", ", await Task.WhenAll(model.Params.Select(async x => await _syntaxGenerator.GenerateAsync(x)))));
 
         builder.Append(')');
 
         if (model.BaseParams.Count > 0)
         {
-            builder.AppendLine($": base({string.Join(',', model.BaseParams)})".Indent(1));
+            builder.AppendLine();
+            builder.Append($"    : base({string.Join(", ", model.BaseParams)})");
+            builder.AppendLine();
         }
 
         builder.AppendLine("{");

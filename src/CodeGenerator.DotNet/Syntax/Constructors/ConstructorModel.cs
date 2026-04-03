@@ -10,6 +10,12 @@ namespace CodeGenerator.DotNet.Syntax.Constructors;
 
 public class ConstructorModel : SyntaxModel
 {
+    public ConstructorModel()
+    {
+        Params = [];
+        BaseParams = [];
+    }
+
     public ConstructorModel(ClassModel @class, string name)
     {
         Parent = @class;

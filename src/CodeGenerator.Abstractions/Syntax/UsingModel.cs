@@ -10,10 +10,17 @@ public class UsingModel
         Name = name;
     }
 
+    public UsingModel(string name, bool global) : this(name)
+    {
+        Global = global;
+    }
+
     public UsingModel()
     {
         Name = string.Empty;
     }
 
     public string Name { get; init; }
+
+    public bool Global { get; set; }
 }

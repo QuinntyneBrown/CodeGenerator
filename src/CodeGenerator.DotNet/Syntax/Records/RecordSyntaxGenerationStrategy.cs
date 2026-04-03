@@ -1,6 +1,7 @@
 // Copyright (c) Quinntyne Brown. All Rights Reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
+using System.Linq;
 using System.Text;
 using System.Threading;
 using Microsoft.Extensions.Logging;
@@ -10,23 +11,52 @@ namespace CodeGenerator.DotNet.Syntax.Records;
 
 public class RecordSyntaxGenerationStrategy : ISyntaxGenerationStrategy<RecordModel>
 {
-    private readonly ILogger<RecordSyntaxGenerationStrategy> logger;
+    private readonly ILogger<RecordSyntaxGenerationStrategy> _logger;
+    private readonly ISyntaxGenerator _syntaxGenerator;
 
     public RecordSyntaxGenerationStrategy(
+        ISyntaxGenerator syntaxGenerator,
         ILogger<RecordSyntaxGenerationStrategy> logger)
     {
-        this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(syntaxGenerator);
+
+        _logger = logger;
+        _syntaxGenerator = syntaxGenerator;
     }
 
     public async Task<string> GenerateAsync(RecordModel model, CancellationToken cancellationToken)
     {
-        logger.LogInformation("Generating Record. {name}", model.Name);
+        _logger.LogInformation("Generating Record. {name}", model.Name);
 
         var sb = StringBuilderCache.Acquire();
 
-        sb.AppendLine($"public record {model.Type switch { Struct => "struct", Class => "class" }} {model.Name}");
+        sb.Append(await _syntaxGenerator.GenerateAsync(model.AccessModifier));
 
+        var typeKeyword = model.Type switch { Struct => " record struct", Class => " record class", _ => " record" };
+
+        sb.Append($"{typeKeyword} {model.Name}");
+
+        if (model.Implements.Count > 0)
+        {
+            var implementNames = await Task.WhenAll(model.Implements.Select(async x => await _syntaxGenerator.GenerateAsync(x)));
+            sb.Append(" : ");
+            sb.Append(string.Join(", ", implementNames));
+        }
+
+        if (model.Properties.Count == 0)
+        {
+            sb.Append(";");
+            return StringBuilderCache.GetStringAndRelease(sb);
+        }
+
+        sb.AppendLine();
         sb.AppendLine("{");
+
+        foreach (var property in model.Properties)
+        {
+            sb.AppendLine(((string)await _syntaxGenerator.GenerateAsync(property)).Indent(1));
+        }
 
         sb.AppendLine("}");
 
