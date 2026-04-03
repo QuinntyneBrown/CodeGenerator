@@ -146,6 +146,24 @@ public class SchemaSyntaxGenerationStrategy : ISyntaxGenerationStrategy<SchemaMo
 
             builder.AppendLine($"class {subClassName}({subSchema.BaseClass}):");
 
+            // Add Meta class for sub-schemas if they have model reference or meta options
+            if (!string.IsNullOrEmpty(subSchema.ModelReference) || subSchema.MetaOptions.Count > 0)
+            {
+                builder.AppendLine("    class Meta:");
+
+                if (!string.IsNullOrEmpty(subSchema.ModelReference))
+                {
+                    builder.AppendLine($"        model = {subSchema.ModelReference}");
+                }
+
+                foreach (var option in subSchema.MetaOptions)
+                {
+                    builder.AppendLine($"        {option.Key} = {option.Value}");
+                }
+
+                builder.AppendLine();
+            }
+
             if (subSchema.Fields.Count == 0)
             {
                 builder.AppendLine("    pass");

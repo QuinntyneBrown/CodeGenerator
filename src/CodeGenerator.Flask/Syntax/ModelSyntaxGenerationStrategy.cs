@@ -118,6 +118,11 @@ public class ModelSyntaxGenerationStrategy : ISyntaxGenerationStrategy<ModelMode
                     }
                 }
 
+                if (!string.IsNullOrEmpty(column.ForeignKey))
+                {
+                    colDef += $", db.ForeignKey('{column.ForeignKey}')";
+                }
+
                 if (column.PrimaryKey)
                 {
                     colDef += ", primary_key=True";

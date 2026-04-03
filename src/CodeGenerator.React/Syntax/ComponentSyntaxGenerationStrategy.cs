@@ -61,42 +61,118 @@ public class ComponentSyntaxGenerationStrategy : ISyntaxGenerationStrategy<Compo
             builder.AppendLine();
         }
 
-        var propsType = model.Props.Count > 0 ? $"{componentName}Props" : "object";
-        var propsParam = model.Props.Count > 0 ? $"props: {componentName}Props" : "_props";
+        var propsDestructure = model.Props.Count > 0 ? "props" : "";
 
-        builder.AppendLine($"export const {componentName} = React.forwardRef<HTMLDivElement, {propsType}>(({propsParam}, ref) => " + "{");
-
-        foreach (var hook in model.Hooks)
+        if (model.ComponentStyle == "fc")
         {
-            var hookCall = hook.StartsWith("use") ? $"const {hook.Substring(3, 1).ToLowerInvariant()}{hook.Substring(4)}Result = {hook}()" : hook;
-            builder.AppendLine($"{hookCall};".Indent(1, 2));
-        }
+            // React.FC pattern
+            var fcType = model.Props.Count > 0 ? $"React.FC<{componentName}Props>" : "React.FC";
+            builder.AppendLine($"const {componentName}: {fcType} = ({propsDestructure}) => " + "{");
 
-        if (model.Hooks.Count > 0)
-        {
+            // Hooks
+            foreach (var hook in model.Hooks)
+            {
+                var hookCall = hook.StartsWith("use") ? $"const {hook.Substring(3, 1).ToLowerInvariant()}{hook.Substring(4)}Result = {hook}()" : hook;
+                builder.AppendLine($"{hookCall};".Indent(1, 2));
+            }
+            if (model.Hooks.Count > 0) builder.AppendLine();
+
+            if (!string.IsNullOrEmpty(model.BodyContent))
+            {
+                foreach (var line in model.BodyContent.Split(Environment.NewLine))
+                {
+                    builder.AppendLine(line.Indent(1, 2));
+                }
+            }
+            else
+            {
+                var cssClassName = namingConventionConverter.Convert(NamingConvention.KebobCase, model.Name).Replace('_', '-');
+                builder.AppendLine("return (".Indent(1, 2));
+                builder.AppendLine($"<div className=\"{cssClassName}\">".Indent(2, 2));
+                foreach (var child in model.Children)
+                {
+                    builder.AppendLine($"<{child} />".Indent(3, 2));
+                }
+                builder.AppendLine("</div>".Indent(2, 2));
+                builder.AppendLine(");".Indent(1, 2));
+            }
+
+            builder.AppendLine("};");
             builder.AppendLine();
+
+            if (model.ExportDefault)
+            {
+                builder.AppendLine($"export default {componentName};");
+            }
+            else
+            {
+                builder.AppendLine($"export {{ {componentName} }};");
+            }
         }
-
-        builder.AppendLine("return (".Indent(1, 2));
-
-        // Use kebab-case with hyphens for CSS class names
-        var cssClassName = namingConventionConverter.Convert(NamingConvention.KebobCase, model.Name).Replace('_', '-');
-        builder.AppendLine($"<div ref={{ref}} className=\"{cssClassName}\">".Indent(2, 2));
-
-        foreach (var child in model.Children)
+        else if (model.ComponentStyle == "arrow")
         {
-            builder.AppendLine($"<{child} />".Indent(3, 2));
+            // Bare arrow function
+            var exportPrefix = model.ExportDefault ? "default " : "";
+            builder.AppendLine($"export {exportPrefix}const {componentName} = ({propsDestructure}) => " + "{");
+
+            foreach (var hook in model.Hooks)
+            {
+                var hookCall = hook.StartsWith("use") ? $"const {hook.Substring(3, 1).ToLowerInvariant()}{hook.Substring(4)}Result = {hook}()" : hook;
+                builder.AppendLine($"{hookCall};".Indent(1, 2));
+            }
+            if (model.Hooks.Count > 0) builder.AppendLine();
+
+            if (!string.IsNullOrEmpty(model.BodyContent))
+            {
+                foreach (var line in model.BodyContent.Split(Environment.NewLine))
+                {
+                    builder.AppendLine(line.Indent(1, 2));
+                }
+            }
+            else
+            {
+                var cssClassName = namingConventionConverter.Convert(NamingConvention.KebobCase, model.Name).Replace('_', '-');
+                builder.AppendLine("return (".Indent(1, 2));
+                builder.AppendLine($"<div className=\"{cssClassName}\">".Indent(2, 2));
+                foreach (var child in model.Children)
+                {
+                    builder.AppendLine($"<{child} />".Indent(3, 2));
+                }
+                builder.AppendLine("</div>".Indent(2, 2));
+                builder.AppendLine(");".Indent(1, 2));
+            }
+
+            builder.AppendLine("};");
         }
+        else
+        {
+            // Default: forwardRef (existing behavior)
+            var propsType = model.Props.Count > 0 ? $"{componentName}Props" : "object";
+            var propsParam = model.Props.Count > 0 ? $"props: {componentName}Props" : "_props";
 
-        builder.AppendLine("</div>".Indent(2, 2));
+            builder.AppendLine($"export const {componentName} = React.forwardRef<HTMLDivElement, {propsType}>(({propsParam}, ref) => " + "{");
 
-        builder.AppendLine(");".Indent(1, 2));
+            foreach (var hook in model.Hooks)
+            {
+                var hookCall = hook.StartsWith("use") ? $"const {hook.Substring(3, 1).ToLowerInvariant()}{hook.Substring(4)}Result = {hook}()" : hook;
+                builder.AppendLine($"{hookCall};".Indent(1, 2));
+            }
+            if (model.Hooks.Count > 0) builder.AppendLine();
 
-        builder.AppendLine("});");
+            builder.AppendLine("return (".Indent(1, 2));
+            var cssClassName = namingConventionConverter.Convert(NamingConvention.KebobCase, model.Name).Replace('_', '-');
+            builder.AppendLine($"<div ref={{ref}} className=\"{cssClassName}\">".Indent(2, 2));
+            foreach (var child in model.Children)
+            {
+                builder.AppendLine($"<{child} />".Indent(3, 2));
+            }
+            builder.AppendLine("</div>".Indent(2, 2));
+            builder.AppendLine(");".Indent(1, 2));
 
-        builder.AppendLine();
-
-        builder.AppendLine($"{componentName}.displayName = \"{componentName}\";");
+            builder.AppendLine("});");
+            builder.AppendLine();
+            builder.AppendLine($"{componentName}.displayName = \"{componentName}\";");
+        }
 
         return StringBuilderCache.GetStringAndRelease(builder);
     }

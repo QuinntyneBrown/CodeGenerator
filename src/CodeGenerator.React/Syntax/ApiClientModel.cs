@@ -17,6 +17,21 @@ public class ApiClientModel : SyntaxModel
     public string BaseUrl { get; set; }
 
     public List<ApiClientMethodModel> Methods { get; set; }
+
+    /// <summary>
+    /// When true, imports a shared axios instance instead of importing axios directly.
+    /// </summary>
+    public bool UseSharedInstance { get; set; }
+
+    /// <summary>
+    /// Import path for the shared instance, e.g., "./apiClient". Used when UseSharedInstance is true.
+    /// </summary>
+    public string? SharedInstanceImport { get; set; }
+
+    /// <summary>
+    /// Export style: "functions" (default, current behavior) or "object" (export const userApi = { ... }).
+    /// </summary>
+    public string ExportStyle { get; set; } = "functions";
 }
 
 public class ApiClientMethodModel

@@ -31,9 +31,9 @@ public class ModelModel : SyntaxModel
 
     public List<ImportModel> Imports { get; set; }
 
-    public bool HasUuidMixin { get; set; } = true;
+    public bool HasUuidMixin { get; set; }
 
-    public bool HasTimestampMixin { get; set; } = true;
+    public bool HasTimestampMixin { get; set; }
 }
 
 public class ColumnModel
@@ -71,6 +71,8 @@ public class ColumnModel
     public string? OnUpdate { get; set; }
 
     public bool PrimaryKey { get; set; }
+
+    public string? ForeignKey { get; set; }
 }
 
 public class RelationshipModel

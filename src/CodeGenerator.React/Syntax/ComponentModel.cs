@@ -25,4 +25,19 @@ public class ComponentModel : SyntaxModel
     public List<ImportModel> Imports { get; set; }
 
     public bool IsClient { get; set; }
+
+    /// <summary>
+    /// Component rendering style: "forwardRef" (default, current), "fc" (React.FC), or "arrow" (bare arrow function).
+    /// </summary>
+    public string ComponentStyle { get; set; } = "forwardRef";
+
+    /// <summary>
+    /// Custom JSX body content to render inside the component. Overrides default empty shell.
+    /// </summary>
+    public string? BodyContent { get; set; }
+
+    /// <summary>
+    /// Whether to use `export default ComponentName` at the end. Default false (uses named export).
+    /// </summary>
+    public bool ExportDefault { get; set; }
 }
