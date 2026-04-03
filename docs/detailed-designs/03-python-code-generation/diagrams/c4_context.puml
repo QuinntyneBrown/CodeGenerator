@@ -1,0 +1,20 @@
+@startuml
+!theme plain
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+title C4 Context — Python Code Generation
+
+Person(developer, "Developer", "Configures models and invokes code generation via the CLI or host application")
+
+System(python_pkg, "CodeGenerator.Python", "Generates Python source code and scaffolds Python projects")
+
+System_Ext(host_app, "Host Application", "CLI tool or IDE extension that orchestrates generation pipelines")
+System_Ext(file_system, "File System", "Target directory where generated .py files and project structures are written")
+System_Ext(python_runtime, "Python Runtime / pip", "Executes venv creation and package installation commands")
+
+Rel(developer, host_app, "Configures models")
+Rel(host_app, python_pkg, "Passes syntax and artifact models")
+Rel(python_pkg, file_system, "Writes generated files")
+Rel(python_pkg, python_runtime, "Runs python -m venv, pip install")
+
+@enduml

@@ -1,0 +1,51 @@
+@startuml
+!theme plain
+
+title Sequence — Class Syntax Generation
+
+participant "Caller" as caller
+participant "ISyntaxGenerator" as gen
+participant "ClassSyntaxGenerationStrategy" as strategy
+participant "INamingConventionConverter" as naming
+participant "ISyntaxGenerator\n(recursive)" as gen2
+
+caller -> gen : GenerateAsync<ClassModel>(model)
+activate gen
+gen -> strategy : GenerateAsync(classModel, ct)
+activate strategy
+
+loop each import in model.Imports
+    strategy -> gen2 : GenerateAsync(import)
+    gen2 --> strategy : "from X import a, b"
+    strategy -> strategy : builder.AppendLine(importText)
+end
+
+loop each decorator in model.Decorators
+    strategy -> gen2 : GenerateAsync(decorator)
+    gen2 --> strategy : "@decorator_name"
+    strategy -> strategy : builder.AppendLine(decoratorText)
+end
+
+strategy -> naming : Convert(PascalCase, model.Name)
+naming --> strategy : "ClassName"
+strategy -> strategy : append "class ClassName(bases):"
+
+alt no properties and no methods
+    strategy -> strategy : append "    pass"
+else has properties or methods
+    loop each property
+        strategy -> strategy : append "    name: type = default"
+    end
+    loop each method
+        strategy -> gen2 : GenerateAsync(method)
+        gen2 --> strategy : method source
+        strategy -> strategy : append indented method
+    end
+end
+
+strategy --> gen : generated class source
+deactivate strategy
+gen --> caller : Python class string
+deactivate gen
+
+@enduml

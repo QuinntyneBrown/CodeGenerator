@@ -1,0 +1,28 @@
+@startuml
+!theme plain
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title C4 Component — CodeGenerator.Python Internals
+
+Container_Boundary(syntax, "Syntax Engine") {
+    Component(class_gen, "ClassSyntaxGenerationStrategy", "ISyntaxGenerationStrategy<ClassModel>", "Renders imports, decorators, class signature with bases, properties, methods")
+    Component(func_gen, "FunctionSyntaxGenerationStrategy", "ISyntaxGenerationStrategy<FunctionModel>", "Renders async def / def with params, type hints, body")
+    Component(method_gen, "MethodSyntaxGenerationStrategy", "ISyntaxGenerationStrategy<MethodModel>", "Adds @staticmethod/@classmethod, auto-prepends self/cls")
+    Component(module_gen, "ModuleSyntaxGenerationStrategy", "ISyntaxGenerationStrategy<ModuleModel>", "Renders imports → classes → functions with spacing")
+    Component(import_gen, "ImportSyntaxGenerationStrategy", "ISyntaxGenerationStrategy<ImportModel>", "Generates import X or from X import a, b")
+    Component(decorator_gen, "DecoratorSyntaxGenerationStrategy", "ISyntaxGenerationStrategy<DecoratorModel>", "Generates @name or @name(args)")
+}
+
+Container_Boundary(artifacts, "Artifact Engine") {
+    Component(project_gen, "ProjectGenerationStrategy", "IArtifactGenerationStrategy<ProjectModel>", "Creates dirs, __init__.py, venv, installs packages")
+    Component(req_gen, "RequirementsGenerationStrategy", "IArtifactGenerationStrategy<RequirementsModel>", "Writes requirements.txt with Name==Version")
+    Component(venv_gen, "VirtualEnvironmentGenerationStrategy", "IArtifactGenerationStrategy<VirtualEnvironmentModel>", "Runs python -m venv")
+}
+
+Rel(module_gen, class_gen, "delegates class rendering")
+Rel(module_gen, func_gen, "delegates function rendering")
+Rel(class_gen, method_gen, "delegates method rendering")
+Rel(class_gen, import_gen, "delegates import rendering")
+Rel(class_gen, decorator_gen, "delegates decorator rendering")
+
+@enduml

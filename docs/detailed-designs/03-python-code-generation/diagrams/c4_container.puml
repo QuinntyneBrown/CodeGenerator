@@ -1,0 +1,25 @@
+@startuml
+!theme plain
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title C4 Container — CodeGenerator.Python
+
+System_Boundary(python_pkg, "CodeGenerator.Python") {
+    Container(syntax_engine, "Syntax Engine", "C# / ISyntaxGenerationStrategy<T>", "Generates Python source code from syntax models (classes, functions, methods, modules, imports, decorators)")
+    Container(artifact_engine, "Artifact Engine", "C# / IArtifactGenerationStrategy<T>", "Scaffolds projects, creates requirements.txt, provisions virtual environments")
+    Container(project_factory, "Project Factory", "C# / IProjectFactory", "Creates ProjectModel instances for a given name, type, and directory")
+    Container(file_factory, "File Factory", "C# / IFileFactory", "Creates __init__.py files and requirements.txt file models")
+}
+
+System_Ext(core, "CodeGenerator.Core", "Provides ISyntaxGenerator, IArtifactGenerator, INamingConventionConverter, ICommandService")
+System_Ext(file_system, "File System", "Target directory for generated output")
+System_Ext(python_rt, "Python Runtime / pip", "Executes venv and package commands")
+
+Rel(core, syntax_engine, "Dispatches via ISyntaxGenerator")
+Rel(core, artifact_engine, "Dispatches via IArtifactGenerator")
+Rel(artifact_engine, project_factory, "Creates project models")
+Rel(artifact_engine, file_factory, "Creates file models")
+Rel(artifact_engine, file_system, "Writes files and directories")
+Rel(artifact_engine, python_rt, "Runs CLI commands")
+
+@enduml

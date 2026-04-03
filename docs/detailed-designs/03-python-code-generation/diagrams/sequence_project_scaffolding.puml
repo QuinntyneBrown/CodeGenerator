@@ -1,0 +1,44 @@
+@startuml
+!theme plain
+
+title Sequence — Project Scaffolding
+
+participant "Caller" as caller
+participant "IArtifactGenerator" as gen
+participant "ProjectGenerationStrategy" as strategy
+participant "IFileSystem" as fs
+participant "ICommandService" as cmd
+
+caller -> gen : GenerateAsync(projectModel)
+activate gen
+gen -> strategy : GenerateAsync(projectModel)
+activate strategy
+
+strategy -> fs : Directory.CreateDirectory(project dir)
+strategy -> fs : Directory.CreateDirectory(src dir)
+strategy -> fs : File.WriteAllText("__init__.py", "")
+
+alt ProjectType == Flask
+    strategy -> fs : Directory.CreateDirectory("templates/")
+    strategy -> fs : Directory.CreateDirectory("static/")
+end
+
+alt ProjectType == Django
+    strategy -> cmd : Start("python -m django startproject ...")
+    cmd --> strategy : exit code
+end
+
+strategy -> cmd : Start("python -m venv .venv")
+cmd --> strategy : exit code
+
+alt packages not empty
+    strategy -> cmd : Start(".venv/bin/pip install pkg1 pkg2")
+    cmd --> strategy : exit code
+end
+
+strategy --> gen : done
+deactivate strategy
+gen --> caller : done
+deactivate gen
+
+@enduml

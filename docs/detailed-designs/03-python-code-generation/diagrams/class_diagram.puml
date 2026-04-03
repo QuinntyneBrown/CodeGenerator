@@ -1,0 +1,102 @@
+@startuml
+!theme plain
+
+title Syntax Models — CodeGenerator.Python.Syntax
+
+abstract class SyntaxModel {
+    + Parent : SyntaxModel?
+    + Usings : List<UsingModel>
+    + GetChildren() : IEnumerable<SyntaxModel>
+}
+
+class ClassModel {
+    + Name : string
+    + Bases : List<string>
+    + Methods : List<MethodModel>
+    + Properties : List<PropertyModel>
+    + Decorators : List<DecoratorModel>
+    + Imports : List<ImportModel>
+}
+
+class FunctionModel {
+    + Name : string
+    + Body : string
+    + Params : List<ParamModel>
+    + Decorators : List<DecoratorModel>
+    + ReturnType : TypeHintModel?
+    + Imports : List<ImportModel>
+    + IsAsync : bool
+}
+
+class MethodModel {
+    + Name : string
+    + Body : string
+    + Params : List<ParamModel>
+    + Decorators : List<DecoratorModel>
+    + ReturnType : TypeHintModel?
+    + IsAsync : bool
+    + IsStatic : bool
+    + IsClassMethod : bool
+}
+
+class ModuleModel {
+    + Name : string
+    + Imports : List<ImportModel>
+    + Classes : List<ClassModel>
+    + Functions : List<FunctionModel>
+}
+
+class ImportModel {
+    + Module : string
+    + Names : List<string>
+    + Alias : string?
+}
+
+class DecoratorModel {
+    + Name : string
+    + Arguments : List<string>
+}
+
+class TypeHintModel {
+    + Name : string
+}
+
+class ParamModel {
+    + Name : string
+    + TypeHint : TypeHintModel?
+    + DefaultValue : string?
+}
+
+class PropertyModel {
+    + Name : string
+    + TypeHint : TypeHintModel?
+    + DefaultValue : string?
+}
+
+SyntaxModel <|-- ClassModel
+SyntaxModel <|-- FunctionModel
+SyntaxModel <|-- MethodModel
+SyntaxModel <|-- ModuleModel
+
+ClassModel "1" *-- "0..*" MethodModel : methods
+ClassModel "1" *-- "0..*" PropertyModel : properties
+ClassModel "1" *-- "0..*" DecoratorModel : decorators
+ClassModel "1" *-- "0..*" ImportModel : imports
+
+FunctionModel "1" *-- "0..*" ParamModel : params
+FunctionModel "1" *-- "0..*" DecoratorModel : decorators
+FunctionModel "1" o-- "0..1" TypeHintModel : returnType
+FunctionModel "1" *-- "0..*" ImportModel : imports
+
+MethodModel "1" *-- "0..*" ParamModel : params
+MethodModel "1" *-- "0..*" DecoratorModel : decorators
+MethodModel "1" o-- "0..1" TypeHintModel : returnType
+
+ModuleModel "1" *-- "0..*" ImportModel : imports
+ModuleModel "1" *-- "0..*" ClassModel : classes
+ModuleModel "1" *-- "0..*" FunctionModel : functions
+
+ParamModel "1" o-- "0..1" TypeHintModel : typeHint
+PropertyModel "1" o-- "0..1" TypeHintModel : typeHint
+
+@enduml

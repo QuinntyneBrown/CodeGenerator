@@ -1,0 +1,66 @@
+@startuml
+!theme plain
+
+title Artifact Models — CodeGenerator.Python.Artifacts
+
+abstract class ArtifactModel {
+    + Parent : ArtifactModel?
+    + GetChildren() : IEnumerable<ArtifactModel>
+}
+
+class ProjectModel {
+    + Name : string
+    + Directory : string
+    + RootDirectory : string
+    + ProjectType : string
+    + VirtualEnvPath : string
+    + Packages : List<PackageModel>
+}
+
+class RequirementsModel {
+    + Directory : string
+    + Packages : List<PackageModel>
+}
+
+class VirtualEnvironmentModel {
+    + Name : string
+    + Directory : string
+    + Path : string
+}
+
+class PackageModel {
+    + Name : string
+    + Version : string
+}
+
+note right of ProjectModel
+  ProjectType values:
+  Flask | Django | Package | Script
+end note
+
+ArtifactModel <|-- ProjectModel
+ArtifactModel <|-- RequirementsModel
+ArtifactModel <|-- VirtualEnvironmentModel
+
+ProjectModel "1" *-- "0..*" PackageModel : packages
+RequirementsModel "1" *-- "0..*" PackageModel : packages
+
+interface "IProjectFactory" as IPF {
+    + Create(name, projectType, directory) : ProjectModel
+}
+
+interface "IFileFactory" as IFF {
+    + CreateInitFiles(directory) : List<FileModel>
+    + CreateRequirementsFile(directory, packages) : FileModel
+}
+
+class ProjectFactory
+class FileFactory
+
+IPF <|.. ProjectFactory
+IFF <|.. FileFactory
+
+ProjectFactory ..> ProjectModel : creates
+FileFactory ..> PackageModel : reads
+
+@enduml

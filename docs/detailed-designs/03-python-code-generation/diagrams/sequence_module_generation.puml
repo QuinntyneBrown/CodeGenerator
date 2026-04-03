@@ -1,0 +1,52 @@
+@startuml
+!theme plain
+
+title Sequence — Module Syntax Generation
+
+participant "Caller" as caller
+participant "ISyntaxGenerator" as gen
+participant "ModuleSyntaxGenerationStrategy" as strategy
+participant "ISyntaxGenerator\n(recursive)" as gen2
+
+caller -> gen : GenerateAsync<ModuleModel>(model)
+activate gen
+gen -> strategy : GenerateAsync(moduleModel, ct)
+activate strategy
+
+== Import Rendering ==
+
+loop each import in model.Imports
+    strategy -> gen2 : GenerateAsync(import)
+    gen2 --> strategy : import line
+    strategy -> strategy : builder.AppendLine(importLine)
+end
+
+note right of strategy
+    Double blank line separates
+    imports from class/function blocks
+end note
+
+== Class Rendering ==
+
+loop each class in model.Classes
+    strategy -> gen2 : GenerateAsync(classModel)
+    gen2 --> strategy : class source
+    strategy -> strategy : builder.AppendLine(classSource)
+    strategy -> strategy : append double blank line
+end
+
+== Function Rendering ==
+
+loop each function in model.Functions
+    strategy -> gen2 : GenerateAsync(functionModel)
+    gen2 --> strategy : function source
+    strategy -> strategy : builder.AppendLine(functionSource)
+    strategy -> strategy : append double blank line
+end
+
+strategy --> gen : generated module source
+deactivate strategy
+gen --> caller : Python module string
+deactivate gen
+
+@enduml
