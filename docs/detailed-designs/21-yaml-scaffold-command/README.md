@@ -1,5 +1,7 @@
 # YAML Scaffold CLI Command — Detailed Design
 
+**Status:** Implemented
+
 ## 1. Overview
 
 The `scaffold` command is a subcommand of `CreateCodeGeneratorCommand` that accepts a YAML configuration file and generates an entire codebase from its declarative description. It parses the YAML into a `ScaffoldConfiguration` model, validates the configuration against a schema, orchestrates file generation through the existing `IArtifactGenerator` pipeline, and executes post-scaffold commands upon completion. Supporting modes include dry-run (preview without writing), validate-only (schema check), force (overwrite conflicts), JSON Schema export, and starter YAML generation.

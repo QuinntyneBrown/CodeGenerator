@@ -1,5 +1,7 @@
 # YAML Configuration Schema — Detailed Design
 
+**Status:** Implemented
+
 ## 1. Overview
 
 The YAML Configuration Schema defines the structure and validation rules for scaffold configuration files used by the CodeGenerator's `scaffold` command. A scaffold YAML file describes an entire multi-project codebase — including .NET backends, React/Angular frontends, Python services, and test projects — in a single, technology-agnostic declaration.

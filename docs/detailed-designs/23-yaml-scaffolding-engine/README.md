@@ -1,5 +1,7 @@
 # YAML Scaffolding Engine -- Detailed Design
 
+**Status:** Implemented
+
 ## 1. Overview
 
 The YAML Scaffolding Engine transforms a parsed `ScaffoldConfiguration` (produced by the YAML Configuration Schema parser, design #22) into a fully generated codebase. It orchestrates directory creation, file generation, entity/DTO scaffolding, test project setup, solution file creation, and cross-project reference wiring across multiple languages and frameworks.
