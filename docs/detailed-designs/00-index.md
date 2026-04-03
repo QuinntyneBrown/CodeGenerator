@@ -86,7 +86,7 @@
 | 54 | [Observability and Error Formatting](54-observability-error-formatting/README.md) | Implemented | Phase 4 | Structured logging, correlation IDs, IErrorFormatter, DiagnosticContext |
 | 55 | [Validation Enhancements](55-validation-enhancements/README.md) | Implemented | Phase 5 | Fluent Validator&lt;T&gt;, CommonRules, ValidationResult enhancements |
 | 56 | [Strategy and Plugin Error Isolation](56-strategy-plugin-error-isolation/README.md) | Implemented | Phase 6 | StrategyExecutor boundary, plugin discovery error handling |
-| 57 | [Error Handling Test Infrastructure](57-error-handling-test-infrastructure/README.md) | Draft | Phase 7 | ResultAssertions, FaultInjectionOptions, fault-injecting decorators |
+| 57 | [Error Handling Test Infrastructure](57-error-handling-test-infrastructure/README.md) | Implemented | Phase 7 | ResultAssertions, FaultInjectionOptions, fault-injecting decorators |
 
 ### Command Flow Integration
 
