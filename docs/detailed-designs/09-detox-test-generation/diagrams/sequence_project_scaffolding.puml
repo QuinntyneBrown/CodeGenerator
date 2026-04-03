@@ -1,0 +1,41 @@
+@startuml sequence_project_scaffolding
+!theme plain
+skinparam sequenceMessageAlign center
+skinparam maxMessageSize 160
+
+title Project Scaffolding — Sequence (FR-10.6)
+
+participant "Host App" as Host
+participant "IArtifactGenerator" as ArtGen
+participant "ProjectGeneration\nStrategy" as ProjGen
+participant "ICommandService" as Cmd
+database "File System" as FS
+
+Host -> ArtGen: GenerateAsync(projectModel)
+ArtGen -> ProjGen: GenerateAsync(projectModel)
+
+ProjGen -> FS: CreateDirectory(pages/)
+ProjGen -> FS: CreateDirectory(specs/)
+
+ProjGen -> Cmd: Start("npm init -y", dir)
+Cmd --> ProjGen: package.json created
+
+ProjGen -> Cmd: Start("npm install detox jest\n@types/jest ts-jest typescript", dir)
+Cmd --> ProjGen: node_modules installed
+
+ProjGen -> ProjGen: GenerateDetoxConfig()
+ProjGen -> FS: WriteAllText(.detoxrc.js)
+
+ProjGen -> ProjGen: GenerateJestConfig()
+ProjGen -> FS: WriteAllText(jest.config.js)
+
+ProjGen -> ProjGen: GenerateTsConfig()
+ProjGen -> FS: WriteAllText(tsconfig.json)
+
+ProjGen -> ProjGen: GenerateBasePage()
+ProjGen -> FS: WriteAllText(pages/BasePage.ts)
+
+ProjGen --> ArtGen: Complete
+ArtGen --> Host: Complete
+
+@enduml

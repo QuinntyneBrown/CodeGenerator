@@ -1,0 +1,27 @@
+@startuml c4_component
+!theme plain
+!include <C4/C4_Component>
+
+title React Native Generation — Component Diagram
+
+Container_Boundary(rn, "CodeGenerator.ReactNative") {
+    Component(screenGen, "ScreenSyntaxGenerationStrategy", "ISyntaxGenerationStrategy<ScreenModel>", "SafeAreaView > View > Text, props interface, hooks, StyleSheet, testID")
+    Component(compGen, "ComponentSyntaxGenerationStrategy", "ISyntaxGenerationStrategy<ComponentModel>", "React.FC<Props>, View > Text, StyleSheet, testID")
+    Component(navGen, "NavigationSyntaxGenerationStrategy", "ISyntaxGenerationStrategy<NavigationModel>", "Stack / Tab / Drawer navigator, ParamList type, NavigationContainer")
+    Component(storeGen, "StoreSyntaxGenerationStrategy", "ISyntaxGenerationStrategy<StoreModel>", "Zustand create<State>, interface, setter actions")
+    Component(styleGen, "StyleSyntaxGenerationStrategy", "ISyntaxGenerationStrategy<StyleModel>", "StyleSheet.create({ name: { props } })")
+    Component(indexGen, "FileFactory (Index)", "IFileFactory", "Barrel export files for .ts/.tsx and subdirectories")
+    Component(projGen, "ProjectGenerationStrategy", "IArtifactGenerationStrategy<ProjectModel>", "npx react-native init, npm install dependencies")
+}
+
+Component(syntaxEng, "SyntaxGenerator", "ISyntaxGenerator", "Resolves and dispatches to syntax strategies")
+Component(artifactEng, "ArtifactGenerator", "IArtifactGenerator", "Resolves and dispatches to artifact strategies")
+
+Rel(syntaxEng, screenGen, "Dispatches ScreenModel")
+Rel(syntaxEng, compGen, "Dispatches ComponentModel")
+Rel(syntaxEng, navGen, "Dispatches NavigationModel")
+Rel(syntaxEng, storeGen, "Dispatches StoreModel")
+Rel(syntaxEng, styleGen, "Dispatches StyleModel")
+Rel(artifactEng, projGen, "Dispatches ProjectModel")
+
+@enduml

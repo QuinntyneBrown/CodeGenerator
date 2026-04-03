@@ -1,0 +1,77 @@
+@startuml sequence_test_spec_generation
+!theme plain
+skinparam sequenceMessageAlign center
+skinparam maxMessageSize 160
+
+title Test Spec Generation — Sequence (FR-09.3)
+
+participant "Caller" as Caller
+participant "ISyntaxGenerator" as SynGen
+participant "TestSpecSyntax\nGenerationStrategy" as TSGen
+participant "INamingConvention\nConverter" as Naming
+participant "StringBuilderCache" as SB
+
+Caller -> SynGen: GenerateAsync(testSpecModel)
+SynGen -> TSGen: GenerateAsync(model, ct)
+
+TSGen -> SB: Acquire()
+SB --> TSGen: StringBuilder
+
+TSGen -> Naming: Convert(PascalCase, model.Name)
+Naming --> TSGen: "Login"
+TSGen -> Naming: Convert(PascalCase, model.PageObjectType)
+Naming --> TSGen: "LoginPage"
+
+note right of TSGen: Emit imports
+TSGen -> TSGen: AppendLine(import { test, expect }\nfrom "@playwright/test")
+TSGen -> TSGen: AppendLine(import { LoginPage }\nfrom "../pages/LoginPage")
+TSGen -> TSGen: Render user imports\n(deduplicate modules)
+
+note right of TSGen: Open describe block
+TSGen -> TSGen: test.describe("Login", () => {
+
+note right of TSGen: Emit beforeEach
+TSGen -> TSGen: test.beforeEach(async ({ page }) => {
+TSGen -> TSGen: loginPage = new LoginPage(page)
+TSGen -> TSGen: await loginPage.navigate()
+loop each SetupAction (skip .navigate)
+    TSGen -> TSGen: append setup action
+end
+TSGen -> TSGen: })
+
+note right of TSGen: Emit test cases
+loop each TestCaseModel
+    TSGen -> TSGen: test("description", async () => {
+
+    opt ArrangeSteps.Count > 0
+        TSGen -> TSGen: // Arrange
+        loop each ArrangeStep
+            TSGen -> TSGen: append step
+        end
+    end
+
+    opt ActSteps.Count > 0
+        TSGen -> TSGen: // Act
+        loop each ActStep
+            TSGen -> TSGen: append step
+        end
+    end
+
+    opt AssertSteps.Count > 0
+        TSGen -> TSGen: // Assert
+        loop each AssertStep
+            TSGen -> TSGen: append step
+        end
+    end
+
+    TSGen -> TSGen: })
+end
+
+TSGen -> TSGen: })  // close describe
+
+TSGen -> SB: GetStringAndRelease()
+SB --> TSGen: TypeScript string
+TSGen --> SynGen: Generated source
+SynGen --> Caller: TypeScript string
+
+@enduml

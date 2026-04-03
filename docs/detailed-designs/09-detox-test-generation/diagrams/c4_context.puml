@@ -1,0 +1,26 @@
+@startuml c4_context
+!theme plain
+!include <C4/C4_Context>
+
+title Detox Test Generation — System Context
+
+Person(dev, "Developer", "Builds models and\ninvokes generation")
+
+System(codegen, "CodeGenerator.Detox", "Generates Detox mobile test\nprojects from C# models")
+
+System_Ext(hostApp, "Host Application", ".NET app or CLI that\norchestrates generation")
+System_Ext(fs, "File System", "Target directory for\ngenerated TypeScript files")
+System_Ext(npm, "Node.js / npm", "Package manager for\nDetox + Jest install")
+System_Ext(detoxCli, "Detox CLI", "Executes generated\nmobile test suites")
+System_Ext(iosSim, "iOS Simulator", "Runs React Native app\non iPhone (Xcode)")
+System_Ext(androidEmu, "Android Emulator", "Runs React Native app\non Pixel (AVD)")
+
+Rel(dev, hostApp, "Configures models")
+Rel(hostApp, codegen, "Invokes generation", "C# API")
+Rel(codegen, fs, "Writes .ts files,\nconfig, tsconfig")
+Rel(codegen, npm, "npm init / npm install")
+Rel(detoxCli, fs, "Reads test files")
+Rel(detoxCli, iosSim, "Launches & controls")
+Rel(detoxCli, androidEmu, "Launches & controls")
+
+@enduml

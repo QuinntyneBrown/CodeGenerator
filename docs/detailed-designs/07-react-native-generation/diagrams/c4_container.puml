@@ -1,0 +1,23 @@
+@startuml c4_container
+!theme plain
+!include <C4/C4_Container>
+
+title React Native Generation — Container Diagram
+
+Person(dev, "Developer", "Configures models and triggers generation")
+
+System_Boundary(cg, "CodeGenerator") {
+    Container(core, "CodeGenerator.Core", "C# / .NET", "ISyntaxGenerator, IArtifactGenerator, naming conventions, StringBuilderCache")
+    Container(rn, "CodeGenerator.ReactNative", "C# / .NET", "React Native syntax strategies, artifact strategies, DI registration")
+}
+
+System_Ext(fs, "File System", "Generated .ts/.tsx project files")
+System_Ext(node, "Node.js / npm", "npx react-native init, npm install")
+
+Rel(dev, rn, "Provides ScreenModel, ComponentModel, NavigationModel, etc.")
+Rel(rn, core, "Implements ISyntaxGenerationStrategy<T>, IArtifactGenerationStrategy<T>")
+Rel(core, rn, "Dispatches GenerateAsync via strategy resolution")
+Rel(rn, fs, "Writes generated TypeScript source")
+Rel(rn, node, "Executes CLI commands via ICommandService")
+
+@enduml

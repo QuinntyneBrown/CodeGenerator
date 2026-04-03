@@ -1,0 +1,68 @@
+@startuml class_artifact_model
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 12
+
+title Core Generation Engine — Artifact & Syntax Model Hierarchy
+
+class ArtifactModel {
+    +Parent : ArtifactModel
+    +GetChildren() : IEnumerable<ArtifactModel>
+    +GetDescendants() : List<ArtifactModel>
+}
+
+class FileModel {
+    +Name : string
+    +Directory : string
+    +Extension : string
+    +Body : string
+    +Path : string {computed}
+    -_fileSystem : IFileSystem
+}
+
+class ContentFileModel {
+    +Content : string {init}
+}
+
+class TemplatedFileModel {
+    +Template : string {init}
+    +Tokens : Dictionary<string, object> {init}
+}
+
+class SyntaxModel {
+    +Parent : SyntaxModel?
+    +Usings : List<UsingModel>
+    +GetChildren() : IEnumerable<SyntaxModel>
+    +GetDescendants() : List<SyntaxModel>
+}
+
+class SyntaxToken <<record>> {
+    +Value : string
+    +{static} implicit operator string
+    +{static} explicit operator SyntaxToken
+}
+
+class TypeModel {
+    +Name : string
+}
+
+class UsingModel {
+    +Name : string {init}
+}
+
+enum NamingConvention {
+    PascalCase
+    CamelCase
+    SnakeCase
+    TitleCase
+    AllCaps
+    KebobCase
+    None
+}
+
+ArtifactModel <|-- FileModel
+FileModel <|-- ContentFileModel
+FileModel <|-- TemplatedFileModel
+SyntaxModel *-- "0..*" UsingModel : Usings
+
+@enduml

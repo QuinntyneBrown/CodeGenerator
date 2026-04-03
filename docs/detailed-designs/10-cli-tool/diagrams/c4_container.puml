@@ -1,0 +1,24 @@
+@startuml c4_container
+!theme plain
+!include <C4/C4_Container>
+
+title CodeGenerator CLI Tool — Container Diagram
+
+Person(dev, "Developer", "Runs create-code-cli")
+
+System_Boundary(sb, "create-code-cli (.NET Global Tool)") {
+    Container(cli_app, "CLI Application", "System.CommandLine", "Parses args, routes to command handlers, orchestrates scaffolding")
+    Container(core, "CodeGenerator.Core", ".NET Library", "IArtifactGenerator, ISyntaxGenerator, ICommandService, DI registration")
+    Container(dotnet_lib, "CodeGenerator.DotNet", ".NET Library", "SolutionModel, ProjectModel, ContentFileModel, factories, template processing")
+}
+
+System_Ext(fs, "File System", "Output directory")
+System_Ext(sdk, ".NET SDK", "dotnet CLI")
+
+Rel(dev, cli_app, "Invokes", "CLI args")
+Rel(cli_app, core, "Resolves IArtifactGenerator, ICommandService")
+Rel(cli_app, dotnet_lib, "Uses models: SolutionModel, ProjectModel, ContentFileModel")
+Rel(core, fs, "Writes generated files via ArtifactGenerator")
+Rel(core, sdk, "Executes shell commands via CommandService")
+
+@enduml

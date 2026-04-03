@@ -1,0 +1,24 @@
+@startuml c4_context
+!theme plain
+!include <C4/C4_Context>
+
+title React Native Generation — System Context
+
+Person(dev, "Developer", "Defines models and invokes code generation via CLI or host app")
+
+System(rn, "CodeGenerator.ReactNative", "Generates React Native projects, screens, components, navigation, stores, and styles")
+
+System_Ext(host, "Host Application", "CLI or custom app that orchestrates generation pipelines")
+System_Ext(fs, "File System", "Target directory where generated RN project is written")
+System_Ext(node, "Node.js / npm", "Executes npx react-native init and npm install")
+System_Ext(rncli, "React Native CLI", "Scaffolds the native project structure")
+System_Ext(sim, "iOS / Android Simulators", "Run and test the generated application")
+
+Rel(dev, host, "Configures models")
+Rel(host, rn, "Invokes generation")
+Rel(rn, fs, "Writes .ts/.tsx files")
+Rel(rn, node, "Runs npx / npm commands")
+Rel(node, rncli, "Delegates project init")
+Rel(dev, sim, "Tests generated app")
+
+@enduml

@@ -1,0 +1,58 @@
+@startuml sequence_test_spec_generation
+!theme plain
+skinparam sequenceMessageAlign center
+skinparam maxMessageSize 160
+
+title Test Spec Generation — Sequence (FR-10.3)
+
+participant "Caller" as Caller
+participant "ISyntaxGenerator" as SynGen
+participant "TestSpecSyntax\nGenerationStrategy" as TSGen
+participant "INamingConvention\nConverter" as Naming
+participant "StringBuilderCache" as SB
+
+Caller -> SynGen: GenerateAsync(testSpecModel)
+SynGen -> TSGen: GenerateAsync(model, ct)
+
+TSGen -> SB: Acquire()
+SB --> TSGen: StringBuilder
+
+TSGen -> Naming: Convert(PascalCase, model.Name)
+Naming --> TSGen: "Login"
+TSGen -> Naming: Convert(PascalCase, model.PageObjectType)
+Naming --> TSGen: "LoginPage"
+
+note right of TSGen: Emit imports
+TSGen -> TSGen: Render import statements\nvia ISyntaxGenerator
+TSGen -> TSGen: import { LoginPage }\nfrom "../pages/LoginPage"
+
+note right of TSGen: Open describe block
+TSGen -> TSGen: describe("Login", () => {
+
+note right of TSGen: Emit beforeAll
+TSGen -> TSGen: beforeAll(async () => {
+TSGen -> TSGen: page = new LoginPage()
+TSGen -> TSGen: })
+
+note right of TSGen: Emit beforeEach
+TSGen -> TSGen: beforeEach(async () => {
+TSGen -> TSGen: await device.reloadReactNative()
+TSGen -> TSGen: })
+
+note right of TSGen: Emit test cases
+loop each TestModel
+    TSGen -> TSGen: it("description", async () => {
+    loop each Step
+        TSGen -> TSGen: await page.stepName()
+    end
+    TSGen -> TSGen: })
+end
+
+TSGen -> TSGen: })  // close describe
+
+TSGen -> SB: GetStringAndRelease()
+SB --> TSGen: TypeScript string
+TSGen --> SynGen: Generated source
+SynGen --> Caller: TypeScript string
+
+@enduml

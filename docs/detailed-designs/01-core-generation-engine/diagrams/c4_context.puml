@@ -1,0 +1,20 @@
+@startuml c4_context
+!theme plain
+!include <C4/C4_Context>
+
+title CodeGenerator Core — System Context
+
+Person(developer, "Developer", "Implements generation strategies in language-specific packages")
+Person(host, "Host Application", "CLI or service that invokes generation at runtime")
+
+System(core, "CodeGenerator.Core", "Core generation engine: strategy dispatch, template rendering, naming conventions, command execution")
+
+System_Ext(fs, "File System", "Target directory where generated files are written")
+System_Ext(shell, "OS Shell", "cmd.exe (Windows) or bash (Unix) for command execution")
+
+Rel(developer, core, "Implements strategies via")
+Rel(host, core, "Calls GenerateAsync()")
+Rel(core, fs, "Writes generated files")
+Rel(core, shell, "Executes commands via")
+
+@enduml

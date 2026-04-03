@@ -1,0 +1,73 @@
+@startuml class_strategy_hierarchy
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 12
+
+title Core Generation Engine — Strategy & Service Hierarchy
+
+interface "IArtifactGenerationStrategy<T>" as IAS {
+    +CanHandle(model: object) : bool
+    +GetPriority() : int
+    +GenerateAsync(target: T) : Task
+}
+
+abstract class ArtifactGenerationStrategyBase {
+    +{abstract} GenerateAsync(sp, target, ct) : Task
+}
+
+abstract class "ArtifactGenerationStrategyWrapper<T>" as ASW {
+    +{abstract} GenerateAsync(target, sp, ct) : Task
+}
+
+class "ArtifactStrategyWrapperImpl<T>" as ASWI {
+    -_strategies : ConcurrentDictionary
+    +GenerateAsync(target, sp, ct) : Task
+}
+
+interface "ISyntaxGenerationStrategy<T>" as ISS {
+    +GetPriority() : int
+    +CanHandle(target: object) : bool
+    +GenerateAsync(target: T, ct) : Task<string>
+}
+
+abstract class SyntaxGenerationStrategyBase {
+    +{abstract} GenerateAsync(sp, target, ct) : Task<string>
+}
+
+class "SyntaxStrategyWrapperImpl<T>" as SSWI {
+    -_strategies : ConcurrentDictionary
+    +GenerateAsync(target, sp, ct) : Task<string>
+}
+
+interface IArtifactGenerator {
+    +GenerateAsync(model: object) : Task
+}
+
+interface ISyntaxGenerator {
+    +GenerateAsync<T>(model: T) : Task<string>
+}
+
+interface ITemplateProcessor {
+    +Process(template, tokens) : string
+    +Process(template, model) : string
+}
+
+interface INamingConventionConverter {
+    +Convert(from, to, value) : string
+    +Convert(to, value) : string
+    +Convert(to, value, pluralize) : string
+}
+
+interface ICommandService {
+    +Start(command, workingDir, waitForExit) : int
+}
+
+ArtifactGenerationStrategyBase <|-- ASW
+ASW <|-- ASWI
+SyntaxGenerationStrategyBase <|-- SSWI
+IArtifactGenerator ..> ASWI : creates
+ISyntaxGenerator ..> SSWI : creates
+ASWI ..> IAS : resolves from DI
+SSWI ..> ISS : resolves from DI
+
+@enduml

@@ -1,0 +1,36 @@
+@startuml sequence_screen_generation
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Screen Generation Workflow
+
+participant "ISyntaxGenerator" as SG
+participant "ScreenSyntaxGenerationStrategy" as SSG
+participant "INamingConventionConverter" as NCC
+participant "StringBuilder" as SB
+
+SG -> SSG : GenerateAsync(ScreenModel, ct)
+
+SSG -> NCC : Convert(PascalCase, name)
+NCC --> SSG : screenName
+SSG -> NCC : Convert(KebabCase, name)
+NCC --> SSG : kebabName
+
+SSG -> SB : Append imports\n(React, View, Text, StyleSheet,\nSafeAreaView, useNavigation)
+
+opt NavigationParams present
+    SSG -> SB : Append "export type {Screen}Params = { ... }"
+end
+
+opt Props present
+    SSG -> SB : Append "export interface {Screen}Props { ... }"
+end
+
+SSG -> SB : Append "export const {Screen}: React.FC<Props>"
+SSG -> SB : Append hook initializations
+SSG -> SB : Append SafeAreaView > View > Text\nwith testID="{kebab}-screen"\ntestID="{kebab}-content"\ntestID="{kebab}-title"
+SSG -> SB : Append StyleSheet.create({\ncontainer: { flex: 1 },\ncontent: { flex: 1, padding: 16 } })
+
+SSG --> SG : Generated TypeScript string
+
+@enduml

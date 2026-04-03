@@ -1,0 +1,52 @@
+@startuml sequence_workspace_generation
+!theme plain
+skinparam sequenceMessageAlign center
+skinparam maxMessageSize 160
+
+title Workspace Generation
+
+participant "Host App" as Host
+participant "ArtifactGenerator" as AG
+participant "AngularWorkspace\nGenerationStrategy" as WS
+participant "ICommandService" as CMD
+participant "File System" as FS
+
+Host -> AG : GenerateAsync(WorkspaceModel)
+AG -> WS : GenerateAsync(model)\n//priority 2 wins//
+
+WS -> CMD : ng new <name>\n--no-create-application
+WS -> CMD : npm install @ngrx/component-store
+WS -> CMD : npm install @ngrx/component
+
+== Karma Removal ==
+WS -> CMD : npm uninstall @types/jasmine
+WS -> CMD : npm uninstall karma (×5 packages)
+
+== Jest Installation ==
+WS -> CMD : npm install jest,\njest-preset-angular,\n@angular-builders/jest,\n@types/jest
+
+== Per-Project Loop ==
+loop for each ProjectModel
+    WS -> WS : AddProject(project)
+    WS -> CMD : ng generate application/library
+    WS -> FS : Delete app-routing.module.ts
+    WS -> FS : Update angular.json\n(standalone schematics)
+    WS -> FS : Update tsconfig.spec.json\n(jest types)
+    WS -> FS : Write jest.config.js
+    WS -> FS : Update angular.json\n(jest test builder)
+
+    alt ProjectType == application
+        WS -> AG : GenerateAsync(FileModel)\n×3 template files
+        WS -> FS : Delete app.module.ts
+    else ProjectType == library
+        WS -> AG : GenerateAsync(ContentFileModel)\nconstants.ts
+        WS -> FS : Create barrel index.ts
+        WS -> FS : Update public-api.ts
+        WS -> FS : Update package.json\n(watch scripts)
+    end
+end
+
+WS --> AG : complete
+AG --> Host : complete
+
+@enduml

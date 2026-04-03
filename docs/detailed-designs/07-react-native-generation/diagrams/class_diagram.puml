@@ -1,0 +1,94 @@
+@startuml class_diagram
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 12
+
+title React Native Generation — Domain Model
+
+abstract class SyntaxModel
+
+class ScreenModel {
+    +Name : string
+    +Props : List<PropertyModel>
+    +Hooks : List<string>
+    +Imports : List<ImportModel>
+    +NavigationParams : List<PropertyModel>
+}
+
+class ComponentModel {
+    +Name : string
+    +Props : List<PropertyModel>
+    +Styles : List<StyleModel>
+    +Children : List<string>
+    +Imports : List<ImportModel>
+}
+
+class NavigationModel {
+    +Name : string
+    +NavigatorType : string
+    +Screens : List<string>
+}
+
+class StoreModel {
+    +Name : string
+    +StateProperties : List<PropertyModel>
+    +Actions : List<string>
+}
+
+class StyleModel {
+    +Name : string
+    +Properties : Dictionary<string, string>
+}
+
+class HookModel {
+    +Name : string
+    +Params : List<PropertyModel>
+    +ReturnType : string
+    +Body : string
+    +Imports : List<ImportModel>
+}
+
+class TypeScriptTypeModel {
+    +Name : string
+    +Properties : List<PropertyModel>
+}
+
+class ImportModel {
+    +Types : List<TypeModel>
+    +Module : string
+}
+
+class PropertyModel {
+    +Name : string
+    +Type : TypeModel
+}
+
+abstract class ArtifactModel
+
+class ProjectModel {
+    +Name : string
+    +Directory : string
+    +RootDirectory : string
+    +Platform : string
+}
+
+SyntaxModel <|-- ScreenModel
+SyntaxModel <|-- ComponentModel
+SyntaxModel <|-- NavigationModel
+SyntaxModel <|-- StoreModel
+SyntaxModel <|-- StyleModel
+SyntaxModel <|-- HookModel
+SyntaxModel <|-- TypeScriptTypeModel
+ArtifactModel <|-- ProjectModel
+
+ScreenModel --> "0..*" PropertyModel : Props / NavigationParams
+ScreenModel --> "0..*" ImportModel : Imports
+ComponentModel --> "0..*" PropertyModel : Props
+ComponentModel --> "0..*" StyleModel : Styles
+ComponentModel --> "0..*" ImportModel : Imports
+StoreModel --> "0..*" PropertyModel : StateProperties
+HookModel --> "0..*" PropertyModel : Params
+HookModel --> "0..*" ImportModel : Imports
+TypeScriptTypeModel --> "0..*" PropertyModel : Properties
+
+@enduml

@@ -1,0 +1,53 @@
+@startuml sequence_project_generation
+!theme plain
+skinparam sequenceMessageAlign center
+skinparam maxMessageSize 160
+
+title Project Generation (Application Path)
+
+participant "AngularWorkspace\nGenerationStrategy" as WS
+participant "ICommandService" as CMD
+participant "IArtifactGenerator" as AG
+participant "JObjectExtensions" as JExt
+participant "IFileSystem" as FS
+participant "IUtilityService" as Util
+
+WS -> CMD : ng generate application <name>\n--prefix <prefix> --style=scss\n--routing --force
+activate CMD
+CMD --> WS : exit code
+deactivate CMD
+
+WS -> FS : Delete app-routing.module.ts
+
+== Enable Standalone Components ==
+WS -> FS : Read angular.json
+WS -> JExt : EnableDefaultStandalone(name)
+note right : Sets @schematics/angular:component\n{ standalone: true, style: scss }\nand :directive { standalone: true }
+WS -> FS : Write angular.json
+
+== Export Assets & Styles (library only) ==
+note over WS : Skipped for applications
+
+== Generate Template Files ==
+WS -> AG : GenerateAsync(app.component.ts)
+WS -> AG : GenerateAsync(app.component.spec.ts)
+WS -> AG : GenerateAsync(main.ts)
+WS -> FS : Delete app.module.ts
+
+== Configure Jest ==
+WS -> FS : Read tsconfig.spec.json
+WS -> JExt : UpdateCompilerOptionsToUseJestTypes()
+note right : types: ["jest"]
+WS -> FS : Write tsconfig.spec.json
+
+WS -> FS : Write jest.config.js
+note right : preset: jest-preset-angular\nglobalSetup: jest-preset-angular/global-setup
+
+WS -> FS : Read angular.json
+WS -> JExt : Set test builder to\n@angular-builders/jest:run
+WS -> FS : Write angular.json
+
+== Copyright ==
+WS -> Util : CopyrightAdd(rootDirectory)
+
+@enduml

@@ -1,0 +1,29 @@
+@startuml c4_component
+!theme plain
+!include <C4/C4_Component>
+
+title Playwright Test Generation — Component Diagram
+
+Container_Boundary(pw, "CodeGenerator.Playwright") {
+    Component(pageObjGen, "PageObjectSyntax\nGenerationStrategy", "C#", "Generates page object\nclasses with locators,\nactions, queries")
+    Component(basePageGen, "BasePageSyntax\nGenerationStrategy", "C#", "Generates abstract\nBasePage class")
+    Component(testSpecGen, "TestSpecSyntax\nGenerationStrategy", "C#", "Generates test.describe\nwith Arrange-Act-Assert")
+    Component(fixtureGen, "FixtureSyntax\nGenerationStrategy", "C#", "Generates base.extend<T>\nfixture files")
+    Component(configGen, "ConfigSyntax\nGenerationStrategy", "C#", "Generates\nplaywright.config.ts")
+    Component(projGen, "ProjectGeneration\nStrategy", "C#", "Scaffolds directories,\nnpm install, files")
+}
+
+Component(syntaxEngine, "SyntaxGenerator", "Core", "Dispatches to syntax\nstrategies by model type")
+Component(artifactEngine, "ArtifactGenerator", "Core", "Dispatches to artifact\nstrategies by model type")
+Component(cmdService, "ICommandService", "Core", "Executes shell commands")
+
+Rel(artifactEngine, projGen, "Dispatches\nProjectModel")
+Rel(syntaxEngine, pageObjGen, "Dispatches\nPageObjectModel")
+Rel(syntaxEngine, basePageGen, "Dispatches\nBasePageModel")
+Rel(syntaxEngine, testSpecGen, "Dispatches\nTestSpecModel")
+Rel(syntaxEngine, fixtureGen, "Dispatches\nFixtureModel")
+Rel(syntaxEngine, configGen, "Dispatches\nConfigModel")
+Rel(projGen, syntaxEngine, "Generates config\n& BasePage syntax")
+Rel(projGen, cmdService, "npm init,\nnpm install")
+
+@enduml

@@ -1,0 +1,27 @@
+@startuml c4_container
+!theme plain
+!include <C4/C4_Container>
+
+title CodeGenerator Core — Container Diagram
+
+Person(host, "Host Application", "CLI or service")
+
+System_Boundary(core, "CodeGenerator.Core") {
+    Container(artifact, "Artifact Generation Engine", ".NET", "Dispatches object models to IArtifactGenerationStrategy<T> via priority-based selection")
+    Container(syntax, "Syntax Generation Engine", ".NET", "Dispatches typed models to ISyntaxGenerationStrategy<T>, returns code strings")
+    Container(template, "Template Engine", "DotLiquid", "Renders Liquid templates with token dictionaries")
+    Container(naming, "Naming Convention Service", "Humanizer", "Converts identifiers between PascalCase, camelCase, snake_case, kebab-case, etc.")
+    Container(cmd, "Command Service", ".NET Process", "Cross-platform shell command execution")
+}
+
+System_Ext(fs, "File System", "Generated output")
+System_Ext(shell, "OS Shell", "cmd.exe / bash")
+
+Rel(host, artifact, "GenerateAsync(model)")
+Rel(host, syntax, "GenerateAsync<T>(model)")
+Rel(artifact, template, "Renders templates")
+Rel(template, naming, "Token naming variants")
+Rel(artifact, fs, "Writes files")
+Rel(cmd, shell, "Starts processes")
+
+@enduml

@@ -1,0 +1,22 @@
+@startuml c4_container
+!theme plain
+!include <C4/C4_Container>
+
+title Detox Test Generation — Container Diagram
+
+Person(dev, "Developer", "Constructs models,\ncalls generation API")
+
+System_Boundary(codegen, "CodeGenerator Framework") {
+    Container(core, "CodeGenerator.Core", "C# / .NET", "Syntax & Artifact engines,\nstrategy dispatch, DI,\nnaming conventions")
+    Container(detox, "CodeGenerator.Detox", "C# / .NET", "Detox-specific models,\nsyntax strategies,\nproject scaffolding")
+}
+
+System_Ext(fs, "File System", "Generated TypeScript\nproject output")
+System_Ext(npm, "Node.js / npm", "Package installation")
+
+Rel(dev, detox, "Creates models,\ncalls factories", "C# API")
+Rel(detox, core, "Uses ISyntaxGenerator,\nIArtifactGenerator", "Assembly ref")
+Rel(detox, fs, "Writes .ts, .js, .json files")
+Rel(detox, npm, "npm init, npm install")
+
+@enduml

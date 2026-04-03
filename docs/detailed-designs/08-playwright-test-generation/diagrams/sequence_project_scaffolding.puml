@@ -1,0 +1,42 @@
+@startuml sequence_project_scaffolding
+!theme plain
+skinparam sequenceMessageAlign center
+skinparam maxMessageSize 160
+
+title Project Scaffolding — Sequence (FR-09.6)
+
+participant "Host App" as Host
+participant "IArtifactGenerator" as ArtGen
+participant "ProjectGeneration\nStrategy" as ProjGen
+participant "ICommandService" as Cmd
+participant "ISyntaxGenerator" as SynGen
+database "File System" as FS
+
+Host -> ArtGen: GenerateAsync(projectModel)
+ArtGen -> ProjGen: GenerateAsync(projectModel)
+
+ProjGen -> FS: CreateDirectory(pages/)
+ProjGen -> FS: CreateDirectory(specs/)
+ProjGen -> FS: CreateDirectory(fixtures/)
+ProjGen -> FS: CreateDirectory(helpers/)
+
+ProjGen -> Cmd: Start("npm init -y", dir)
+Cmd --> ProjGen: package.json created
+
+ProjGen -> Cmd: Start("npm install\n--save-dev @playwright/test", dir)
+Cmd --> ProjGen: node_modules installed
+
+ProjGen -> SynGen: GenerateAsync(ConfigModel)
+SynGen --> ProjGen: playwright.config.ts content
+ProjGen -> FS: WriteAllText(playwright.config.ts)
+
+ProjGen -> SynGen: GenerateAsync(BasePageModel)
+SynGen --> ProjGen: BasePage.ts content
+ProjGen -> FS: WriteAllText(pages/BasePage.ts)
+
+ProjGen -> FS: WriteAllText(tsconfig.json)
+
+ProjGen --> ArtGen: Complete
+ArtGen --> Host: Complete
+
+@enduml

@@ -1,0 +1,28 @@
+@startuml c4_component
+!theme plain
+!include <C4/C4_Component>
+
+title Detox Test Generation — Component Diagram
+
+Container_Boundary(detox, "CodeGenerator.Detox") {
+    Component(pageObjGen, "PageObjectSyntax\nGenerationStrategy", "C#", "Generates page objects\nwith testID selectors,\nvisibility, interactions")
+    Component(basePageGen, "BasePageSyntax\nGenerationStrategy", "C#", "Generates BasePage\nwith mobile helpers")
+    Component(testSpecGen, "TestSpecSyntax\nGenerationStrategy", "C#", "Generates Jest\ndescribe/it blocks")
+    Component(detoxCfgGen, "DetoxConfigSyntax\nGenerationStrategy", "C#", "Generates .detoxrc.js\nfor iOS/Android")
+    Component(jestCfgGen, "JestConfigSyntax\nGenerationStrategy", "C#", "Generates jest.config.js\nwith ts-jest preset")
+    Component(projGen, "ProjectGeneration\nStrategy", "C#", "Scaffolds directories,\nnpm install, files")
+}
+
+Component(syntaxEngine, "SyntaxGenerator", "Core", "Dispatches to syntax\nstrategies by model type")
+Component(artifactEngine, "ArtifactGenerator", "Core", "Dispatches to artifact\nstrategies by model type")
+Component(cmdService, "ICommandService", "Core", "Executes shell commands")
+
+Rel(artifactEngine, projGen, "Dispatches\nProjectModel")
+Rel(syntaxEngine, pageObjGen, "Dispatches\nPageObjectModel")
+Rel(syntaxEngine, basePageGen, "Dispatches\nBasePageModel")
+Rel(syntaxEngine, testSpecGen, "Dispatches\nTestSpecModel")
+Rel(syntaxEngine, detoxCfgGen, "Dispatches\nDetoxConfigModel")
+Rel(syntaxEngine, jestCfgGen, "Dispatches\nJestConfigModel")
+Rel(projGen, cmdService, "npm init,\nnpm install")
+
+@enduml

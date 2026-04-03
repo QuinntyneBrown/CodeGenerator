@@ -1,0 +1,40 @@
+@startuml sequence_artifact_generation
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Artifact Generation Flow (FR-01.1, FR-01.4)
+
+participant "Client" as C
+participant "IArtifactGenerator\n(ArtifactGenerator)" as AG
+participant "ConcurrentDictionary\n<Type, StrategyBase>" as Cache
+participant "ArtifactStrategyWrapperImpl<T>" as W
+participant "IServiceProvider" as SP
+participant "IArtifactGenerationStrategy<T>" as S
+
+C -> AG : GenerateAsync(model)
+AG -> AG : model.GetType()
+AG -> Cache : GetOrAdd(type)
+
+alt Cache miss
+    Cache -> Cache : MakeGenericType(\nWrapperImpl<T>)
+    Cache -> W ** : Activator.CreateInstance()
+    Cache --> AG : new wrapper
+else Cache hit
+    Cache --> AG : cached wrapper
+end
+
+AG -> W : GenerateAsync(serviceProvider,\nmodel, ct)
+W -> W : cast model to T
+W -> SP : GetRequiredService<\nIEnumerable<IStrategy<T>>>()
+SP --> W : strategies[]
+
+W -> W : Filter: CanHandle(model)
+W -> W : OrderByDescending(GetPriority())
+W -> W : First()
+
+W -> S : GenerateAsync(T target)
+S --> W : Task completed
+W --> AG : done
+AG --> C : done
+
+@enduml

@@ -1,0 +1,27 @@
+@startuml c4_container
+!theme plain
+!include <C4/C4_Container>
+
+title Angular Generation — Container Diagram
+
+Person(dev, "Developer", "Invokes generation\nvia host app")
+
+System_Boundary(codegen, "CodeGenerator.Angular") {
+    Container(syntaxEngine, "Syntax Engine", "C# / ISyntaxGenerator", "Resolves and executes\nISyntaxGenerationStrategy<T>\nfor TypeScript source text")
+    Container(artifactEngine, "Artifact Engine", "C# / IArtifactGenerator", "Resolves and executes\nIArtifactGenerationStrategy<T>\nfor workspace scaffolding")
+    Container(jsonUtils, "JObjectExtensions", "C# static methods", "Mutates angular.json,\ntsconfig, package.json")
+}
+
+System_Ext(ngcli, "Angular CLI", "ng new / ng generate")
+System_Ext(npm, "npm", "Install / uninstall packages")
+System_Ext(fs, "File System", "Generated files")
+
+Rel(dev, artifactEngine, "WorkspaceModel")
+Rel(artifactEngine, syntaxEngine, "Generates TypeScript\nsource via models")
+Rel(artifactEngine, jsonUtils, "Modifies JSON configs")
+Rel(artifactEngine, ngcli, "Runs CLI commands")
+Rel(artifactEngine, npm, "Manages dependencies")
+Rel(artifactEngine, fs, "Writes files")
+Rel(syntaxEngine, fs, "Writes .ts / .scss")
+
+@enduml

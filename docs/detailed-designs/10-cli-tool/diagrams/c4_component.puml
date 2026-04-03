@@ -1,0 +1,24 @@
+@startuml c4_component
+!theme plain
+!include <C4/C4_Component>
+
+title CodeGenerator CLI Tool — Component Diagram
+
+Container_Boundary(cli, "create-code-cli") {
+    Component(program, "Program.cs", "Top-level statements", "Configures DI with AddCoreServices + AddDotNetServices, builds ServiceProvider, invokes root command")
+    Component(root_cmd, "CreateCodeGeneratorCommand", "RootCommand", "Options: -n, -o, -f, --slnx. Scaffolds entire project structure")
+    Component(install_cmd, "InstallCommand", "Command", "Subcommand 'install'. Option: -o. Writes SKILL.md to .claude/skills/")
+}
+
+Component(artifact_gen, "IArtifactGenerator", "Core", "Writes ContentFileModel instances to disk")
+Component(cmd_svc, "ICommandService", "Core", "Executes dotnet new sln, dotnet sln add")
+Component(gen_output, "Generated Project", "Output", ".sln, .csproj, Program.cs, Commands/, install-cli.bat")
+
+Rel(program, root_cmd, "Creates and invokes")
+Rel(root_cmd, install_cmd, "Adds as subcommand")
+Rel(root_cmd, artifact_gen, "GenerateAsync() for .csproj, .cs, .bat files")
+Rel(root_cmd, cmd_svc, "Start() for dotnet CLI commands")
+Rel(root_cmd, gen_output, "Produces")
+Rel(install_cmd, gen_output, "Writes SKILL.md")
+
+@enduml

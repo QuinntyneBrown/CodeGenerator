@@ -1,0 +1,63 @@
+@startuml sequence_page_object_generation
+!theme plain
+skinparam sequenceMessageAlign center
+skinparam maxMessageSize 160
+
+title Page Object Generation — Sequence (FR-09.1)
+
+participant "Caller" as Caller
+participant "ISyntaxGenerator" as SynGen
+participant "PageObjectSyntax\nGenerationStrategy" as POGen
+participant "INamingConvention\nConverter" as Naming
+participant "StringBuilderCache" as SB
+
+Caller -> SynGen: GenerateAsync(pageObjectModel)
+SynGen -> POGen: GenerateAsync(model, ct)
+
+POGen -> SB: Acquire()
+SB --> POGen: StringBuilder
+
+POGen -> Naming: Convert(PascalCase, model.Name)
+Naming --> POGen: "LoginPage"
+
+note right of POGen: Emit imports
+POGen -> POGen: AppendLine(import { Locator, Page })
+POGen -> POGen: AppendLine(import { BasePage })
+POGen -> POGen: Render user imports\n(deduplicate modules)
+
+note right of POGen: Emit class
+POGen -> POGen: AppendLine(export class\nLoginPage extends BasePage)
+POGen -> POGen: AppendLine(protected path)
+
+note right of POGen: Emit locators
+loop each LocatorModel
+    POGen -> Naming: Convert(camelCase, locator.Name)
+    alt GetByTestId
+        POGen -> POGen: this.page.getByTestId("value")
+    else GetByRole
+        POGen -> POGen: this.page.getByRole("value")
+    else GetByLabel
+        POGen -> POGen: this.page.getByLabel("value")
+    else Locator (CSS)
+        POGen -> POGen: this.page.locator("value")
+    end
+end
+
+note right of POGen: Emit action methods
+loop each PageActionModel
+    POGen -> Naming: Convert(camelCase, action.Name)
+    POGen -> POGen: async actionName(params):\nPromise<void> { body }
+end
+
+note right of POGen: Emit query methods
+loop each PageQueryModel
+    POGen -> Naming: Convert(camelCase, query.Name)
+    POGen -> POGen: async queryName():\nPromise<returnType> { body }
+end
+
+POGen -> SB: GetStringAndRelease()
+SB --> POGen: TypeScript string
+POGen --> SynGen: Generated source
+SynGen --> Caller: TypeScript string
+
+@enduml

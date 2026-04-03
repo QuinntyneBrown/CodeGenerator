@@ -1,0 +1,26 @@
+@startuml c4_component
+!theme plain
+!include <C4/C4_Component>
+
+title Angular Generation — Component Diagram
+
+Container_Boundary(artifact, "Artifact Engine") {
+    Component(wsGen, "AngularWorkspace\nGenerationStrategy", "C#", "Priority 2 — full workspace\nscaffolding with Jest,\nNGRx, standalone")
+    Component(projGen, "ProjectGeneration\nStrategy", "C#", "Runs ng generate\napplication / library")
+    Component(fileFactory, "FileFactory", "C#", "Creates barrel index\nFileModel lists")
+}
+
+Container_Boundary(syntax, "Syntax Engine") {
+    Component(tsTypeGen, "TypeScriptType\nSyntaxGenerationStrategy", "C#", "Emits export type\ndeclarations")
+    Component(funcGen, "FunctionSyntax\nGenerationStrategy", "C#", "Emits import + export\nfunction declarations")
+    Component(importGen, "ImportSyntax\nGenerationStrategy", "C#", "Emits ES module\nimport statements")
+}
+
+Component(jsonExt, "JObjectExtensions", "C# static", "AddBuildConfiguration,\nEnableDefaultStandalone,\nAddSupportedLocales, etc.")
+
+Rel(wsGen, projGen, "Delegates per project")
+Rel(wsGen, jsonExt, "Modifies angular.json\nand tsconfig")
+Rel(wsGen, fileFactory, "Creates index files")
+Rel(funcGen, importGen, "Renders imports\nvia ISyntaxGenerator")
+
+@enduml

@@ -1,0 +1,29 @@
+@startuml sequence_project_generation
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Project Generation Workflow
+
+actor Developer as Dev
+participant "IArtifactGenerator" as AG
+participant "ProjectGenerationStrategy" as PGS
+participant "ICommandService" as CMD
+participant "File System" as FS
+
+Dev -> AG : GenerateAsync(ProjectModel)
+AG -> PGS : GenerateAsync(model)
+
+PGS -> CMD : Start("npx react-native@latest init {name}\n--template react-native-template-typescript")
+CMD -> FS : Scaffold RN project structure
+FS --> CMD : Project created
+CMD --> PGS : Init complete
+
+PGS -> CMD : Start("npm install @react-navigation/native\n@react-navigation/stack zustand axios\nreact-native-safe-area-context\nreact-native-screens\nreact-native-gesture-handler")
+CMD -> FS : Install node_modules
+FS --> CMD : Dependencies installed
+CMD --> PGS : Install complete
+
+PGS --> AG : Generation complete
+AG --> Dev : Project ready
+
+@enduml

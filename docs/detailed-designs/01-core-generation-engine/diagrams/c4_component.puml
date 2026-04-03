@@ -1,0 +1,31 @@
+@startuml c4_component
+!theme plain
+!include <C4/C4_Component>
+
+title CodeGenerator Core — Component Diagram
+
+Container_Boundary(core, "CodeGenerator.Core") {
+    Component(iag, "IArtifactGenerator", "Interface", "GenerateAsync(object model)")
+    Component(ag, "ArtifactGenerator", "Class", "ConcurrentDictionary cache + wrapper dispatch")
+    Component(aswi, "ArtifactStrategyWrapperImpl<T>", "Class", "Resolves strategies from DI, filters CanHandle, selects highest priority")
+
+    Component(isg, "ISyntaxGenerator", "Interface", "GenerateAsync<T>(T model)")
+    Component(sg, "SyntaxGenerator", "Class", "ConcurrentDictionary cache + wrapper dispatch")
+    Component(sswi, "SyntaxStrategyWrapperImpl<T>", "Class", "Same resolve/filter/select pattern")
+
+    Component(tp, "LiquidTemplateProcessor", "Class", "DotLiquid template rendering")
+    Component(tb, "TokensBuilder", "Class", "Fluent builder generating naming variants")
+    Component(ncc, "NamingConventionConverter", "Class", "Convention conversion + pluralization")
+
+    Component(cs, "CommandService", "Class", "Cross-platform Process execution")
+}
+
+Rel(iag, ag, "implemented by")
+Rel(ag, aswi, "delegates to")
+Rel(isg, sg, "implemented by")
+Rel(sg, sswi, "delegates to")
+Rel(tb, ncc, "uses for variants")
+Rel(tp, tb, "consumes tokens from")
+Rel(aswi, tp, "strategies use")
+
+@enduml

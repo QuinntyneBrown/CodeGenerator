@@ -1,0 +1,62 @@
+@startuml class_diagram
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 12
+
+title CodeGenerator CLI Tool — Class Diagram
+
+class CreateCodeGeneratorCommand <<RootCommand>> {
+    -_serviceProvider : IServiceProvider
+    +CreateCodeGeneratorCommand(sp : IServiceProvider)
+    -HandleAsync(name, outputDir, framework, slnx) : Task
+    -{static} GenerateProgramContent(name) : string
+    -{static} GenerateRootCommandContent(name) : string
+    -{static} GenerateHelloWorldCommandContent(name) : string
+    -{static} GenerateCliProjectContent(name, framework) : string
+    -{static} GenerateInstallCliBatContent(name) : string
+    __options__
+    -n / --name : string [required]
+    -o / --output : string [default: "."]
+    -f / --framework : string [default: "net9.0"]
+    --slnx : bool [default: false]
+}
+
+class InstallCommand <<Command>> {
+    -_serviceProvider : IServiceProvider
+    +InstallCommand(sp : IServiceProvider)
+    -HandleAsync(outputDirectory) : Task
+    -{static} SkillContent : string
+    __options__
+    -o / --output : string [default: "."]
+}
+
+class "HelloWorldCommand\n(generated)" as HelloWorldCommand <<Command>> {
+    -_serviceProvider : IServiceProvider
+    +HelloWorldCommand(sp : IServiceProvider)
+    -HandleAsync(outputDir, message) : Task
+    __options__
+    -o / --output : string [default: "."]
+    -m / --message : string
+}
+
+class "AppRootCommand\n(generated)" as AppRootCommand <<RootCommand>> {
+    +AppRootCommand(sp : IServiceProvider)
+}
+
+interface IArtifactGenerator {
+    +GenerateAsync(model) : Task
+}
+
+interface ICommandService {
+    +Start(command, workingDir) : void
+}
+
+CreateCodeGeneratorCommand --> InstallCommand : adds subcommand
+CreateCodeGeneratorCommand ..> IArtifactGenerator : resolves from DI
+CreateCodeGeneratorCommand ..> ICommandService : resolves from DI
+CreateCodeGeneratorCommand ..> AppRootCommand : generates source
+CreateCodeGeneratorCommand ..> HelloWorldCommand : generates source
+
+AppRootCommand --> HelloWorldCommand : adds subcommand
+
+@enduml

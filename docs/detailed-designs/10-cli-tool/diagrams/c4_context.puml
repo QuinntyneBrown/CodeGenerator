@@ -1,0 +1,20 @@
+@startuml c4_context
+!theme plain
+!include <C4/C4_Context>
+
+title CodeGenerator CLI Tool — System Context
+
+Person(dev, "Developer", "Creates new code generator projects using the CLI tool")
+
+System(cli, "create-code-cli", ".NET global tool that scaffolds code generator projects and installs Claude skill documentation")
+
+System_Ext(fs, "File System", "Target directory where solution, projects, and scripts are written")
+System_Ext(dotnet, ".NET SDK", "Provides dotnet new, dotnet sln, dotnet pack, and dotnet tool commands")
+System_Ext(nuget, "NuGet Registry", "Hosts CodeGenerator packages referenced by generated projects")
+
+Rel(dev, cli, "Invokes", "CLI args")
+Rel(cli, fs, "Creates directories and writes files")
+Rel(cli, dotnet, "Executes dotnet new sln/slnx, dotnet sln add")
+Rel_L(cli, nuget, "Generated .csproj references packages from")
+
+@enduml

@@ -1,0 +1,94 @@
+@startuml class_diagram
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 11
+skinparam linetype ortho
+
+title Angular Generation — Domain Model
+
+package "Core" <<Rectangle>> {
+    class ArtifactModel {
+        +Parent : ArtifactModel
+        +GetChildren() : IEnumerable<ArtifactModel>
+        +GetDescendants() : List<ArtifactModel>
+    }
+    class SyntaxModel {
+        +Parent : SyntaxModel?
+        +Usings : List<UsingModel>
+        +GetChildren() : IEnumerable<SyntaxModel>
+        +GetDescendants() : List<SyntaxModel>
+    }
+    class FileModel {
+        +Name : string
+        +Directory : string
+        +Extension : string
+        +Path : string
+        +Body : string
+    }
+    class ContentFileModel {
+        +Content : string
+    }
+}
+
+package "Angular.Artifacts" <<Rectangle>> {
+    class WorkspaceModel {
+        +Name : string
+        +Version : string
+        +RootDirectory : string
+        +Directory : string
+        +Projects : List<ProjectModel>
+    }
+    class ProjectModel {
+        +Name : string
+        +Prefix : string
+        +ProjectType : string
+        +Directory : string
+        +RootDirectory : string
+    }
+    class ProjectReferenceModel {
+        +Name : string
+        +ReferencedDirectory : string
+        +ProjectType : string
+    }
+}
+
+package "Angular.Syntax" <<Rectangle>> {
+    class TypeScriptTypeModel {
+        +Name : string
+        +Properties : List<PropertyModel>
+    }
+    class FunctionModel {
+        +Name : string
+        +Body : string
+        +Imports : List<ImportModel>
+    }
+    class ImportModel {
+        +Types : List<TypeModel>
+        +Module : string
+    }
+    class PropertyModel {
+        +Name : string
+        +Type : TypeModel
+    }
+    class FileReplacementModel {
+        +Replace : string
+        +With : string
+    }
+}
+
+ArtifactModel <|-- WorkspaceModel
+ArtifactModel <|-- ProjectModel
+ArtifactModel <|-- ProjectReferenceModel
+ArtifactModel <|-- FileModel
+FileModel <|-- ContentFileModel
+
+SyntaxModel <|-- TypeScriptTypeModel
+SyntaxModel <|-- FunctionModel
+
+WorkspaceModel "1" *-- "*" ProjectModel : Projects
+
+TypeScriptTypeModel "1" *-- "*" PropertyModel : Properties
+FunctionModel "1" *-- "*" ImportModel : Imports
+PropertyModel --> "1" TypeModel : Type
+
+@enduml

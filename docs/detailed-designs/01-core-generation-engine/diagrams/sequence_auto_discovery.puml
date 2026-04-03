@@ -1,0 +1,48 @@
+@startuml sequence_auto_discovery
+!theme plain
+skinparam sequenceMessageAlign center
+
+title DI Auto-Discovery Flow (FR-01.3)
+
+participant "Host Startup" as H
+participant "ConfigureServices" as CS
+participant "Assembly" as A
+participant "IServiceCollection" as DI
+
+H -> CS : AddCoreServices(assembly)
+CS -> DI : AddSingleton<IUserInputService,\nUserInputService>()
+
+== Artifact Strategy Registration ==
+
+CS -> A : GetTypes()
+A --> CS : all types
+
+CS -> CS : Filter: !IsAbstract &&\nimplements IArtifactGenerationStrategy<>
+
+loop each matching type
+    CS -> CS : Get implemented interfaces
+    loop each IArtifactGenerationStrategy<T>
+        CS -> DI : AddSingleton(\nIArtifactGenerationStrategy<T>,\nimplementation)
+    end
+end
+
+CS -> DI : AddSingleton<IObjectCache, ObjectCache>()
+CS -> DI : AddSingleton<IArtifactGenerator,\nArtifactGenerator>()
+
+== Syntax Strategy Registration ==
+
+CS -> A : GetTypes()
+A --> CS : all types
+
+CS -> CS : Filter: !IsAbstract &&\nimplements ISyntaxGenerationStrategy<>
+
+loop each matching type
+    CS -> CS : Get implemented interfaces
+    loop each ISyntaxGenerationStrategy<T>
+        CS -> DI : AddSingleton(\nISyntaxGenerationStrategy<T>,\nimplementation)
+    end
+end
+
+CS -> DI : AddSingleton<ISyntaxGenerator,\nSyntaxGenerator>()
+
+@enduml

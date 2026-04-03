@@ -1,0 +1,36 @@
+@startuml sequence_template_processing
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Template Processing Flow (FR-13.1, FR-13.2)
+
+participant "Strategy" as S
+participant "TokensBuilder" as TB
+participant "SyntaxExtensions" as SE
+participant "NamingConventionConverter" as NCC
+participant "ITemplateProcessor\n(LiquidTemplateProcessor)" as TP
+participant "DotLiquid" as DL
+
+S -> TB : new TokensBuilder()
+S -> TB : With("EntityName", value)
+TB -> SE : token.ToTokens("EntityName")
+SE -> NCC : Convert(PascalCase, value)
+SE -> NCC : Convert(CamelCase, value)
+SE -> NCC : Convert(SnakeCase, value)
+SE -> NCC : Convert(PascalCase, value, plural)
+SE -> NCC : Convert(CamelCase, value, plural)
+SE -> NCC : Convert(SnakeCase, value, plural)
+SE -> NCC : Convert(TitleCase, value)
+SE --> TB : dict with 8 variants
+
+S -> TB : Build()
+TB --> S : Dictionary<string, object>
+
+S -> TP : Process(template, tokens)
+TP -> DL : Hash.FromDictionary(tokens)
+TP -> DL : Template.Parse(template)
+TP -> DL : Render(hash)
+DL --> TP : rendered string
+TP --> S : rendered string
+
+@enduml

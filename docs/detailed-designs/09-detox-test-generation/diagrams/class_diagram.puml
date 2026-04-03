@@ -1,0 +1,111 @@
+@startuml class_diagram
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 11
+skinparam defaultFontSize 10
+
+title Detox Test Generation — Domain Model
+
+class SyntaxModel <<Core>> {
+    +Parent: SyntaxModel?
+    +Usings: List<UsingModel>
+    +GetChildren(): IEnumerable<SyntaxModel>
+}
+
+class ArtifactModel <<Core>> {
+    +Parent: ArtifactModel?
+    +GetChildren(): IEnumerable<ArtifactModel>
+}
+
+class PageObjectModel {
+    +Name: string
+    +TestIds: List<PropertyModel>
+    +VisibilityChecks: List<string>
+    +Interactions: List<InteractionModel>
+    +CombinedActions: List<CombinedActionModel>
+    +QueryHelpers: List<QueryHelperModel>
+    +Imports: List<ImportModel>
+}
+
+class PropertyModel {
+    +Name: string
+    +Id: string
+}
+
+class InteractionModel {
+    +Name: string
+    +Params: string
+    +Body: string
+}
+
+class CombinedActionModel {
+    +Name: string
+    +Params: string
+    +Steps: List<string>
+}
+
+class QueryHelperModel {
+    +Name: string
+    +Params: string
+    +Body: string
+}
+
+class BasePageModel {
+    +AdditionalMethods: List<InteractionModel>
+}
+
+class TestSpecModel {
+    +Name: string
+    +PageObjectType: string
+    +Tests: List<TestModel>
+    +Imports: List<ImportModel>
+}
+
+class TestModel {
+    +Description: string
+    +Steps: List<string>
+}
+
+class DetoxConfigModel {
+    +AppName: string
+    +IosBuild: string
+    +AndroidBuild: string
+    +TestRunner: string
+}
+
+class JestConfigModel {
+    +TestMatch: string
+    +TestTimeout: int
+    +SetupTimeout: int
+}
+
+class ImportModel {
+    +Types: List<TypeModel>
+    +Module: string
+}
+
+class "ProjectModel\n(Artifact)" as ProjectModelArtifact {
+    +Name: string
+    +Directory: string
+    +RootDirectory: string
+    +AppName: string
+    +Platforms: string
+}
+
+SyntaxModel <|-- PageObjectModel
+SyntaxModel <|-- BasePageModel
+SyntaxModel <|-- TestSpecModel
+SyntaxModel <|-- DetoxConfigModel
+SyntaxModel <|-- JestConfigModel
+ArtifactModel <|-- ProjectModelArtifact
+
+PageObjectModel *-- "0..*" PropertyModel
+PageObjectModel *-- "0..*" InteractionModel
+PageObjectModel *-- "0..*" CombinedActionModel
+PageObjectModel *-- "0..*" QueryHelperModel
+PageObjectModel o-- "0..*" ImportModel
+
+TestSpecModel *-- "0..*" TestModel
+TestSpecModel o-- "0..*" ImportModel
+
+@enduml

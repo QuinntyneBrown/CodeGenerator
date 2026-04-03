@@ -1,0 +1,124 @@
+@startuml class_diagram
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 11
+skinparam defaultFontSize 10
+
+title Playwright Test Generation — Domain Model
+
+class SyntaxModel <<Core>> {
+    +Parent: SyntaxModel?
+    +Usings: List<UsingModel>
+    +GetChildren(): IEnumerable<SyntaxModel>
+}
+
+class ArtifactModel <<Core>> {
+    +Parent: ArtifactModel?
+    +GetChildren(): IEnumerable<ArtifactModel>
+}
+
+class PageObjectModel {
+    +Name: string
+    +Path: string
+    +Locators: List<LocatorModel>
+    +Actions: List<PageActionModel>
+    +Queries: List<PageQueryModel>
+    +Imports: List<ImportModel>
+}
+
+class LocatorModel {
+    +Name: string
+    +Strategy: LocatorStrategy
+    +Value: string
+}
+
+enum LocatorStrategy {
+    GetByTestId
+    GetByRole
+    GetByLabel
+    Locator
+}
+
+class PageActionModel {
+    +Name: string
+    +Params: string
+    +Body: string
+}
+
+class PageQueryModel {
+    +Name: string
+    +ReturnType: string
+    +Body: string
+}
+
+class BasePageModel {
+    +BaseUrl: string
+}
+
+class TestSpecModel {
+    +Name: string
+    +PageObjectType: string
+    +SetupActions: List<string>
+    +Tests: List<TestCaseModel>
+    +Imports: List<ImportModel>
+}
+
+class TestCaseModel {
+    +Description: string
+    +ArrangeSteps: List<string>
+    +ActSteps: List<string>
+    +AssertSteps: List<string>
+}
+
+class FixtureModel {
+    +Name: string
+    +Fixtures: List<FixtureDefinitionModel>
+}
+
+class FixtureDefinitionModel {
+    +Name: string
+    +Type: string
+    +Setup: string
+}
+
+class ConfigModel {
+    +BaseUrl: string
+    +Browsers: List<string>
+    +Timeout: int
+    +Retries: int
+    +Reporter: string
+}
+
+class ImportModel {
+    +Types: List<TypeModel>
+    +Module: string
+    +IsTypeOnly: bool
+}
+
+class "ProjectModel\n(Artifact)" as ProjectModelArtifact {
+    +Name: string
+    +Directory: string
+    +RootDirectory: string
+    +BaseUrl: string
+    +Browsers: List<string>
+}
+
+SyntaxModel <|-- PageObjectModel
+SyntaxModel <|-- BasePageModel
+SyntaxModel <|-- TestSpecModel
+SyntaxModel <|-- FixtureModel
+SyntaxModel <|-- ConfigModel
+ArtifactModel <|-- ProjectModelArtifact
+
+PageObjectModel *-- "0..*" LocatorModel
+PageObjectModel *-- "0..*" PageActionModel
+PageObjectModel *-- "0..*" PageQueryModel
+PageObjectModel o-- "0..*" ImportModel
+LocatorModel --> LocatorStrategy
+
+TestSpecModel *-- "0..*" TestCaseModel
+TestSpecModel o-- "0..*" ImportModel
+
+FixtureModel *-- "0..*" FixtureDefinitionModel
+
+@enduml

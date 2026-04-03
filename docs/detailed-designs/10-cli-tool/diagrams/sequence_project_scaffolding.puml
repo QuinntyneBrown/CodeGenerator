@@ -1,0 +1,46 @@
+@startuml sequence_project_scaffolding
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Project Scaffolding Workflow
+
+actor Developer as dev
+participant "CreateCodeGenerator\nCommand" as cmd
+participant "ICommandService" as cmdsvc
+participant "IArtifactGenerator" as artgen
+database "File System" as fs
+
+dev -> cmd : create-code-cli -n MyGen -o ./output
+activate cmd
+
+cmd -> cmd : Create SolutionModel("MyGen", "./output")
+cmd -> cmd : Create ProjectModel(Console, "MyGen.Cli")
+cmd -> cmd : Add Program.cs, AppRootCommand.cs,\nHelloWorldCommand.cs to project.Files
+
+cmd -> fs : CreateDirectory (solution, src, Commands, eng/scripts)
+
+alt --slnx flag
+    cmd -> cmdsvc : Start("dotnet new slnx -n MyGen")
+else default .sln
+    cmd -> cmdsvc : Start("dotnet new sln -n MyGen")
+end
+cmdsvc -> fs : Write MyGen.sln
+
+cmd -> artgen : GenerateAsync(ContentFileModel: MyGen.Cli.csproj)
+artgen -> fs : Write .csproj (PackAsTool=true)
+
+loop for each file in project.Files
+    cmd -> artgen : GenerateAsync(file)
+    artgen -> fs : Write Program.cs / AppRootCommand.cs / HelloWorldCommand.cs
+end
+
+cmd -> cmdsvc : Start("dotnet sln add {projectPath}")
+cmdsvc -> fs : Update .sln with project reference
+
+cmd -> artgen : GenerateAsync(ContentFileModel: install-cli.bat)
+artgen -> fs : Write eng/scripts/install-cli.bat
+
+cmd --> dev : "Solution created successfully"
+deactivate cmd
+
+@enduml

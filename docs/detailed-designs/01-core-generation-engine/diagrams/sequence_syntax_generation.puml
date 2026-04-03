@@ -1,0 +1,40 @@
+@startuml sequence_syntax_generation
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Syntax Generation Flow (FR-01.2, FR-01.4)
+
+participant "Client" as C
+participant "ISyntaxGenerator\n(SyntaxGenerator)" as SG
+participant "ConcurrentDictionary\n<Type, StrategyBase>" as Cache
+participant "SyntaxStrategyWrapperImpl<T>" as W
+participant "IServiceProvider" as SP
+participant "ISyntaxGenerationStrategy<T>" as S
+
+C -> SG : GenerateAsync<T>(model)
+SG -> SG : model.GetType()
+SG -> Cache : GetOrAdd(type)
+
+alt Cache miss
+    Cache -> Cache : MakeGenericType(\nWrapperImpl<T>)
+    Cache -> W ** : Activator.CreateInstance()
+    Cache --> SG : new wrapper
+else Cache hit
+    Cache --> SG : cached wrapper
+end
+
+SG -> W : GenerateAsync(serviceProvider,\nmodel, ct)
+W -> W : cast model to T
+W -> SP : GetService<\nIEnumerable<IStrategy<T>>>()
+SP --> W : strategies[]
+
+W -> W : Filter: CanHandle(model)
+W -> W : OrderByDescending(GetPriority())
+W -> W : First()
+
+W -> S : GenerateAsync(T target, ct)
+S --> W : code string
+W --> SG : code string
+SG --> C : code string
+
+@enduml

@@ -1,0 +1,45 @@
+@startuml sequence_navigation_generation
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Navigation Generation Workflow
+
+participant "ISyntaxGenerator" as SG
+participant "NavigationSyntaxGenerationStrategy" as NSG
+participant "INamingConventionConverter" as NCC
+participant "StringBuilder" as SB
+
+SG -> NSG : GenerateAsync(NavigationModel, ct)
+
+NSG -> NCC : Convert(PascalCase, name)
+NCC --> NSG : navigatorName
+
+NSG -> SB : Append "import React"
+NSG -> SB : Append "import { NavigationContainer }"
+
+alt type == "stack"
+    NSG -> SB : Append "import { createStackNavigator }"
+else type == "tab"
+    NSG -> SB : Append "import { createBottomTabNavigator }"
+else type == "drawer"
+    NSG -> SB : Append "import { createDrawerNavigator }"
+end
+
+NSG -> SB : Append "export type {Name}ParamList = {\n  Screen1: undefined;\n  Screen2: undefined;\n}"
+
+alt type == "stack"
+    NSG -> SB : Append "const Stack = createStackNavigator<ParamList>()"
+else type == "tab"
+    NSG -> SB : Append "const Tab = createBottomTabNavigator<ParamList>()"
+else type == "drawer"
+    NSG -> SB : Append "const Drawer = createDrawerNavigator<ParamList>()"
+end
+
+NSG -> SB : Append "export const {Name}: React.FC"
+NSG -> SB : Append "<NavigationContainer>"
+NSG -> SB : Append "<Navigator.Screen> per screen entry"
+NSG -> SB : Append "</NavigationContainer>"
+
+NSG --> SG : Generated TypeScript string
+
+@enduml

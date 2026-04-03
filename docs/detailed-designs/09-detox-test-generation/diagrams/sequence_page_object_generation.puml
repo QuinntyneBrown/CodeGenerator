@@ -1,0 +1,69 @@
+@startuml sequence_page_object_generation
+!theme plain
+skinparam sequenceMessageAlign center
+skinparam maxMessageSize 160
+
+title Page Object Generation — Sequence (FR-10.1)
+
+participant "Caller" as Caller
+participant "ISyntaxGenerator" as SynGen
+participant "PageObjectSyntax\nGenerationStrategy" as POGen
+participant "INamingConvention\nConverter" as Naming
+participant "StringBuilderCache" as SB
+
+Caller -> SynGen: GenerateAsync(pageObjectModel)
+SynGen -> POGen: GenerateAsync(model, ct)
+
+POGen -> SB: Acquire()
+SB --> POGen: StringBuilder
+
+POGen -> Naming: Convert(PascalCase, model.Name)
+Naming --> POGen: "LoginPage"
+
+note right of POGen: Emit imports
+POGen -> POGen: Render import statements\nvia ISyntaxGenerator
+
+note right of POGen: Emit class declaration
+POGen -> POGen: export class LoginPage\nextends BasePage {
+
+note right of POGen: Emit testID fields
+loop each PropertyModel in TestIds
+    POGen -> Naming: Convert(camelCase, property.Name)
+    POGen -> POGen: private fieldId = 'test-id-value';
+end
+
+note right of POGen: Emit visibility checks
+loop each VisibilityCheck
+    POGen -> POGen: expect(element(by.id(\nthis.fieldId))).toBeVisible()
+end
+
+note right of POGen: Emit interactions
+loop each InteractionModel
+    POGen -> Naming: Convert(camelCase, interaction.Name)
+    alt tap
+        POGen -> POGen: element(by.id(testId)).tap()
+    else typeText
+        POGen -> POGen: element(by.id(testId)).typeText(text)
+    else scroll
+        POGen -> POGen: element(by.id(testId)).scroll(px, dir)
+    else swipe
+        POGen -> POGen: element(by.id(testId)).swipe(dir, spd)
+    end
+end
+
+note right of POGen: Emit combined actions
+loop each CombinedActionModel
+    POGen -> POGen: async method executing\nsequential steps
+end
+
+note right of POGen: Emit query helpers
+loop each QueryHelperModel
+    POGen -> POGen: async query returning\nelement attribute
+end
+
+POGen -> SB: GetStringAndRelease()
+SB --> POGen: TypeScript string
+POGen --> SynGen: Generated source
+SynGen --> Caller: TypeScript string
+
+@enduml

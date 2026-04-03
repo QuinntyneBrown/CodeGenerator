@@ -1,0 +1,24 @@
+@startuml c4_context
+!theme plain
+!include <C4/C4_Context>
+
+title Playwright Test Generation — System Context
+
+Person(dev, "Developer", "Builds models and\ninvokes generation")
+
+System(codegen, "CodeGenerator.Playwright", "Generates Playwright test\nprojects from C# models")
+
+System_Ext(hostApp, "Host Application", ".NET app or CLI that\norchestrates generation")
+System_Ext(fs, "File System", "Target directory for\ngenerated TypeScript files")
+System_Ext(npm, "Node.js / npm", "Package manager for\n@playwright/test install")
+System_Ext(pwRunner, "Playwright Test Runner", "Executes generated\ntest suites")
+System_Ext(browsers, "Browsers", "Chromium, Firefox,\nWebKit engines")
+
+Rel(dev, hostApp, "Configures models")
+Rel(hostApp, codegen, "Invokes generation", "C# API")
+Rel(codegen, fs, "Writes .ts files,\nconfig, tsconfig")
+Rel(codegen, npm, "npm init / npm install")
+Rel(pwRunner, fs, "Reads test files")
+Rel(pwRunner, browsers, "Launches & controls")
+
+@enduml

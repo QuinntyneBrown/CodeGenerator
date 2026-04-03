@@ -1,0 +1,39 @@
+@startuml sequence_install_skill
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Install Skill Workflow
+
+actor Developer as dev
+participant "InstallCommand" as cmd
+participant "ILogger" as log
+database "File System" as fs
+
+dev -> cmd : create-code-cli install -o ./myproject
+activate cmd
+
+cmd -> cmd : Resolve ILogger<InstallCommand> from DI
+cmd -> cmd : Build path:\n./myproject/.claude/skills/code-generator/
+
+cmd -> fs : Directory.CreateDirectory(\n".claude/skills/code-generator/")
+fs --> cmd : Directory created
+
+cmd -> fs : File.WriteAllTextAsync(\n"SKILL.md", SkillContent)
+fs --> cmd : File written
+
+cmd -> log : "Installed Claude skill: {path}"
+
+cmd --> dev : Skill installed successfully
+deactivate cmd
+
+note right of fs
+    SKILL.md contains comprehensive
+    documentation covering:
+    • Core Abstractions (IArtifactGenerator, ISyntaxGenerator)
+    • DotNet Models & Factories
+    • Angular Models
+    • Generation Patterns
+    • Package references for all 9 packages
+end note
+
+@enduml
