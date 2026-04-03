@@ -128,6 +128,11 @@ public class ControllerSyntaxGenerationStrategy : ISyntaxGenerationStrategy<Cont
             builder.AppendLine();
             builder.AppendLine();
 
+            if (route.Methods == null || route.Methods.Count == 0)
+            {
+                route.Methods = new List<string> { "GET" };
+            }
+
             var methods = string.Join("', '", route.Methods);
 
             builder.AppendLine($"@bp.route('{route.Path}', methods=['{methods}'])");

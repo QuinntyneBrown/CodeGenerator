@@ -21,7 +21,7 @@ public class HookSyntaxGenerationStrategy : ISyntaxGenerationStrategy<HookModel>
     {
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         this.namingConventionConverter = namingConventionConverter ?? throw new ArgumentNullException(nameof(namingConventionConverter));
-        this.syntaxGenerator = syntaxGenerator;
+        this.syntaxGenerator = syntaxGenerator ?? throw new ArgumentNullException(nameof(syntaxGenerator));
     }
 
     public async Task<string> GenerateAsync(HookModel model, CancellationToken cancellationToken)

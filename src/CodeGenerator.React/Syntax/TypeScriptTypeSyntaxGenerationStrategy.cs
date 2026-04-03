@@ -31,7 +31,9 @@ public class TypeScriptTypeSyntaxGenerationStrategy : ISyntaxGenerationStrategy<
 
         foreach (var property in model.Properties)
         {
-            builder.AppendLine($"{namingConventionConverter.Convert(NamingConvention.CamelCase, property.Name)}?: {namingConventionConverter.Convert(NamingConvention.CamelCase, property.Type.Name)};".Indent(1, 2));
+            var propName = namingConventionConverter.Convert(NamingConvention.CamelCase, property.Name);
+            var typeName = property.Type.Name;
+            builder.AppendLine($"{propName}?: {typeName};".Indent(1, 2));
         }
 
         builder.AppendLine("};");

@@ -102,6 +102,7 @@ public class SchemaSyntaxGenerationStrategy : ISyntaxGenerationStrategy<SchemaMo
 
             foreach (var field in model.Fields)
             {
+                var fieldType = string.IsNullOrEmpty(field.FieldType) ? "String" : field.FieldType;
                 var fieldName = namingConventionConverter.Convert(NamingConvention.KebobCase, field.Name);
                 var fieldArgs = new List<string>();
 
@@ -134,7 +135,7 @@ public class SchemaSyntaxGenerationStrategy : ISyntaxGenerationStrategy<SchemaMo
 
                 var args = fieldArgs.Count > 0 ? string.Join(", ", fieldArgs) : string.Empty;
 
-                builder.AppendLine($"    {fieldName} = fields.{field.FieldType}({args})");
+                builder.AppendLine($"    {fieldName} = fields.{fieldType}({args})");
             }
         }
 
@@ -177,6 +178,7 @@ public class SchemaSyntaxGenerationStrategy : ISyntaxGenerationStrategy<SchemaMo
             {
                 foreach (var field in subSchema.Fields)
                 {
+                    var fieldType = string.IsNullOrEmpty(field.FieldType) ? "String" : field.FieldType;
                     var fieldName = namingConventionConverter.Convert(NamingConvention.KebobCase, field.Name);
                     var fieldArgs = new List<string>();
 
@@ -207,7 +209,7 @@ public class SchemaSyntaxGenerationStrategy : ISyntaxGenerationStrategy<SchemaMo
                     }
 
                     var args = fieldArgs.Count > 0 ? string.Join(", ", fieldArgs) : string.Empty;
-                    builder.AppendLine($"    {fieldName} = fields.{field.FieldType}({args})");
+                    builder.AppendLine($"    {fieldName} = fields.{fieldType}({args})");
                 }
             }
         }
