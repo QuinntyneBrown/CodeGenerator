@@ -59,9 +59,9 @@ public class SolutionGenerationStrategy : IArtifactGenerationStrategy<SolutionMo
 
         _fileSystem.Directory.CreateDirectory(solutionDocsDirectory);
 
-        await _artifactGenerator.GenerateAsync(new ContentFileModel($"# {model.Name}", "README", solutionDocsDirectory, ".md"));
+        await _artifactGenerator.GenerateAsync(new ContentFileModel($"# {model.Name}{Environment.NewLine}", "README", solutionDocsDirectory, ".md"));
 
-        await _artifactGenerator.GenerateAsync(new ContentFileModel($"# {model.Name}", "README", model.SolutionDirectory, ".md"));
+        await _artifactGenerator.GenerateAsync(new ContentFileModel($"# {model.Name}{Environment.NewLine}", "README", model.SolutionDirectory, ".md"));
 
         foreach (var project in model.Projects)
         {
