@@ -108,8 +108,9 @@ public class ModelSyntaxGenerationStrategy : ISyntaxGenerationStrategy<ModelMode
             foreach (var column in model.Columns)
             {
                 var colName = namingConventionConverter.Convert(NamingConvention.KebobCase, column.Name);
-                var columnTypeStr = column.ColumnType;
-                if (column.Length.HasValue && column.ColumnType.Contains("String"))
+                var columnType = column.ColumnType ?? "String";
+                var columnTypeStr = columnType;
+                if (column.Length.HasValue && columnType.Contains("String"))
                 {
                     columnTypeStr += $"({column.Length})";
                 }

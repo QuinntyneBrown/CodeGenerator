@@ -135,7 +135,9 @@ public class ControllerSyntaxGenerationStrategy : ISyntaxGenerationStrategy<Cont
 
             var methods = string.Join("', '", route.Methods);
 
-            builder.AppendLine($"@bp.route('{route.Path}', methods=['{methods}'])");
+            var routePath = route.Path ?? "/";
+
+            builder.AppendLine($"@bp.route('{routePath}', methods=['{methods}'])");
 
             if (route.RequiresAuth)
             {
@@ -144,7 +146,7 @@ public class ControllerSyntaxGenerationStrategy : ISyntaxGenerationStrategy<Cont
 
             // Extract path parameters from route (e.g., <string:todo_id> -> todo_id)
             var pathParams = new List<string>();
-            var pathParamMatches = System.Text.RegularExpressions.Regex.Matches(route.Path, @"<\w+:(\w+)>");
+            var pathParamMatches = System.Text.RegularExpressions.Regex.Matches(routePath, @"<\w+:(\w+)>");
             foreach (System.Text.RegularExpressions.Match match in pathParamMatches)
             {
                 pathParams.Add(match.Groups[1].Value);

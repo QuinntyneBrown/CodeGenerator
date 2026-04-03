@@ -60,7 +60,8 @@ public class ComponentSyntaxGenerationStrategy : ISyntaxGenerationStrategy<Compo
 
             foreach (var prop in model.Props)
             {
-                builder.AppendLine($"{namingConventionConverter.Convert(NamingConvention.CamelCase, prop.Name)}?: {prop.Type.Name};".Indent(1, 2));
+                var typeName = prop.Type?.Name ?? "any";
+                builder.AppendLine($"{namingConventionConverter.Convert(NamingConvention.CamelCase, prop.Name)}?: {typeName};".Indent(1, 2));
             }
 
             if (model.IncludeChildren)

@@ -24,7 +24,7 @@ public class ImportSyntaxGenerationStrategy : ISyntaxGenerationStrategy<ImportMo
 
         builder.Append("import { ");
 
-        builder.AppendJoin(',', model.Types.Select(x => x.Name));
+        builder.AppendJoin(',', model.Types.Where(x => x != null).Select(x => x.Name));
 
         builder.Append(" } from \"");
 

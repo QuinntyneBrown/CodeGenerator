@@ -40,7 +40,7 @@ public class TypeScriptInterfaceSyntaxGenerationStrategy : ISyntaxGenerationStra
             var propName = namingConventionConverter.Convert(NamingConvention.CamelCase, property.Name);
             var typeName = property.IsArray && !string.IsNullOrEmpty(property.ArrayElementType)
                 ? $"{property.ArrayElementType}[]"
-                : property.Type.Name;
+                : property.Type?.Name ?? "any";
             var optionalMarker = property.IsOptional ? "?" : "";
             var readonlyPrefix = property.IsReadonly ? "readonly " : "";
             builder.AppendLine($"{readonlyPrefix}{propName}{optionalMarker}: {typeName};".Indent(1, 2));
@@ -65,7 +65,7 @@ public class TypeScriptInterfaceSyntaxGenerationStrategy : ISyntaxGenerationStra
                 var propName = namingConventionConverter.Convert(NamingConvention.CamelCase, property.Name);
                 var typeName = property.IsArray && !string.IsNullOrEmpty(property.ArrayElementType)
                     ? $"{property.ArrayElementType}[]"
-                    : property.Type.Name;
+                    : property.Type?.Name ?? "any";
                 var optionalMarker = property.IsOptional ? "?" : "";
                 var readonlyPrefix = property.IsReadonly ? "readonly " : "";
                 builder.AppendLine($"{readonlyPrefix}{propName}{optionalMarker}: {typeName};".Indent(1, 2));

@@ -32,7 +32,7 @@ public class TypeScriptTypeSyntaxGenerationStrategy : ISyntaxGenerationStrategy<
         foreach (var property in model.Properties)
         {
             var propName = namingConventionConverter.Convert(NamingConvention.CamelCase, property.Name);
-            var typeName = property.Type.Name;
+            var typeName = property.Type?.Name ?? "any";
             builder.AppendLine($"{propName}?: {typeName};".Indent(1, 2));
         }
 

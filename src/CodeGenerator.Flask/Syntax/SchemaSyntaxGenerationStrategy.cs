@@ -28,15 +28,17 @@ public class SchemaSyntaxGenerationStrategy : ISyntaxGenerationStrategy<SchemaMo
         var builder = StringBuilderCache.Acquire();
 
         // Collect all imports and deduplicate by module
+        var baseClass = string.IsNullOrEmpty(model.BaseClass) ? "Schema" : model.BaseClass;
+
         var importsByModule = new Dictionary<string, HashSet<string>>();
-        if (!string.IsNullOrEmpty(model.BaseClass) && model.BaseClass.Contains("SQLAlchemy"))
+        if (baseClass.Contains("SQLAlchemy"))
         {
-            importsByModule["marshmallow_sqlalchemy"] = new HashSet<string> { model.BaseClass };
+            importsByModule["marshmallow_sqlalchemy"] = new HashSet<string> { baseClass };
             importsByModule["marshmallow"] = new HashSet<string> { "fields", "validate" };
         }
         else
         {
-            importsByModule["marshmallow"] = new HashSet<string> { model.BaseClass, "fields", "validate" };
+            importsByModule["marshmallow"] = new HashSet<string> { baseClass, "fields", "validate" };
         }
 
         foreach (var import in model.Imports)
@@ -74,7 +76,7 @@ public class SchemaSyntaxGenerationStrategy : ISyntaxGenerationStrategy<SchemaMo
             ? className
             : $"{className}Schema";
 
-        builder.AppendLine($"class {schemaClassName}({model.BaseClass}):");
+        builder.AppendLine($"class {schemaClassName}({baseClass}):");
 
         if (model.Fields.Count == 0)
         {

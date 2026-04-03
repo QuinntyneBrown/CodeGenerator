@@ -56,7 +56,8 @@ public class StoreSyntaxGenerationStrategy : ISyntaxGenerationStrategy<StoreMode
 
         foreach (var property in model.StateProperties)
         {
-            builder.AppendLine($"{namingConventionConverter.Convert(NamingConvention.CamelCase, property.Name)}: {property.Type.Name};".Indent(1, 2));
+            var typeName = property.Type?.Name ?? "any";
+            builder.AppendLine($"{namingConventionConverter.Convert(NamingConvention.CamelCase, property.Name)}: {typeName};".Indent(1, 2));
         }
 
         foreach (var action in model.Actions)
@@ -94,7 +95,7 @@ public class StoreSyntaxGenerationStrategy : ISyntaxGenerationStrategy<StoreMode
         foreach (var property in model.StateProperties)
         {
             var propertyName = namingConventionConverter.Convert(NamingConvention.CamelCase, property.Name);
-            var defaultValue = GetDefaultValue(property.Type.Name);
+            var defaultValue = GetDefaultValue(property.Type?.Name ?? "any");
             builder.AppendLine($"{propertyName}: {defaultValue},".Indent(1, 2));
         }
 
