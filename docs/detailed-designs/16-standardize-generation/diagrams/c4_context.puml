@@ -1,0 +1,16 @@
+@startuml c4_context
+!theme plain
+!include <C4/C4_Context>
+
+title System Context — Standardized Generation
+
+Person(dev, "Developer", "Defines generation models\nand invokes generators")
+System(codegen, "CodeGenerator Framework", "Model-driven code generation\nfor .NET, Python, JS/TS targets")
+System_Ext(filesystem, "File System", "Generated source files,\nconfigs, and markup")
+System_Ext(di, "DI Container", "Microsoft.Extensions\n.DependencyInjection")
+
+Rel(dev, codegen, "Provides models, invokes CLI")
+Rel(codegen, filesystem, "Writes generated artifacts")
+Rel(di, codegen, "Resolves strategies\nand services")
+
+@enduml

@@ -1,0 +1,75 @@
+@startuml class_diagram_after
+!theme plain
+
+title Simplified Class Hierarchy (2 Layers)
+
+skinparam classAttributeIconSize 0
+
+package "Artifacts" {
+    interface "IArtifactGenerationStrategy<T>" as IAGS {
+        + CanHandle(model: object): bool
+        + GetPriority(): int
+        + GenerateAsync(target: T): Task
+    }
+
+    class "ArtifactGenerator" as AG {
+        - _logger: ILogger<ArtifactGenerator>
+        - _registry: IStrategyRegistry
+        - _serviceProvider: IServiceProvider
+        + GenerateAsync(model: object): Task
+    }
+
+    AG ..> IAGS : retrieves via registry,\nfilters, invokes
+}
+
+package "Syntax" {
+    interface "ISyntaxGenerationStrategy<T>" as ISGS {
+        + GetPriority(): int
+        + CanHandle(target: object): bool
+        + GenerateAsync(target: T, ct): Task<string>
+    }
+
+    class "SyntaxGenerator" as SG {
+        - _logger: ILogger<SyntaxGenerator>
+        - _registry: IStrategyRegistry
+        + GenerateAsync<T>(model: T): Task<string>
+    }
+
+    SG ..> ISGS : retrieves via registry,\nfilters, invokes
+}
+
+package "Shared Infrastructure" {
+    interface "IStrategyRegistry" as ISR {
+        + GetArtifactStrategies(modelType: Type): IReadOnlyList<object>
+        + GetSyntaxStrategies(modelType: Type): IReadOnlyList<object>
+    }
+
+    class "StrategyRegistry" as SR {
+        - _artifactStrategies: Dictionary<Type, List<object>>
+        - _syntaxStrategies: Dictionary<Type, List<object>>
+        + GetArtifactStrategies(modelType): IReadOnlyList<object>
+        + GetSyntaxStrategies(modelType): IReadOnlyList<object>
+    }
+
+    ISR <|.. SR
+
+    AG --> ISR : injected
+    SG --> ISR : injected
+}
+
+note bottom of SR
+  Populated once at DI registration time.
+  No runtime reflection. No static state.
+  Instance-scoped (Singleton via DI).
+end note
+
+note bottom of AG
+  **Removed:**
+  - ArtifactGenerationStrategyBase
+  - ArtifactGenerationStrategyWrapper<T>
+  - ArtifactGenerationStrategyWrapperImplementation<T>
+  - static ConcurrentDictionary
+  - MakeGenericType / Activator.CreateInstance
+end note
+
+@enduml

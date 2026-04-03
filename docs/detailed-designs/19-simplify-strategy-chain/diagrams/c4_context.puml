@@ -1,0 +1,33 @@
+@startuml c4_context
+!theme plain
+
+title System Context - CodeGenerator Strategy Dispatch
+
+skinparam rectangle {
+    BackgroundColor<<system>> #438DD5
+    FontColor<<system>> white
+    BackgroundColor<<external>> #999999
+    FontColor<<external>> white
+    BackgroundColor<<person>> #08427B
+    FontColor<<person>> white
+}
+
+rectangle "Developer / AI Agent" <<person>> as user
+rectangle "CodeGenerator CLI" <<system>> as cli
+rectangle "CodeGenerator.Core" <<system>> as core
+rectangle "Framework Modules\n(DotNet, Angular, Flask, ...)" <<system>> as frameworks
+rectangle "Target Project\n(Generated Code)" <<external>> as target
+
+user --> cli : invokes generation
+cli --> core : calls IArtifactGenerator\n& ISyntaxGenerator
+core --> frameworks : dispatches to\nregistered strategies
+frameworks --> target : writes generated\ncode files
+
+note right of core
+  **Strategy Dispatch Chain**
+  Resolves strategies by model type,
+  filters by CanHandle, sorts by
+  priority, invokes best match.
+end note
+
+@enduml

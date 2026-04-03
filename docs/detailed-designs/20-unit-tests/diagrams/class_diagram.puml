@@ -1,0 +1,84 @@
+@startuml class_diagram
+!theme plain
+
+title Test Project Structure and Mock Classes
+
+package "CodeGenerator.Core.UnitTests" {
+
+    package "Services" {
+        class NamingConventionConverterTests {
+            - _sut : NamingConventionConverter
+            + Convert_PascalCase_ToCamelCase()
+            + Convert_SnakeCase_ToPascalCase()
+            + Convert_EmptyString_ReturnsEmpty()
+            + GetNamingConvention_DetectsCorrectly()
+            + Convert_WithPluralize_Pluralizes()
+        }
+
+        class LiquidTemplateProcessorTests {
+            - _sut : LiquidTemplateProcessor
+            + Process_SubstitutesTokens()
+            + Process_WithIgnoreTokens_SkipsThem()
+            + Process_DynamicModel_ConvertsToDict()
+        }
+
+        class TokensBuilderTests {
+            - _sut : TokensBuilder
+            + Build_WithProperty_GeneratesVariants()
+            + Build_NullToken_UsesEmpty()
+            + With_Chaining_AccumulatesTokens()
+        }
+
+        class CommandServiceTests {
+            - _mockLogger : ILogger<CommandService>
+            - _sut : CommandService
+            + Start_WindowsCmd_FormatsCorrectly()
+            + Start_NullWorkingDir_UsesCurrentDir()
+        }
+
+        class TenseConverterTests {
+            - _sut : TenseConverter
+            + Convert_PastTense_ReturnsCorrect()
+            + Convert_PresentTense_ReturnsCorrect()
+        }
+    }
+
+    package "Syntax" {
+        class SyntaxModelTests {
+            + GetChildren_Base_YieldsNothing()
+            + GetDescendants_ReturnsTree()
+            + Parent_SetCorrectly()
+        }
+
+        class SyntaxGeneratorTests {
+            - _mockServiceProvider : IServiceProvider
+            + GenerateAsync_SelectsHighestPriority()
+            + GenerateAsync_FiltersCanHandle()
+        }
+
+        class SyntaxTokenTests {
+            + ImplicitCast_ToString_Works()
+            + ExplicitCast_FromString_Works()
+            + ToTokens_GeneratesAllVariants()
+        }
+    }
+
+    package "Artifacts" {
+        class FileModelTests {
+            - _mockFileSystem : MockFileSystem
+            + Constructor_BuildsPath()
+            + Constructor_CustomFileSystem_Used()
+        }
+    }
+
+    package "Events" {
+        class DomainEventsTests {
+            + Register_Raise_InvokesCallback()
+            + Register_Replaces_ExistingHandler()
+            + Raise_NoHandler_DoesNotThrow()
+            + ClearCallbacks_RemovesAll()
+        }
+    }
+}
+
+@enduml

@@ -1,0 +1,72 @@
+@startuml class_diagram
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 12
+
+title Dry-Run Mode — Class Diagram
+
+interface IGenerationContext {
+    +DryRun : bool {get}
+    +Result : GenerationResult {get}
+    +FileSystem : IFileSystem {get}
+    +CommandService : ICommandService {get}
+}
+
+class GenerationContext {
+    -_dryRun : bool
+    -_result : GenerationResult
+    -_fileSystem : IFileSystem
+    -_commandService : ICommandService
+    +DryRun : bool {get}
+    +Result : GenerationResult {get}
+    +FileSystem : IFileSystem {get}
+    +CommandService : ICommandService {get}
+}
+
+class GenerationContextFactory <<static>> {
+    +{static} Create(dryRun: bool, realFs: IFileSystem, realCmd: ICommandService) : IGenerationContext
+}
+
+class GenerationResult {
+    +Files : List<GeneratedFileEntry>
+    +Commands : List<SkippedCommandEntry>
+    +IsSuccess : bool
+    +ErrorMessage : string?
+    +TotalFileCount : int {computed}
+    +TotalSizeBytes : long {computed}
+    +AddFile(path, content) : void
+    +AddCommand(command, workingDir) : void
+}
+
+class GeneratedFileEntry <<record>> {
+    +Path : string
+    +Content : string
+    +SizeBytes : long
+}
+
+class SkippedCommandEntry <<record>> {
+    +Command : string
+    +WorkingDirectory : string
+}
+
+class DryRunFileSystem {
+    -_result : GenerationResult
+    +File : IFile {in-memory capture}
+    +Directory : IDirectory {in-memory}
+    +Path : IPath {real path logic}
+}
+
+class DryRunCommandService {
+    -_result : GenerationResult
+    +Start(command, workingDir, waitForExit) : int
+}
+
+IGenerationContext <|.. GenerationContext
+GenerationContext *-- GenerationResult
+GenerationResult *-- "0..*" GeneratedFileEntry
+GenerationResult *-- "0..*" SkippedCommandEntry
+GenerationContext --> DryRunFileSystem : when DryRun
+GenerationContext --> DryRunCommandService : when DryRun
+GenerationContextFactory ..> GenerationContext : creates
+
+@enduml

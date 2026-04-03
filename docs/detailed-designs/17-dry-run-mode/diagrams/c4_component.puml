@@ -1,0 +1,33 @@
+@startuml c4_component
+!theme plain
+!include <C4/C4_Component>
+
+title Dry-Run Mode — Component Diagram
+
+Container_Boundary(core, "CodeGenerator.Core") {
+    Component(ictx, "IGenerationContext", "Interface", "DryRun flag, GenerationResult accessor, IFileSystem, ICommandService")
+    Component(ctx, "GenerationContext", "Class", "Default implementation; swaps real/dry-run providers based on DryRun flag")
+    Component(ctxFactory, "GenerationContextFactory", "Static", "Create(dryRun) — builds context with correct provider wiring")
+
+    Component(result, "GenerationResult", "Class", "Files: List<GeneratedFileEntry>\nCommands: List<SkippedCommandEntry>\nIsSuccess, ErrorMessage")
+    Component(entry, "GeneratedFileEntry", "Record", "Path, Content, SizeBytes")
+    Component(cmdEntry, "SkippedCommandEntry", "Record", "Command, WorkingDirectory")
+
+    Component(dryFs, "DryRunFileSystem", "Class", "In-memory IFileSystem; records writes to GenerationResult")
+    Component(dryCmd, "DryRunCommandService", "Class", "No-op ICommandService; records commands to GenerationResult")
+
+    Component(ag, "ArtifactGenerator", "Class", "Reads context to select real or dry-run providers")
+    Component(strat, "IArtifactGenerationStrategy<T>", "Interface", "Existing strategies — unmodified")
+}
+
+Rel(ictx, ctx, "implemented by")
+Rel(ctx, result, "owns")
+Rel(result, entry, "contains 0..*")
+Rel(result, cmdEntry, "contains 0..*")
+Rel(ctx, dryFs, "provides when DryRun")
+Rel(ctx, dryCmd, "provides when DryRun")
+Rel(ag, ictx, "consumes")
+Rel(ag, strat, "dispatches to")
+Rel(ctxFactory, ctx, "creates")
+
+@enduml

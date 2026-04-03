@@ -15,3 +15,18 @@
 | 08 | [Playwright Test Generation](08-playwright-test-generation/README.md) | Draft | FR-09 | Playwright page objects, test specs, fixtures, multi-browser config |
 | 09 | [Detox Test Generation](09-detox-test-generation/README.md) | Draft | FR-10 | Detox mobile page objects, Jest test specs, iOS/Android configuration |
 | 10 | [CLI Tool](10-cli-tool/README.md) | Draft | FR-15 | `create-code-cli` global tool for scaffolding code generator projects |
+
+### Priority Action Designs
+
+| # | Feature | Status | Audit Ref | Description |
+|---|---------|--------|-----------|-------------|
+| 11 | [Extract Abstractions](11-extract-abstractions/README.md) | Draft | Priority #1 | Decouple Core from heavy dependencies into lightweight Abstractions package |
+| 12 | [Model Validation](12-model-validation/README.md) | Draft | Priority #2 | Add IValidatable and validation pipeline to prevent broken agent output |
+| 13 | [Builder/Fluent APIs](13-builder-fluent-apis/README.md) | Draft | Priority #3 | Reduce model construction verbosity for maximum token savings |
+| 14 | [Expand SKILL.md](14-expand-skill-documentation/README.md) | Draft | Priority #4 | Cover all 8 frameworks so agents know the full API surface |
+| 15 | [Incremental Generation](15-incremental-generation/README.md) | Draft | Priority #5 | Add-file-to-existing-project alongside scaffold-new-project |
+| 16 | [Standardize Generation](16-standardize-generation/README.md) | Draft | Priority #6 | ISyntaxGenerator for code, Liquid templates for config — consistently |
+| 17 | [Dry-Run Mode](17-dry-run-mode/README.md) | Draft | Priority #7 | Preview generated content without writing to disk |
+| 18 | [Non-DotNet Parity](18-non-dotnet-parity/README.md) | Draft | Priority #8 | Bring all non-DotNet modules to minimum capability baseline |
+| 19 | [Simplify Strategy Chain](19-simplify-strategy-chain/README.md) | Draft | Priority #9 | Reduce 4-layer wrapper chain to 2-layer direct dispatch |
+| 20 | [Unit Tests](20-unit-tests/README.md) | Draft | Priority #10 | Add unit test coverage for Core logic |

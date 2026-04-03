@@ -1,0 +1,39 @@
+@startuml sequence_syntax_generation
+!theme plain
+
+title Sequence — Syntax-Based Generation Flow
+
+participant "Caller" as caller
+participant "ISyntaxGenerator\n(SyntaxGenerator)" as sg
+participant "ConcurrentDictionary\n(type cache)" as cache
+participant "SyntaxGenerationStrategy\nWrapperImpl<T>" as wrapper
+participant "IServiceProvider" as di
+participant "ISyntaxGenerationStrategy<T>\n(concrete strategy)" as strategy
+
+caller -> sg : GenerateAsync<T>(model)
+sg -> cache : GetOrAdd(model.GetType())
+
+alt cache miss
+    cache -> cache : Create WrapperImpl<T>\nvia Activator.CreateInstance
+end
+
+cache --> sg : wrapper instance
+sg -> wrapper : GenerateAsync(serviceProvider,\nmodel, cancellationToken)
+wrapper -> di : GetService<IEnumerable\n<ISyntaxGenerationStrategy<T>>>()
+di --> wrapper : all registered strategies
+wrapper -> wrapper : Filter by CanHandle(model)\nOrder by GetPriority() desc\nSelect first
+wrapper -> strategy : GenerateAsync(model, ct)
+
+note right of strategy
+  Strategy builds output using
+  StringBuilderCache + naming
+  convention converter +
+  recursive ISyntaxGenerator
+  calls for child models
+end note
+
+strategy --> wrapper : generated code string
+wrapper --> sg : result
+sg --> caller : result
+
+@enduml

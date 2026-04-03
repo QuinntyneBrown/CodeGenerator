@@ -1,0 +1,102 @@
+@startuml class_diagram
+!theme plain
+
+title Class Diagram — ISyntaxGenerationStrategy Hierarchy and ITemplateProcessor Usage
+
+package "CodeGenerator.Core.Syntax" {
+    interface ISyntaxGenerator {
+        +GenerateAsync<T>(model: T): Task<string>
+    }
+
+    class SyntaxGenerator {
+        -_syntaxGenerators: ConcurrentDictionary
+        -_serviceProvider: IServiceProvider
+        +GenerateAsync<T>(model: T): Task<string>
+    }
+
+    abstract class SyntaxGenerationStrategyBase {
+        +{abstract} GenerateAsync(sp, target, ct): Task<string>
+    }
+
+    abstract class "SyntaxGenerationStrategyWrapper<T>" as Wrapper {
+        +{abstract} GenerateAsync(target, sp, ct): Task<string>
+    }
+
+    class "SyntaxGenerationStrategyWrapperImplementation<T>" as WrapperImpl {
+        +GenerateAsync(sp, target, ct): Task<string>
+        +GenerateAsync(target, sp, ct): Task<string>
+    }
+
+    interface "ISyntaxGenerationStrategy<T>" as IStrategy {
+        +CanHandle(target: object): bool
+        +GetPriority(): int
+        +GenerateAsync(target: T, ct): Task<string>
+    }
+}
+
+package "CodeGenerator.Core.Services" {
+    interface ITemplateProcessor {
+        +Process(template, tokens): string
+        +Process(template, tokens, ignoreTokens): string
+        +Process(template, model): string
+        +ProcessAsync(template, tokens): Task<string>
+    }
+
+    class LiquidTemplateProcessor {
+        +Process(template, tokens): string
+    }
+
+    interface ITemplateLocator {
+        +Get(filename: string): string
+    }
+
+    class "EmbeddedResourceTemplateLocatorBase<T>" as TemplateLocator {
+        +Get(name: string): string
+        +GetResource(assembly, name): string
+    }
+}
+
+package "Module Strategies (examples)" {
+    class "React.ComponentSyntaxGenerationStrategy" as ReactComp
+    class "Playwright.PageObjectSyntaxGenerationStrategy" as PlayPage
+    class "DotNet.TypeSyntaxGenerationStrategy" as DotNetType
+    class "Detox.TestSpecSyntaxGenerationStrategy" as DetoxTest
+    class "Flask.ModelSyntaxGenerationStrategy" as FlaskModel
+    class "DotNet.TemplatedFileArtifactGenerationStrategy" as DotNetTemplate
+}
+
+ISyntaxGenerator <|.. SyntaxGenerator
+SyntaxGenerationStrategyBase <|-- Wrapper
+Wrapper <|-- WrapperImpl
+SyntaxGenerator --> WrapperImpl : dispatches via
+
+IStrategy <|.. ReactComp
+IStrategy <|.. PlayPage
+IStrategy <|.. DotNetType
+IStrategy <|.. DetoxTest
+IStrategy <|.. FlaskModel
+
+ITemplateProcessor <|.. LiquidTemplateProcessor
+ITemplateLocator <|.. TemplateLocator
+DotNetTemplate --> ITemplateProcessor : uses
+DotNetTemplate --> ITemplateLocator : uses
+
+WrapperImpl --> IStrategy : resolves from DI
+
+note right of DetoxTest
+  **Migration target:**
+  Currently uses inline
+  StringBuilder — already
+  implements ISyntaxGenerationStrategy<T>
+  but code style needs
+  standardization.
+end note
+
+note right of FlaskModel
+  **Migration target:**
+  Same pattern as Detox —
+  inline string building
+  inside strategy.
+end note
+
+@enduml

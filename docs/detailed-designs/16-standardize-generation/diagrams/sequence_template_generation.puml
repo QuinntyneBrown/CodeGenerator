@@ -1,0 +1,38 @@
+@startuml sequence_template_generation
+!theme plain
+
+title Sequence — Template-Based Generation Flow (DotNet Module)
+
+participant "Caller" as caller
+participant "IArtifactGenerator" as ag
+participant "TemplatedFileArtifact\nGenerationStrategy" as strategy
+participant "ITemplateLocator\n(EmbeddedResource\nLocatorBase<T>)" as locator
+participant "ITemplateProcessor\n(LiquidTemplateProcessor)" as processor
+participant "IArtifactGenerator\n(file writer)" as writer
+
+caller -> ag : GenerateAsync(TemplatedFileModel)
+ag -> strategy : GenerateAsync(model)
+strategy -> locator : Get(model.Template)
+
+note right of locator
+  Scans assembly embedded
+  resources for matching
+  .liquid file name
+end note
+
+locator --> strategy : raw template string
+strategy -> strategy : Build tokens via\nTokensBuilder
+
+strategy -> processor : Process(template, tokens)
+
+note right of processor
+  1. Template.Parse(template)
+  2. Hash.FromDictionary(tokens)
+  3. liquidTemplate.Render(hash)
+end note
+
+processor --> strategy : rendered string
+strategy -> writer : GenerateAsync(FileModel)
+writer --> caller : file written to disk
+
+@enduml

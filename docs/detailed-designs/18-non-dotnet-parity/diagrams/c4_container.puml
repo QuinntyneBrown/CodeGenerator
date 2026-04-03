@@ -1,0 +1,41 @@
+@startuml c4_container
+!theme plain
+!include <C4/C4_Container>
+
+title Non-DotNet Parity — Container Diagram (All Modules at Parity)
+
+Person(dev, "Developer", "Uses any framework module")
+
+System_Boundary(codegen, "CodeGenerator") {
+    Container(core, "CodeGenerator.Core", ".NET", "Strategy dispatch, template engine, naming conventions")
+    Container(dotnet, "CodeGenerator.DotNet", ".NET", "97 registrations: full scaffolding, model factories, services")
+    Container(python, "CodeGenerator.Python", ".NET", "Project, file, model, config, test factories")
+    Container(flask, "CodeGenerator.Flask", ".NET", "Project, file, model, config, test factories")
+    Container(angular, "CodeGenerator.Angular", ".NET", "Project, file, component, config, test factories")
+    Container(react, "CodeGenerator.React", ".NET", "Project, file, component, config, test factories")
+    Container(reactnative, "CodeGenerator.ReactNative", ".NET", "Project, file, component, config, test factories")
+    Container(playwright, "CodeGenerator.Playwright", ".NET", "Project, file, page-object, config factories")
+    Container(detox, "CodeGenerator.Detox", ".NET", "Project, file, page-object, config factories")
+}
+
+System_Ext(fs, "File System", "Generated output")
+
+Rel(dev, core, "GenerateAsync(model)")
+Rel(core, dotnet, "Dispatches to")
+Rel(core, python, "Dispatches to")
+Rel(core, flask, "Dispatches to")
+Rel(core, angular, "Dispatches to")
+Rel(core, react, "Dispatches to")
+Rel(core, reactnative, "Dispatches to")
+Rel(core, playwright, "Dispatches to")
+Rel(core, detox, "Dispatches to")
+Rel(dotnet, fs, "Writes files")
+Rel(python, fs, "Writes files")
+Rel(flask, fs, "Writes files")
+Rel(angular, fs, "Writes files")
+Rel(react, fs, "Writes files")
+Rel(reactnative, fs, "Writes files")
+Rel(playwright, fs, "Writes files")
+Rel(detox, fs, "Writes files")
+
+@enduml

@@ -1,0 +1,43 @@
+@startuml c4_component
+!theme plain
+
+title Component Comparison - Before vs After
+
+skinparam package {
+    BackgroundColor #FEFECE
+}
+
+skinparam rectangle {
+    BackgroundColor<<kept>> #438DD5
+    FontColor<<kept>> white
+    BackgroundColor<<removed>> #CC3333
+    FontColor<<removed>> white
+    BackgroundColor<<new>> #33AA33
+    FontColor<<new>> white
+}
+
+package "BEFORE: 4-Layer Chain" {
+    rectangle "IArtifactGenerationStrategy<T>\n(interface)" <<kept>> as i1
+    rectangle "ArtifactGenerationStrategyBase\n(abstract class)" <<removed>> as b1
+    rectangle "ArtifactGenerationStrategyWrapper<T>\n(abstract generic)" <<removed>> as w1
+    rectangle "ArtifactGenerationStrategyWrapperImpl<T>\n(concrete generic)" <<removed>> as wi1
+    rectangle "ArtifactGenerator\n(uses MakeGenericType)" <<removed>> as g1
+
+    g1 -down-> b1 : static ConcurrentDict\nMakeGenericType
+    b1 <|-down- w1
+    w1 <|-down- wi1
+    wi1 -right-> i1 : resolves from DI
+}
+
+package "AFTER: 2-Layer Design" {
+    rectangle "IArtifactGenerationStrategy<T>\n(interface - unchanged)" <<kept>> as i2
+    rectangle "IStrategyRegistry\n(new interface)" <<new>> as r2
+    rectangle "StrategyRegistry\n(Dictionary<Type, List>)" <<new>> as sr2
+    rectangle "ArtifactGenerator\n(simplified)" <<new>> as g2
+
+    g2 -down-> r2 : GetArtifactStrategies(type)
+    r2 <|.. sr2 : implements
+    sr2 -right-> i2 : stores typed\nstrategy lists
+}
+
+@enduml

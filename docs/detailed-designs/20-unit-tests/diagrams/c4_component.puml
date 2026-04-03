@@ -1,0 +1,30 @@
+@startuml c4_component
+!theme plain
+!include <C4/C4_Component>
+
+title Component Diagram - Test Class Organization
+
+Container_Boundary(unitTests, "CodeGenerator.Core.UnitTests") {
+
+    Component(naming, "NamingConventionConverterTests", "xUnit", "PascalCase, camelCase, snake_case,\nkebab-case, TitleCase, AllCaps,\npluralisation, edge cases")
+
+    Component(liquid, "LiquidTemplateProcessorTests", "xUnit", "Token substitution, ignoreTokens,\nobject-to-dictionary conversion")
+
+    Component(tokens, "TokensBuilderTests", "xUnit", "Token dictionary building,\nnaming variant generation")
+
+    Component(syntaxGen, "SyntaxGeneratorTests", "xUnit", "Strategy dispatch, priority ordering,\nCanHandle filtering")
+
+    Component(syntaxModel, "SyntaxModelTests", "xUnit", "GetChildren, GetDescendants,\nparent-child traversal")
+
+    Component(fileModel, "FileModelTests", "xUnit", "Path construction from\nName + Directory + Extension")
+
+    Component(command, "CommandServiceTests", "xUnit", "Cross-platform command\nconstruction logic")
+
+    Component(events, "DomainEventsTests", "xUnit", "Register, Raise, ClearCallbacks,\nthread-static isolation")
+
+    Component(tense, "TenseConverterTests", "xUnit", "Past/present tense conversion")
+
+    Component(syntaxToken, "SyntaxTokenTests", "xUnit", "Implicit/explicit casts,\nToTokens extension")
+}
+
+@enduml

@@ -1,0 +1,45 @@
+@startuml c4_container
+!theme plain
+
+title Container View - Strategy Dispatch in Core Package
+
+skinparam rectangle {
+    BackgroundColor<<container>> #438DD5
+    FontColor<<container>> white
+    BackgroundColor<<removed>> #CC3333
+    FontColor<<removed>> white
+    BackgroundColor<<new>> #33AA33
+    FontColor<<new>> white
+    BackgroundColor<<unchanged>> #438DD5
+    FontColor<<unchanged>> white
+}
+
+package "CodeGenerator.Core (Before)" {
+    rectangle "ArtifactGenerator" <<container>> as ag_before
+    rectangle "ArtifactGenerationStrategyBase" <<container>> as base_before
+    rectangle "ArtifactGenerationStrategyWrapper<T>" <<container>> as wrapper_before
+    rectangle "ArtifactGenerationStrategyWrapperImplementation<T>" <<container>> as impl_before
+    rectangle "IArtifactGenerationStrategy<T>" <<container>> as iface_before
+
+    ag_before --> base_before : creates via\nMakeGenericType
+    base_before <|-- wrapper_before
+    wrapper_before <|-- impl_before
+    impl_before --> iface_before : resolves from DI
+}
+
+package "CodeGenerator.Core (After)" {
+    rectangle "ArtifactGenerator" <<new>> as ag_after
+    rectangle "IStrategyRegistry" <<new>> as registry
+    rectangle "IArtifactGenerationStrategy<T>" <<unchanged>> as iface_after
+
+    ag_after --> registry : looks up strategies\nby Type key
+    registry --> iface_after : returns List<strategy>\nfor model type
+}
+
+note bottom of impl_before
+  **Removed:** 3 intermediate layers
+  replaced by a simple Dictionary
+  populated at DI registration time.
+end note
+
+@enduml

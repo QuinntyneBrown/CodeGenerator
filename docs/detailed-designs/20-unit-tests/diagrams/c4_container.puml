@@ -1,0 +1,25 @@
+@startuml c4_container
+!theme plain
+!include <C4/C4_Container>
+
+title Container Diagram - Unit Test Project Dependencies
+
+System_Boundary(solution, "CodeGenerator Solution") {
+
+    Container(unitTests, "CodeGenerator.Core.UnitTests", "xUnit + NSubstitute", "Isolated unit tests for core logic")
+
+    Container(core, "CodeGenerator.Core", ".NET Class Library", "Services, Models, Syntax, Artifacts, Events")
+
+    Container(xunit, "xunit 2.6+", "NuGet", "Test framework")
+    Container(nsub, "NSubstitute 5+", "NuGet", "Mocking framework")
+    Container(fluentAssert, "FluentAssertions 6+", "NuGet", "Assertion library")
+    Container(ioAbsMock, "System.IO.Abstractions.TestingHelpers", "NuGet", "Mock file system")
+}
+
+Rel(unitTests, core, "References")
+Rel(unitTests, xunit, "Uses")
+Rel(unitTests, nsub, "Uses")
+Rel(unitTests, fluentAssert, "Uses")
+Rel(unitTests, ioAbsMock, "Uses")
+
+@enduml

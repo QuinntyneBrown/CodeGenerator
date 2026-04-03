@@ -1,0 +1,36 @@
+@startuml c4_component
+!theme plain
+!include <C4/C4_Component>
+
+title Component Diagram — Syntax Strategies vs Template Pipeline
+
+Container_Boundary(core, "CodeGenerator.Core") {
+    Component(syntaxGen, "SyntaxGenerator", "Class", "Dispatches to ISyntaxGenerationStrategy<T>\nvia ConcurrentDictionary cache")
+    Component(iSyntaxGen, "ISyntaxGenerator", "Interface", "GenerateAsync<T>(T model)")
+    Component(iStrategy, "ISyntaxGenerationStrategy<T>", "Interface", "CanHandle, GetPriority,\nGenerateAsync")
+    Component(wrapper, "SyntaxGenerationStrategy\nWrapperImplementation<T>", "Class", "Resolves strategies from DI,\nfilters, orders, invokes")
+
+    Component(templateProc, "LiquidTemplateProcessor", "Class", "Renders DotLiquid templates\nwith token dictionaries")
+    Component(iTemplateProc, "ITemplateProcessor", "Interface", "Process(template, tokens)")
+    Component(templateLoc, "EmbeddedResourceTemplate\nLocatorBase<T>", "Class", "Reads .liquid files from\nassembly embedded resources")
+    Component(iTemplateLoc, "ITemplateLocator", "Interface", "Get(filename)")
+}
+
+Container_Boundary(modules, "Language Modules") {
+    Component(syntaxStrats, "Concrete Strategies", "Classes", "DotNet, React, Angular,\nPlaywright, Python,\nReactNative strategies")
+    Component(migrateStrats, "Detox + Flask Strategies", "Classes", "Target: migrate from inline\nstring building to proper\nISyntaxGenerationStrategy<T>")
+    Component(templateUsers, "DotNet Template Strategies", "Classes", "TemplatedFileArtifact,\nLaunchSettings, etc.")
+}
+
+Rel(iSyntaxGen, syntaxGen, "implemented by")
+Rel(syntaxGen, wrapper, "delegates to")
+Rel(wrapper, iStrategy, "resolves and invokes")
+Rel(syntaxStrats, iStrategy, "implements")
+Rel(migrateStrats, iStrategy, "will implement\n(migration target)")
+
+Rel(iTemplateProc, templateProc, "implemented by")
+Rel(iTemplateLoc, templateLoc, "implemented by")
+Rel(templateUsers, iTemplateProc, "uses")
+Rel(templateUsers, iTemplateLoc, "uses")
+
+@enduml

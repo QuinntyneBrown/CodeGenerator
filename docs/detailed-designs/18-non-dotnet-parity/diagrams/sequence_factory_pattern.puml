@@ -1,0 +1,35 @@
+@startuml sequence_factory_pattern
+!theme plain
+
+title Standard Factory -> Model -> Generation Flow
+
+actor Developer as dev
+participant "CLI" as cli
+participant "Core\nArtifactGenerator" as core
+participant "Module\nIProjectFactory" as pf
+participant "Module\nIModelFactory" as mf
+participant "Module\nIConfigFactory" as cf
+participant "Module\nITestFactory" as tf
+participant "Core\nSyntaxGenerator" as syntax
+participant "File System" as fs
+
+dev -> cli : scaffold --framework flask --name MyApp
+cli -> core : GenerateAsync(ProjectModel)
+
+core -> pf : CreateAsync(projectModel)
+pf -> mf : CreateEntityModel("User", props)
+pf -> cf : CreateConfigModel("MyApp")
+pf -> tf : CreateTestModel("User")
+
+pf --> core : ProjectModel with children
+
+loop For each child model
+    core -> syntax : GenerateAsync<T>(childModel)
+    syntax --> core : generated code string
+    core -> fs : Write file to disk
+end
+
+core --> cli : Generation complete
+cli --> dev : "Project scaffolded at ./MyApp"
+
+@enduml

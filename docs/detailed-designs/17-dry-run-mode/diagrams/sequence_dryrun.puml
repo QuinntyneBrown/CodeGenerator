@@ -1,0 +1,78 @@
+@startuml sequence_dryrun
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Dry-Run Workflow — Agent Previews Generation Output
+
+participant "Agent / Host" as A
+participant "GenerationContextFactory" as F
+participant "IGenerationContext" as Ctx
+participant "IArtifactGenerator\n(ArtifactGenerator)" as AG
+participant "SolutionGenerationStrategy" as SS
+participant "ProjectGenerationStrategy" as PS
+participant "FileGenerationStrategy" as FS
+participant "DryRunFileSystem" as DFS
+participant "DryRunCommandService" as DCS
+participant "GenerationResult" as R
+
+== Context Setup ==
+
+A -> F : Create(dryRun: true, realFs, realCmd)
+F -> Ctx ** : new GenerationContext(\n  dryRun=true,\n  DryRunFileSystem,\n  DryRunCommandService)
+F --> A : context
+
+== Generation (Dry-Run) ==
+
+A -> AG : GenerateAsync(solutionModel, context)
+AG -> AG : Resolve SolutionGenerationStrategy
+
+AG -> SS : GenerateAsync(solutionModel)
+
+SS -> DCS : Start("dotnet new sln ...")
+DCS -> R : AddCommand("dotnet new sln ...", dir)
+DCS --> SS : 0 (no-op)
+
+SS -> DFS : Directory.CreateDirectory(srcDir)
+DFS --> SS : (in-memory, no disk write)
+
+loop each project in model.Projects
+    SS -> AG : GenerateAsync(projectModel)
+    AG -> PS : GenerateAsync(projectModel)
+
+    PS -> DCS : Start("dotnet new classlib ...")
+    DCS -> R : AddCommand("dotnet new classlib ...", dir)
+
+    loop each file in project.Files
+        PS -> AG : GenerateAsync(fileModel)
+        AG -> FS : GenerateAsync(fileModel)
+
+        FS -> DFS : File.WriteAllText(path, body)
+        DFS -> R : AddFile(path, body)
+        DFS --> FS : (captured, not written)
+    end
+end
+
+SS --> AG : done
+AG --> A : done
+
+== Result Inspection ==
+
+A -> Ctx : .Result
+Ctx --> A : GenerationResult
+
+A -> R : .Files
+R --> A : List<GeneratedFileEntry>\n(path + content for each file)
+
+A -> R : .Commands
+R --> A : List<SkippedCommandEntry>\n(commands that would run)
+
+A -> R : .TotalFileCount / .TotalSizeBytes
+R --> A : summary metrics
+
+note right of A
+    Agent inspects manifest.
+    If satisfied, re-runs with
+    dryRun: false to write to disk.
+end note
+
+@enduml

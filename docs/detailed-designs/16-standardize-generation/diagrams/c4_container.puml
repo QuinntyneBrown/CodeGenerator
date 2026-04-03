@@ -1,0 +1,37 @@
+@startuml c4_container
+!theme plain
+!include <C4/C4_Container>
+
+title Container Diagram — Two Generation Paths
+
+System_Boundary(codegen, "CodeGenerator Framework") {
+    Container(core, "CodeGenerator.Core", ".NET Library", "ISyntaxGenerator, ITemplateProcessor,\nIArtifactGenerator, ITemplateLocator")
+
+    Container(dotnet, "CodeGenerator.DotNet", ".NET Library", "Syntax strategies +\nLiquid templates for\nconfig/markup files")
+
+    Container(playwright, "CodeGenerator.Playwright", ".NET Library", "ISyntaxGenerationStrategy<T>\nimplementations")
+
+    Container(react, "CodeGenerator.React", ".NET Library", "ISyntaxGenerationStrategy<T>\nimplementations")
+
+    Container(angular, "CodeGenerator.Angular", ".NET Library", "ISyntaxGenerationStrategy<T>\nimplementations")
+
+    Container(flask, "CodeGenerator.Flask", ".NET Library", "ISyntaxGenerationStrategy<T>\n(uses inline string building)")
+
+    Container(detox, "CodeGenerator.Detox", ".NET Library", "ISyntaxGenerationStrategy<T>\n(uses inline string building)")
+
+    Container(python, "CodeGenerator.Python", ".NET Library", "ISyntaxGenerationStrategy<T>\nimplementations")
+
+    Container(reactnative, "CodeGenerator.ReactNative", ".NET Library", "ISyntaxGenerationStrategy<T>\nimplementations")
+}
+
+Rel(dotnet, core, "Syntax path:\nISyntaxGenerator.GenerateAsync<T>")
+Rel(dotnet, core, "Template path:\nITemplateLocator + ITemplateProcessor")
+Rel(playwright, core, "Syntax path only")
+Rel(react, core, "Syntax path only")
+Rel(angular, core, "Syntax path only")
+Rel(flask, core, "Syntax path (inline strings)")
+Rel(detox, core, "Syntax path (inline strings)")
+Rel(python, core, "Syntax path only")
+Rel(reactnative, core, "Syntax path only")
+
+@enduml

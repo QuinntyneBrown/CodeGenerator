@@ -1,0 +1,29 @@
+@startuml c4_container
+!theme plain
+!include <C4/C4_Container>
+
+title Dry-Run Mode — Container Diagram
+
+Person(agent, "AI Agent / Host App", "Previews generation output")
+
+System_Boundary(core, "CodeGenerator.Core") {
+    Container(ctx, "IGenerationContext", "Interface", "Carries DryRun flag and collects GenerationResult across the generation tree")
+    Container(ag, "ArtifactGenerator", "Class", "Dispatches models to strategies, passes context")
+    Container(result, "GenerationResult", "Class", "Manifest of generated file entries and skipped commands")
+    Container(dryFs, "DryRunFileProvider", "Class", "IFileSystem implementation that captures writes in memory")
+    Container(dryCmd, "DryRunCommandService", "Class", "ICommandService implementation that records commands without executing")
+}
+
+System_Ext(fs, "File System", "Real disk (normal mode)")
+System_Ext(shell, "OS Shell", "Real shell (normal mode)")
+
+Rel(agent, ag, "GenerateAsync(model, context)")
+Rel(ag, ctx, "Reads DryRun flag")
+Rel(ctx, result, "Accumulates entries")
+Rel(ag, dryFs, "Used when DryRun=true")
+Rel(ag, dryCmd, "Used when DryRun=true")
+Rel(ag, fs, "Used when DryRun=false")
+Rel(ag, shell, "Used when DryRun=false")
+Rel(ag, agent, "Returns GenerationResult")
+
+@enduml

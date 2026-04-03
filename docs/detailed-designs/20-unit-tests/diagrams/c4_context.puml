@@ -1,0 +1,23 @@
+@startuml c4_context
+!theme plain
+!include <C4/C4_Context>
+
+title System Context - Unit Test Projects in Solution
+
+System(core, "CodeGenerator.Core", "Core framework: services, models, syntax, artifacts")
+System(dotnet, "CodeGenerator.DotNet", ".NET code generation strategies")
+System(angular, "CodeGenerator.Angular", "Angular code generation strategies")
+System(otherModules, "Other Modules", "Python, React, Flask, Playwright, Detox, ReactNative")
+
+System_Boundary(tests, "Test Projects") {
+    System(unitTests, "CodeGenerator.Core.UnitTests", "Isolated unit tests for core logic\nxUnit + NSubstitute")
+    System(integrationTests, "CodeGenerator.IntegrationTests", "End-to-end pipeline tests\nFull DI container")
+}
+
+Rel(unitTests, core, "Tests in isolation")
+Rel(integrationTests, core, "Tests via full pipeline")
+Rel(integrationTests, dotnet, "References")
+Rel(integrationTests, angular, "References")
+Rel(integrationTests, otherModules, "References")
+
+@enduml

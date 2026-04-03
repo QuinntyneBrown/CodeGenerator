@@ -1,0 +1,88 @@
+@startuml class_diagram_before
+!theme plain
+
+title Current Class Hierarchy (4 Layers)
+
+skinparam classAttributeIconSize 0
+
+package "Artifacts" {
+    interface "IArtifactGenerationStrategy<T>" as IAGS {
+        + CanHandle(model: object): bool
+        + GetPriority(): int
+        + GenerateAsync(target: T): Task
+    }
+
+    abstract class "ArtifactGenerationStrategyBase" as AGSB {
+        + {abstract} GenerateAsync(sp: IServiceProvider,\n    target: object, ct: CancellationToken): Task
+    }
+
+    abstract class "ArtifactGenerationStrategyWrapper<T>" as AGSW {
+        + {abstract} GenerateAsync(target: T,\n    sp: IServiceProvider, ct: CancellationToken): Task
+    }
+
+    class "ArtifactGenerationStrategy\nWrapperImplementation<T>" as AGSWI {
+        - _strategies: ConcurrentDictionary<Type, ...>
+        + GenerateAsync(sp, target, ct): Task
+        + GenerateAsync(target, sp, ct): Task
+    }
+
+    class "ArtifactGenerator" as AG {
+        - {static} _artifactGenerators: ConcurrentDictionary<Type, Base>
+        - logger: ILogger
+        - serviceProvider: IServiceProvider
+        + GenerateAsync(model: object): Task
+    }
+
+    AGSB <|-- AGSW
+    AGSW <|-- AGSWI
+    AGSWI ..> IAGS : resolves from DI
+    AG ..> AGSWI : creates via\nMakeGenericType +\nActivator.CreateInstance
+    AG ..> AGSB : stores in\nConcurrentDictionary
+}
+
+package "Syntax" {
+    interface "ISyntaxGenerationStrategy<T>" as ISGS {
+        + GetPriority(): int
+        + CanHandle(target: object): bool
+        + GenerateAsync(target: T, ct): Task<string>
+    }
+
+    abstract class "SyntaxGenerationStrategyBase" as SGSB {
+        + {abstract} GenerateAsync(sp, target, ct): Task<string>
+    }
+
+    abstract class "SyntaxGenerationStrategyWrapper<T>" as SGSW {
+        + {abstract} GenerateAsync(target, sp, ct): Task<string>
+    }
+
+    class "SyntaxGenerationStrategy\nWrapperImplementation<T>" as SGSWI {
+        - _strategies: ConcurrentDictionary<Type, ...>
+        + GenerateAsync(sp, target, ct): Task<string>
+        + GenerateAsync(target, sp, ct): Task<string>
+    }
+
+    class "SyntaxGenerator" as SG {
+        - {static} _syntaxGenerators: ConcurrentDictionary<Type, Base>
+        - _serviceProvider: IServiceProvider
+        + GenerateAsync<T>(model: T): Task<string>
+    }
+
+    SGSB <|-- SGSW
+    SGSW <|-- SGSWI
+    SGSWI ..> ISGS : resolves from DI
+    SG ..> SGSWI : creates via\nMakeGenericType
+    SG ..> SGSB : stores in\nConcurrentDictionary
+}
+
+note bottom of AGSWI
+  **Unused field:** _strategies ConcurrentDictionary
+  is declared but never read. Strategies are
+  resolved from IServiceProvider each time.
+end note
+
+note bottom of AG
+  **Static dictionary** is shared across all
+  ArtifactGenerator instances (DI scope leak).
+end note
+
+@enduml

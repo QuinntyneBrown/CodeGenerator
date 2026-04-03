@@ -1,0 +1,39 @@
+@startuml sequence_test_execution
+!theme plain
+
+title Unit Test Isolation Pattern
+
+participant "xUnit Runner" as runner
+participant "Test Class" as test
+participant "NSubstitute" as mock
+participant "SUT (System Under Test)" as sut
+
+== Setup ==
+runner -> test : Construct test class
+test -> mock : Create mock dependencies\n(IServiceProvider, ILogger, IFileSystem)
+test -> sut : Instantiate SUT with mocks
+
+== Execute ==
+runner -> test : Invoke test method
+test -> mock : Configure returns / expectations
+test -> sut : Call method under test
+sut -> mock : Calls dependency (if any)
+mock --> sut : Returns configured value
+sut --> test : Returns result
+
+== Assert ==
+test -> test : Assert result matches expected
+test -> mock : Verify interactions (optional)
+test --> runner : Pass / Fail
+
+== Teardown ==
+runner -> test : Dispose (if IDisposable)
+
+note right of mock
+  No DI container.
+  No file system I/O.
+  No process spawning.
+  Pure in-memory execution.
+end note
+
+@enduml

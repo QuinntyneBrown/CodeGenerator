@@ -1,0 +1,18 @@
+@startuml c4_context
+!theme plain
+!include <C4/C4_Context>
+
+title Non-DotNet Parity — System Context
+
+Person(developer, "Developer", "Uses CLI to scaffold projects in any supported framework")
+
+System(codegen, "CodeGenerator", "Multi-framework code generation system with uniform capabilities across all modules")
+
+System_Ext(fs, "File System", "Target directory for generated projects and files")
+System_Ext(templates, "Template Store", "Embedded Liquid templates per framework")
+
+Rel(developer, codegen, "Scaffolds projects via CLI")
+Rel(codegen, fs, "Writes generated artifacts")
+Rel(codegen, templates, "Loads framework-specific templates")
+
+@enduml

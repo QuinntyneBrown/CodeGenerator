@@ -1,0 +1,54 @@
+@startuml class_diagram
+!theme plain
+
+title Standardized Factory Interfaces Across Modules
+
+package "CodeGenerator.Core" {
+    interface "IFileFactory" as CoreIFF {
+        +CreateAsync(model: FileModel): Task<FileModel>
+    }
+    abstract class "FileModel" as CoreFM {
+        +Name: string
+        +Directory: string
+        +Extension: string
+        +Content: string
+    }
+}
+
+package "Per-Module Standard Interfaces" {
+    interface "IFileFactory" as ModIFF {
+        +CreateAsync(model: FileModel): Task<FileModel>
+    }
+    interface "IProjectFactory" as ModIPF {
+        +CreateAsync(model: ProjectModel): Task<ProjectModel>
+    }
+    interface "IModelFactory" as ModIMF {
+        +CreateEntityModel(name: string, props: PropertyModel[]): EntityModel
+        +CreateDtoModel(name: string, props: PropertyModel[]): DtoModel
+    }
+    interface "IConfigFactory" as ModICF {
+        +CreateConfigModel(projectName: string): ConfigModel
+        +CreateDockerfileModel(projectName: string): DockerfileModel
+    }
+    interface "ITestFactory" as ModITF {
+        +CreateTestModel(targetName: string): TestModel
+        +CreateTestConfigModel(): TestConfigModel
+    }
+}
+
+package "Example: CodeGenerator.Flask" {
+    class "FileFactory" as FlaskFF
+    class "ProjectFactory" as FlaskPF
+    class "ModelFactory" as FlaskMF
+    class "ConfigFactory" as FlaskCF
+    class "TestFactory" as FlaskTF
+}
+
+ModIFF --|> CoreIFF
+FlaskFF ..|> ModIFF
+FlaskPF ..|> ModIPF
+FlaskMF ..|> ModIMF
+FlaskCF ..|> ModICF
+FlaskTF ..|> ModITF
+
+@enduml

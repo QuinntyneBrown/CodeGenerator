@@ -1,0 +1,19 @@
+@startuml c4_context
+!theme plain
+!include <C4/C4_Context>
+
+title Dry-Run Mode — System Context
+
+Person(agent, "AI Agent / Host App", "Invokes generation with optional dry-run flag to preview output before writing")
+
+System(codegen, "CodeGenerator Framework", "Model-driven code generation engine with dry-run preview capability")
+
+System_Ext(fs, "File System", "Target directory for generated files (skipped in dry-run)")
+System_Ext(shell, "OS Shell", "cmd.exe / bash for dotnet/npm commands (skipped in dry-run)")
+
+Rel(agent, codegen, "GenerateAsync(model, dryRun: true)")
+Rel(codegen, fs, "Writes files (normal mode only)")
+Rel(codegen, shell, "Executes commands (normal mode only)")
+Rel(codegen, agent, "Returns GenerationResult manifest")
+
+@enduml

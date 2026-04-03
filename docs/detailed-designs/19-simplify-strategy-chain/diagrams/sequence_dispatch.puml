@@ -1,0 +1,46 @@
+@startuml sequence_dispatch
+!theme plain
+
+title Simplified Artifact Dispatch Flow
+
+participant "Caller" as caller
+participant "ArtifactGenerator" as ag
+participant "IStrategyRegistry" as reg
+participant "IArtifactGenerationStrategy<T>" as strat
+
+caller -> ag : GenerateAsync(model)
+activate ag
+
+ag -> ag : modelType = model.GetType()
+ag -> reg : GetArtifactStrategies(modelType)
+activate reg
+reg --> ag : IReadOnlyList<object>
+deactivate reg
+
+ag -> ag : Cast to typed strategies
+ag -> ag : Filter by CanHandle(model)
+ag -> ag : Sort by GetPriority() desc
+ag -> ag : Take first match
+
+ag -> strat : GenerateAsync(target)
+activate strat
+strat --> ag : Task (completed)
+deactivate strat
+
+ag --> caller : Task (completed)
+deactivate ag
+
+note right of ag
+  **No reflection at dispatch time.**
+  Registry returns pre-built list.
+  Only a dictionary lookup + LINQ
+  filter/sort remains.
+end note
+
+note right of reg
+  Dictionary<Type, List<object>>
+  populated once during
+  ConfigureServices.
+end note
+
+@enduml

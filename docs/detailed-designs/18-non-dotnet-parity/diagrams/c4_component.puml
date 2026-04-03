@@ -1,0 +1,33 @@
+@startuml c4_component
+!theme plain
+!include <C4/C4_Component>
+
+title Non-DotNet Parity — Standardized Component Set Per Module
+
+System_Boundary(module, "Any Non-DotNet Module (e.g., CodeGenerator.Python)") {
+
+    Component(filefactory, "IFileFactory", "Factory", "Creates file models from templates or syntax models")
+    Component(projectfactory, "IProjectFactory", "Factory", "Scaffolds new project directory structures")
+    Component(modelfactory, "IModelFactory", "Factory", "Creates entity/model/class definitions for the framework")
+    Component(configfactory, "IConfigFactory", "Factory", "Generates framework config files (e.g., pyproject.toml, tsconfig.json)")
+    Component(testfactory, "ITestFactory", "Factory", "Generates test file scaffolding (pytest, Jest, etc.)")
+    Component(templatelocator, "ITemplateLocator", "Service", "Locates embedded Liquid templates for this module")
+    Component(namingservice, "INamingService", "Service", "Applies framework-specific naming conventions")
+
+    Component(artifactstrategies, "Artifact Strategies", "Strategy Set", "ProjectGenerationStrategy, ConfigGenerationStrategy, etc.")
+    Component(syntaxstrategies, "Syntax Strategies", "Strategy Set", "ClassSyntaxStrategy, FunctionSyntaxStrategy, etc.")
+}
+
+System_Ext(core, "CodeGenerator.Core", "Strategy dispatch + template engine")
+
+Rel(core, artifactstrategies, "Dispatches artifact models to")
+Rel(core, syntaxstrategies, "Dispatches syntax models to")
+Rel(artifactstrategies, filefactory, "Uses")
+Rel(artifactstrategies, projectfactory, "Uses")
+Rel(artifactstrategies, configfactory, "Uses")
+Rel(artifactstrategies, testfactory, "Uses")
+Rel(filefactory, templatelocator, "Loads templates via")
+Rel(modelfactory, namingservice, "Applies naming via")
+Rel(syntaxstrategies, namingservice, "Applies naming via")
+
+@enduml
