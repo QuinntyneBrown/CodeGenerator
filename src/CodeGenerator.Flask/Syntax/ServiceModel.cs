@@ -28,6 +28,20 @@ public class ServiceModel : SyntaxModel
     public List<ServiceMethodModel> Methods { get; set; }
 
     public List<ImportModel> Imports { get; set; }
+
+    public bool SelfInstantiate { get; set; }
+}
+
+public class ServiceParamModel
+{
+    public ServiceParamModel()
+    {
+        Name = string.Empty;
+    }
+
+    public string Name { get; set; }
+    public string? TypeHint { get; set; }
+    public string? DefaultValue { get; set; }
 }
 
 public class ServiceMethodModel
@@ -37,6 +51,7 @@ public class ServiceMethodModel
         Name = string.Empty;
         Body = string.Empty;
         Params = [];
+        TypedParams = [];
     }
 
     public string Name { get; set; }
@@ -44,6 +59,8 @@ public class ServiceMethodModel
     public string Body { get; set; }
 
     public List<string> Params { get; set; }
+
+    public List<ServiceParamModel> TypedParams { get; set; }
 
     public string? ReturnTypeHint { get; set; }
 }

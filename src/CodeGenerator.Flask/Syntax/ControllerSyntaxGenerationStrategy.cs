@@ -69,6 +69,34 @@ public class ControllerSyntaxGenerationStrategy : ISyntaxGenerationStrategy<Cont
             }
         }
 
+        // Collect service instance imports
+        foreach (var instance in model.ServiceInstances)
+        {
+            if (!string.IsNullOrEmpty(instance.ImportModule))
+            {
+                if (!importsByModule.ContainsKey(instance.ImportModule))
+                {
+                    importsByModule[instance.ImportModule] = new HashSet<string>();
+                }
+
+                importsByModule[instance.ImportModule].Add(instance.ClassName);
+            }
+        }
+
+        // Collect schema instance imports
+        foreach (var instance in model.SchemaInstances)
+        {
+            if (!string.IsNullOrEmpty(instance.ImportModule))
+            {
+                if (!importsByModule.ContainsKey(instance.ImportModule))
+                {
+                    importsByModule[instance.ImportModule] = new HashSet<string>();
+                }
+
+                importsByModule[instance.ImportModule].Add(instance.ClassName);
+            }
+        }
+
         foreach (var kvp in importsByModule)
         {
             builder.AppendLine($"from {kvp.Key} import {string.Join(", ", kvp.Value)}");
@@ -77,6 +105,23 @@ public class ControllerSyntaxGenerationStrategy : ISyntaxGenerationStrategy<Cont
         builder.AppendLine();
         builder.AppendLine();
         builder.AppendLine($"bp = Blueprint('{snakeName}', __name__, url_prefix='{urlPrefix}')");
+
+        if (model.ServiceInstances.Count > 0 || model.SchemaInstances.Count > 0)
+        {
+            builder.AppendLine();
+        }
+
+        foreach (var instance in model.ServiceInstances)
+        {
+            var args = instance.ConstructorArgs ?? string.Empty;
+            builder.AppendLine($"{instance.VariableName} = {instance.ClassName}({args})");
+        }
+
+        foreach (var instance in model.SchemaInstances)
+        {
+            var args = instance.ConstructorArgs ?? string.Empty;
+            builder.AppendLine($"{instance.VariableName} = {instance.ClassName}({args})");
+        }
 
         foreach (var route in model.Routes)
         {
@@ -103,36 +148,79 @@ public class ControllerSyntaxGenerationStrategy : ISyntaxGenerationStrategy<Cont
             var paramStr = pathParams.Count > 0 ? string.Join(", ", pathParams) : string.Empty;
             builder.AppendLine($"def {route.HandlerName}({paramStr}):");
 
-            if (!string.IsNullOrEmpty(route.Body))
+            if (route.WrapInTryCatch)
             {
-                foreach (var line in route.Body.Split(Environment.NewLine))
+                builder.AppendLine("    try:");
+
+                if (!string.IsNullOrEmpty(route.Body))
                 {
-                    builder.AppendLine(line.Indent(1));
-                }
-            }
-            else
-            {
-                if (route.Methods.Contains("GET"))
-                {
-                    builder.AppendLine("    return jsonify([]), 200");
-                }
-                else if (route.Methods.Contains("POST"))
-                {
-                    builder.AppendLine("    data = request.get_json()");
-                    builder.AppendLine("    return jsonify(data), 201");
-                }
-                else if (route.Methods.Contains("PUT"))
-                {
-                    builder.AppendLine("    data = request.get_json()");
-                    builder.AppendLine("    return jsonify(data), 200");
-                }
-                else if (route.Methods.Contains("DELETE"))
-                {
-                    builder.AppendLine("    return jsonify({}), 204");
+                    foreach (var line in route.Body.Split(Environment.NewLine))
+                    {
+                        builder.AppendLine(line.Indent(2));
+                    }
                 }
                 else
                 {
-                    builder.AppendLine("    pass");
+                    if (route.Methods.Contains("GET"))
+                    {
+                        builder.AppendLine("        return jsonify([]), 200");
+                    }
+                    else if (route.Methods.Contains("POST"))
+                    {
+                        builder.AppendLine("        data = request.get_json()");
+                        builder.AppendLine("        return jsonify(data), 201");
+                    }
+                    else if (route.Methods.Contains("PUT"))
+                    {
+                        builder.AppendLine("        data = request.get_json()");
+                        builder.AppendLine("        return jsonify(data), 200");
+                    }
+                    else if (route.Methods.Contains("DELETE"))
+                    {
+                        builder.AppendLine("        return jsonify({}), 204");
+                    }
+                    else
+                    {
+                        builder.AppendLine("        pass");
+                    }
+                }
+
+                builder.AppendLine("    except Exception as e:");
+                builder.AppendLine("        return jsonify({'error': str(e)}), 500");
+            }
+            else
+            {
+                if (!string.IsNullOrEmpty(route.Body))
+                {
+                    foreach (var line in route.Body.Split(Environment.NewLine))
+                    {
+                        builder.AppendLine(line.Indent(1));
+                    }
+                }
+                else
+                {
+                    if (route.Methods.Contains("GET"))
+                    {
+                        builder.AppendLine("    return jsonify([]), 200");
+                    }
+                    else if (route.Methods.Contains("POST"))
+                    {
+                        builder.AppendLine("    data = request.get_json()");
+                        builder.AppendLine("    return jsonify(data), 201");
+                    }
+                    else if (route.Methods.Contains("PUT"))
+                    {
+                        builder.AppendLine("    data = request.get_json()");
+                        builder.AppendLine("    return jsonify(data), 200");
+                    }
+                    else if (route.Methods.Contains("DELETE"))
+                    {
+                        builder.AppendLine("    return jsonify({}), 204");
+                    }
+                    else
+                    {
+                        builder.AppendLine("    pass");
+                    }
                 }
             }
         }

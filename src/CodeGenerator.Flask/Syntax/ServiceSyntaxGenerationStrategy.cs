@@ -65,27 +65,48 @@ public class ServiceSyntaxGenerationStrategy : ISyntaxGenerationStrategy<Service
         builder.AppendLine($"class {className}:");
 
         // Generate __init__ method
-        var initParams = new List<string> { "self" };
-
-        foreach (var repoRef in model.RepositoryReferences)
+        if (model.SelfInstantiate)
         {
-            var repoSnake = namingConventionConverter.Convert(NamingConvention.KebobCase, repoRef);
-            initParams.Add(repoSnake);
-        }
+            builder.AppendLine("    def __init__(self):");
 
-        builder.AppendLine($"    def __init__({string.Join(", ", initParams)}):");
-
-        if (model.RepositoryReferences.Count > 0)
-        {
-            foreach (var repoRef in model.RepositoryReferences)
+            if (model.RepositoryReferences.Count > 0)
             {
-                var repoSnake = namingConventionConverter.Convert(NamingConvention.KebobCase, repoRef);
-                builder.AppendLine($"        self.{repoSnake} = {repoSnake}");
+                foreach (var repoRef in model.RepositoryReferences)
+                {
+                    var repoClass = namingConventionConverter.Convert(NamingConvention.PascalCase, repoRef);
+                    var repoSnake = namingConventionConverter.Convert(NamingConvention.KebobCase, repoRef);
+                    builder.AppendLine($"        self.{repoSnake} = {repoClass}()");
+                }
+            }
+            else
+            {
+                builder.AppendLine("        pass");
             }
         }
         else
         {
-            builder.AppendLine("        pass");
+            var initParams = new List<string> { "self" };
+
+            foreach (var repoRef in model.RepositoryReferences)
+            {
+                var repoSnake = namingConventionConverter.Convert(NamingConvention.KebobCase, repoRef);
+                initParams.Add(repoSnake);
+            }
+
+            builder.AppendLine($"    def __init__({string.Join(", ", initParams)}):");
+
+            if (model.RepositoryReferences.Count > 0)
+            {
+                foreach (var repoRef in model.RepositoryReferences)
+                {
+                    var repoSnake = namingConventionConverter.Convert(NamingConvention.KebobCase, repoRef);
+                    builder.AppendLine($"        self.{repoSnake} = {repoSnake}");
+                }
+            }
+            else
+            {
+                builder.AppendLine("        pass");
+            }
         }
 
         foreach (var method in model.Methods)
@@ -93,10 +114,34 @@ public class ServiceSyntaxGenerationStrategy : ISyntaxGenerationStrategy<Service
             builder.AppendLine();
 
             var methodParams = new List<string> { "self" };
-            methodParams.AddRange(method.Params);
-            var paramStr = string.Join(", ", methodParams);
 
-            builder.AppendLine($"    def {method.Name}({paramStr}):");
+            if (method.TypedParams.Count > 0)
+            {
+                foreach (var param in method.TypedParams)
+                {
+                    var paramPart = param.Name;
+                    if (!string.IsNullOrEmpty(param.TypeHint))
+                    {
+                        paramPart += $": {param.TypeHint}";
+                    }
+
+                    if (!string.IsNullOrEmpty(param.DefaultValue))
+                    {
+                        paramPart += $" = {param.DefaultValue}";
+                    }
+
+                    methodParams.Add(paramPart);
+                }
+            }
+            else
+            {
+                methodParams.AddRange(method.Params);
+            }
+
+            var paramStr = string.Join(", ", methodParams);
+            var returnHint = !string.IsNullOrEmpty(method.ReturnTypeHint) ? $" -> {method.ReturnTypeHint}" : "";
+
+            builder.AppendLine($"    def {method.Name}({paramStr}){returnHint}:");
 
             if (!string.IsNullOrEmpty(method.Body))
             {

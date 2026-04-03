@@ -11,6 +11,8 @@ public class ControllerModel : SyntaxModel
         Routes = [];
         MiddlewareDecorators = [];
         Imports = [];
+        ServiceInstances = [];
+        SchemaInstances = [];
     }
 
     public ControllerModel(string name)
@@ -19,6 +21,8 @@ public class ControllerModel : SyntaxModel
         Routes = [];
         MiddlewareDecorators = [];
         Imports = [];
+        ServiceInstances = [];
+        SchemaInstances = [];
     }
 
     public string Name { get; set; }
@@ -30,6 +34,24 @@ public class ControllerModel : SyntaxModel
     public List<ImportModel> Imports { get; set; }
 
     public string? UrlPrefix { get; set; }
+
+    public List<ControllerInstanceModel> ServiceInstances { get; set; }
+
+    public List<ControllerInstanceModel> SchemaInstances { get; set; }
+}
+
+public class ControllerInstanceModel
+{
+    public ControllerInstanceModel()
+    {
+        VariableName = string.Empty;
+        ClassName = string.Empty;
+    }
+
+    public string VariableName { get; set; }
+    public string ClassName { get; set; }
+    public string? ImportModule { get; set; }
+    public string? ConstructorArgs { get; set; }
 }
 
 public class ControllerRouteModel
@@ -51,4 +73,6 @@ public class ControllerRouteModel
     public string Body { get; set; }
 
     public bool RequiresAuth { get; set; }
+
+    public bool WrapInTryCatch { get; set; }
 }
