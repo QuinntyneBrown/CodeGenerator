@@ -1,5 +1,12 @@
 # CodeGenerator
 
+[![CI/CD](https://github.com/QuinntyneBrown/CodeGenerator/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/QuinntyneBrown/CodeGenerator/actions/workflows/ci-cd.yml)
+[![NuGet](https://img.shields.io/nuget/v/QuinntyneBrown.CodeGenerator.Core.svg?label=CodeGenerator.Core)](https://www.nuget.org/packages/QuinntyneBrown.CodeGenerator.Core)
+[![NuGet](https://img.shields.io/nuget/v/QuinntyneBrown.CodeGenerator.DotNet.svg?label=CodeGenerator.DotNet)](https://www.nuget.org/packages/QuinntyneBrown.CodeGenerator.DotNet)
+[![NuGet](https://img.shields.io/nuget/v/QuinntyneBrown.CodeGenerator.Cli.svg?label=CodeGenerator.Cli)](https://www.nuget.org/packages/QuinntyneBrown.CodeGenerator.Cli)
+[![NuGet Downloads](https://img.shields.io/nuget/dt/QuinntyneBrown.CodeGenerator.Core.svg?label=downloads)](https://www.nuget.org/packages/QuinntyneBrown.CodeGenerator.Core)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A model-driven code generation framework that dramatically reduces tokens for coding agents. Instead of writing code line-by-line, agents build lightweight object models and pass them to the generator — producing complete files, projects, solutions, and full-stack applications.
 
 Supports .NET, Python, React, React Native, Angular, Flask, Playwright, and Detox. Generate clean architecture solutions, APIs, full-stack applications, mobile apps, and end-to-end tests from models, PlantUML diagrams, or code analysis.
@@ -8,16 +15,16 @@ Supports .NET, Python, React, React Native, Angular, Flask, Playwright, and Deto
 
 | Package | Version | Description |
 |---------|---------|-------------|
-| `QuinntyneBrown.CodeGenerator.Core` | 1.2.0 | Core abstractions, syntax models, and shared services |
-| `QuinntyneBrown.CodeGenerator.DotNet` | 1.2.0 | .NET code generation with C# syntax, DotLiquid templates, and solution scaffolding |
-| `QuinntyneBrown.CodeGenerator.Angular` | 1.2.0 | Angular workspace and project generation with Jest configuration |
-| `QuinntyneBrown.CodeGenerator.Python` | 1.2.0 | Python code generation with classes, functions, modules, decorators, and type hints |
-| `QuinntyneBrown.CodeGenerator.React` | 1.2.0 | React workspace and project generation with TypeScript, Vite, Zustand, and TanStack Query |
-| `QuinntyneBrown.CodeGenerator.ReactNative` | 1.2.0 | React Native project generation with screens, components, navigation, and stores |
-| `QuinntyneBrown.CodeGenerator.Flask` | 1.2.0 | Flask project generation with controllers, SQLAlchemy models, repositories, services, and Marshmallow schemas |
-| `QuinntyneBrown.CodeGenerator.Playwright` | 1.2.0 | Playwright test project generation with page object models, specs, and fixtures |
-| `QuinntyneBrown.CodeGenerator.Detox` | 1.2.0 | Detox mobile test project generation with page object models, specs, and configuration |
-| `QuinntyneBrown.CodeGenerator.Cli` | 1.1.0 | CLI tool to scaffold new code generator projects |
+| `QuinntyneBrown.CodeGenerator.Core` | 1.3.1 | Core abstractions, syntax models, and shared services |
+| `QuinntyneBrown.CodeGenerator.DotNet` | 1.2.1 | .NET code generation with C# syntax, DotLiquid templates, and solution scaffolding |
+| `QuinntyneBrown.CodeGenerator.Angular` | 1.2.1 | Angular workspace and project generation with Jest configuration |
+| `QuinntyneBrown.CodeGenerator.Python` | 1.2.2 | Python code generation with classes, functions, modules, decorators, and type hints |
+| `QuinntyneBrown.CodeGenerator.React` | 1.2.6 | React workspace and project generation with TypeScript, Vite, Zustand, and TanStack Query |
+| `QuinntyneBrown.CodeGenerator.ReactNative` | 1.2.2 | React Native project generation with screens, components, navigation, and stores |
+| `QuinntyneBrown.CodeGenerator.Flask` | 1.2.7 | Flask project generation with controllers, SQLAlchemy models, repositories, services, and Marshmallow schemas |
+| `QuinntyneBrown.CodeGenerator.Playwright` | 1.2.6 | Playwright test project generation with page object models, specs, and fixtures |
+| `QuinntyneBrown.CodeGenerator.Detox` | 1.2.2 | Detox mobile test project generation with page object models, specs, and configuration |
+| `QuinntyneBrown.CodeGenerator.Cli` | 1.2.1 | CLI tool to scaffold new code generator projects |
 
 ## Installation
 
