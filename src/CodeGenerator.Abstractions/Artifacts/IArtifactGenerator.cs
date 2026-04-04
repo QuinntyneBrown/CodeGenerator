@@ -5,5 +5,5 @@ namespace CodeGenerator.Core.Artifacts.Abstractions;
 
 public interface IArtifactGenerator
 {
-    Task GenerateAsync(object model);
+    Task GenerateAsync(object model, CancellationToken ct = default);
 }

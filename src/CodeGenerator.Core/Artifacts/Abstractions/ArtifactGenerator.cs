@@ -26,8 +26,10 @@ public class ArtifactGenerator : IArtifactGenerator
         _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
     }
 
-    public async Task GenerateAsync(object model)
+    public async Task GenerateAsync(object model, CancellationToken ct = default)
     {
+        ct.ThrowIfCancellationRequested();
+
         _logger.LogInformation("Generating artifact for model. {type}", model.GetType());
 
         if (model is IValidatable validatable)
@@ -53,7 +55,7 @@ public class ArtifactGenerator : IArtifactGenerator
                 Delegate.CreateDelegate(typeof(Func<IServiceProvider, object, CancellationToken, Task>), genericMethod);
         });
 
-        await dispatcher(_serviceProvider, model, default);
+        await dispatcher(_serviceProvider, model, ct);
     }
 
     private static async Task DispatchArtifactAsync<T>(IServiceProvider serviceProvider, object model, CancellationToken cancellationToken)

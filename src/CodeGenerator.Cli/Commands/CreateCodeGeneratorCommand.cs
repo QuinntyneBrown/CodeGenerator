@@ -84,6 +84,7 @@ public class CreateCodeGeneratorCommand : RootCommand
         var fileSystem = _serviceProvider.GetRequiredService<IFileSystem>();
         var artifactGenerator = _serviceProvider.GetRequiredService<IArtifactGenerator>();
         var commandService = _serviceProvider.GetRequiredService<ICommandService>();
+        var ct = _serviceProvider.GetService<CancellationToken>() ?? CancellationToken.None;
 
         // Design 54: Initialize correlation ID for observability
         var correlationId = Guid.NewGuid().ToString();
@@ -207,11 +208,11 @@ public class CreateCodeGeneratorCommand : RootCommand
         {
             if (slnx)
             {
-                commandService.Start($"dotnet new slnx -n {name}", solution.SolutionDirectory);
+                commandService.Start($"dotnet new slnx -n {name}", solution.SolutionDirectory, ct: ct);
             }
             else
             {
-                commandService.Start($"dotnet new sln -n {name}", solution.SolutionDirectory);
+                commandService.Start($"dotnet new sln -n {name}", solution.SolutionDirectory, ct: ct);
             }
         }
 
@@ -222,7 +223,7 @@ public class CreateCodeGeneratorCommand : RootCommand
                 GenerateCliProjectContent(name, framework, localSourceRoot, project.Directory),
                 $"{name}.Cli",
                 project.Directory,
-                ".csproj"));
+                ".csproj"), ct);
         }
 
         // Generate project files
@@ -230,14 +231,14 @@ public class CreateCodeGeneratorCommand : RootCommand
         {
             foreach (var file in project.Files)
             {
-                await artifactGenerator.GenerateAsync(file);
+                await artifactGenerator.GenerateAsync(file, ct);
             }
         }
 
         // Add project to solution
         using (timer.TimeStep("Add project to solution"))
         {
-            commandService.Start($"dotnet sln add {project.Path}", solution.SolutionDirectory);
+            commandService.Start($"dotnet sln add {project.Path}", solution.SolutionDirectory, ct: ct);
         }
 
         // Generate install-cli.bat script
@@ -247,7 +248,7 @@ public class CreateCodeGeneratorCommand : RootCommand
                 GenerateInstallCliBatContent(name),
                 "install-cli",
                 Path.Combine(solution.SolutionDirectory, "eng", "scripts"),
-                ".bat"));
+                ".bat"), ct);
         }
 
         rollbackService.Commit();

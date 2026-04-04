@@ -12,13 +12,16 @@ public class BaseRepositorySyntaxGenerationStrategy : ISyntaxGenerationStrategy<
 {
     private readonly ILogger<BaseRepositorySyntaxGenerationStrategy> logger;
     private readonly INamingConventionConverter namingConventionConverter;
+    private readonly ISyntaxGenerator _syntaxGenerator;
 
     public BaseRepositorySyntaxGenerationStrategy(
         INamingConventionConverter namingConventionConverter,
+        ISyntaxGenerator syntaxGenerator,
         ILogger<BaseRepositorySyntaxGenerationStrategy> logger)
     {
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         this.namingConventionConverter = namingConventionConverter ?? throw new ArgumentNullException(nameof(namingConventionConverter));
+        _syntaxGenerator = syntaxGenerator ?? throw new ArgumentNullException(nameof(syntaxGenerator));
     }
 
     public async Task<string> GenerateAsync(BaseRepositoryModel model, CancellationToken cancellationToken)
@@ -30,11 +33,11 @@ public class BaseRepositorySyntaxGenerationStrategy : ISyntaxGenerationStrategy<
         // Imports
         if (model.UseTypeHints)
         {
-            builder.AppendLine("from typing import Any, Optional, Type");
+            builder.AppendLine(await _syntaxGenerator.GenerateAsync(new ImportModel { Module = "typing", Names = ["Any", "Optional", "Type"] }));
         }
 
-        builder.AppendLine("from flask_sqlalchemy.model import Model");
-        builder.AppendLine("from app.extensions import db");
+        builder.AppendLine(await _syntaxGenerator.GenerateAsync(new ImportModel { Module = "flask_sqlalchemy.model", Names = ["Model"] }));
+        builder.AppendLine(await _syntaxGenerator.GenerateAsync(new ImportModel { Module = "app.extensions", Names = ["db"] }));
         builder.AppendLine();
         builder.AppendLine();
 

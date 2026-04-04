@@ -10,10 +10,13 @@ namespace CodeGenerator.Flask.Syntax;
 public class CorsMiddlewareSyntaxGenerationStrategy : ISyntaxGenerationStrategy<CorsMiddlewareModel>
 {
     private readonly ILogger<CorsMiddlewareSyntaxGenerationStrategy> logger;
+    private readonly ISyntaxGenerator _syntaxGenerator;
 
     public CorsMiddlewareSyntaxGenerationStrategy(
+        ISyntaxGenerator syntaxGenerator,
         ILogger<CorsMiddlewareSyntaxGenerationStrategy> logger)
     {
+        _syntaxGenerator = syntaxGenerator ?? throw new ArgumentNullException(nameof(syntaxGenerator));
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -23,7 +26,7 @@ public class CorsMiddlewareSyntaxGenerationStrategy : ISyntaxGenerationStrategy<
 
         var builder = StringBuilderCache.Acquire();
 
-        builder.AppendLine("from flask_cors import CORS");
+        builder.AppendLine(await _syntaxGenerator.GenerateAsync(new ImportModel { Module = "flask_cors", Names = ["CORS"] }));
         builder.AppendLine();
         builder.AppendLine();
 
