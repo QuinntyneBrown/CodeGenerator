@@ -124,7 +124,7 @@ public class DependencyInjectionService : IDependencyInjectionService
                 {
                     newContent.AppendLine(line);
 
-                    if (addRegistration && line.trim() == "{")
+                    if (addRegistration && line.Trim() == "{")
                     {
                         newContent.AppendLine(diRegistration);
                         registrationAdded = true;

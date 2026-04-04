@@ -103,7 +103,7 @@ public class ScaffoldCommand : Command
     private async Task HandleAsync(string? configPath, string outputDirectory, bool dryRun, bool force, bool validate, bool exportSchema, bool init, bool diagnostics, bool failFast)
     {
         var logger = _serviceProvider.GetRequiredService<ILogger<ScaffoldCommand>>();
-        var ct = _serviceProvider.GetService<CancellationToken>() ?? CancellationToken.None;
+        var ct = _serviceProvider.GetService<CancellationTokenSource>()?.Token ?? CancellationToken.None;
 
         // Design 52: Wire --fail-fast to ArtifactGenerator
         if (failFast && _serviceProvider.GetService<IArtifactGenerator>() is ArtifactGenerator generator)

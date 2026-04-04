@@ -93,7 +93,7 @@ public class CreateCodeGeneratorCommand : RootCommand
 
         if (failFast && artifactGenerator is ArtifactGenerator concreteGenerator)
             concreteGenerator.FailFast = true;
-        var ct = _serviceProvider.GetService<CancellationToken>() ?? CancellationToken.None;
+        var ct = _serviceProvider.GetService<CancellationTokenSource>()?.Token ?? CancellationToken.None;
 
         // Design 54: Initialize correlation ID for observability
         var correlationId = Guid.NewGuid().ToString();

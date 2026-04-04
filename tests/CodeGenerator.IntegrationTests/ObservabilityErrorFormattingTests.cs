@@ -236,7 +236,6 @@ public class JsonErrorFormatterTests
     {
         var scaffoldResult = new ScaffoldResult
         {
-            Success = false,
             CorrelationId = "corr-456",
             Duration = TimeSpan.FromMilliseconds(250),
         };
