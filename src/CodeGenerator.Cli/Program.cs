@@ -60,6 +60,9 @@ if (!Console.IsInputRedirected)
 else
     services.AddSingleton<IInteractivePromptService, NonInteractivePromptService>();
 
+// Design 53: Register CancellationToken for handler injection
+services.AddSingleton(cts.Token);
+
 // Design 54: Register error formatter
 services.AddSingleton<IErrorFormatter, ConsoleErrorFormatter>();
 services.AddSingleton<MarkdownErrorFormatter>();

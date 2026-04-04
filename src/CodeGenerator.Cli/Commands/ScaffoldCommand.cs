@@ -83,6 +83,7 @@ public class ScaffoldCommand : Command
     private async Task HandleAsync(string? configPath, string outputDirectory, bool dryRun, bool force, bool validate, bool exportSchema, bool init, bool diagnostics)
     {
         var logger = _serviceProvider.GetRequiredService<ILogger<ScaffoldCommand>>();
+        var ct = _serviceProvider.GetService<CancellationToken>() ?? CancellationToken.None;
 
         // Design 54: Initialize correlation ID for observability
         var correlationId = Guid.NewGuid().ToString();
@@ -188,7 +189,7 @@ public class ScaffoldCommand : Command
         {
             using (timer.TimeStep("Scaffold files"))
             {
-                result = await engine.ScaffoldAsync(yaml, outputDirectory, dryRun, force);
+                result = await engine.ScaffoldAsync(yaml, outputDirectory, dryRun, force, ct);
             }
 
             if (!result.ValidationResult.IsValid)
