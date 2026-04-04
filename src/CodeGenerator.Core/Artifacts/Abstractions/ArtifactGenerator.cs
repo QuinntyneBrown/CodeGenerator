@@ -2,7 +2,10 @@
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Reflection;
+using CodeGenerator.Abstractions.Results;
+using CodeGenerator.Core.Errors;
 using CodeGenerator.Core.Validation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -13,7 +16,7 @@ public class ArtifactGenerator : IArtifactGenerator
 {
     private readonly ILogger<ArtifactGenerator> _logger;
     private readonly IServiceProvider _serviceProvider;
-    private readonly ConcurrentDictionary<Type, Func<IServiceProvider, object, CancellationToken, Task>> _dispatchers = new();
+    private readonly ConcurrentDictionary<Type, Func<IServiceProvider, object, bool, CancellationToken, Task<ArtifactGenerationResult>>> _dispatchers = new();
 
     private static readonly MethodInfo DispatchMethod = typeof(ArtifactGenerator)
         .GetMethod(nameof(DispatchArtifactAsync), BindingFlags.NonPublic | BindingFlags.Static)!;
@@ -26,47 +29,114 @@ public class ArtifactGenerator : IArtifactGenerator
         _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
     }
 
-    public async Task GenerateAsync(object model, CancellationToken ct = default)
+    public bool FailFast { get; set; }
+
+    public async Task<ArtifactGenerationResult> GenerateAsync(object model, CancellationToken ct = default)
     {
         ct.ThrowIfCancellationRequested();
 
         _logger.LogInformation("Generating artifact for model. {type}", model.GetType());
 
+        var aggregateResult = new ArtifactGenerationResult();
+
         if (model is IValidatable validatable)
         {
-            var result = validatable.Validate();
+            var validationResult = validatable.Validate();
+            aggregateResult.MergedValidation = validationResult;
 
-            foreach (var warning in result.Warnings)
+            foreach (var warning in validationResult.Warnings)
             {
                 _logger.LogWarning("Validation warning on {Type}.{Prop}: {Msg}",
                     model.GetType().Name, warning.PropertyName, warning.ErrorMessage);
             }
 
-            if (!result.IsValid)
+            if (!validationResult.IsValid)
             {
-                throw new ModelValidationException(result, model.GetType());
+                throw new ModelValidationException(validationResult, model.GetType());
             }
         }
 
         var dispatcher = _dispatchers.GetOrAdd(model.GetType(), static modelType =>
         {
             var genericMethod = DispatchMethod.MakeGenericMethod(modelType);
-            return (Func<IServiceProvider, object, CancellationToken, Task>)
-                Delegate.CreateDelegate(typeof(Func<IServiceProvider, object, CancellationToken, Task>), genericMethod);
+            return (Func<IServiceProvider, object, bool, CancellationToken, Task<ArtifactGenerationResult>>)
+                Delegate.CreateDelegate(
+                    typeof(Func<IServiceProvider, object, bool, CancellationToken, Task<ArtifactGenerationResult>>),
+                    genericMethod);
         });
 
-        await dispatcher(_serviceProvider, model, ct);
+        var result = await dispatcher(_serviceProvider, model, FailFast, ct);
+
+        // Merge into aggregate
+        aggregateResult.Succeeded.AddRange(result.Succeeded);
+        aggregateResult.Failed.AddRange(result.Failed);
+        aggregateResult.Warnings.AddRange(result.Warnings);
+
+        if (aggregateResult.HasErrors)
+        {
+            _logger.LogWarning("Artifact generation completed with errors: {Summary}", aggregateResult.ToSummary());
+        }
+
+        return aggregateResult;
     }
 
-    private static async Task DispatchArtifactAsync<T>(IServiceProvider serviceProvider, object model, CancellationToken cancellationToken)
+    private static async Task<ArtifactGenerationResult> DispatchArtifactAsync<T>(
+        IServiceProvider serviceProvider, object model, bool failFast, CancellationToken ct)
     {
+        var result = new ArtifactGenerationResult();
         var strategies = serviceProvider.GetRequiredService<IEnumerable<IArtifactGenerationStrategy<T>>>();
 
-        var strategy = strategies
+        var matchingStrategies = strategies
             .Where(x => x.CanHandle(model))
             .OrderByDescending(x => x.GetPriority())
-            .First();
+            .ToList();
 
-        await strategy.GenerateAsync((T)model);
+        foreach (var strategy in matchingStrategies)
+        {
+            ct.ThrowIfCancellationRequested();
+
+            var strategyName = strategy.GetType().Name;
+            var sw = Stopwatch.StartNew();
+
+            try
+            {
+                await strategy.GenerateAsync((T)model);
+                sw.Stop();
+
+                result.Succeeded.Add(new GeneratedArtifact(
+                    FilePath: model.ToString() ?? strategyName,
+                    StrategyName: strategyName,
+                    SizeBytes: 0,
+                    Duration: sw.Elapsed));
+            }
+            catch (SkipFileException)
+            {
+                // Intentional skip - not an error
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                sw.Stop();
+
+                var error = new ErrorInfo(
+                    Code: ErrorCodes.Strategy.ExecutionFailed,
+                    Message: $"Strategy '{strategyName}' failed: {ex.Message}",
+                    Category: ErrorCategory.Plugin,
+                    StackTrace: ex.StackTrace);
+
+                result.Failed.Add(new ArtifactError(
+                    StrategyName: strategyName,
+                    ModelType: typeof(T).Name,
+                    Error: error));
+
+                if (failFast)
+                    break;
+            }
+        }
+
+        return result;
     }
 }

@@ -8,7 +8,7 @@ namespace CodeGenerator.Core.Scaffold.Models;
 
 public class ScaffoldResult
 {
-    public bool Success { get; set; }
+    public bool Success => ValidationResult.IsValid && Errors.Count == 0;
 
     public List<PlannedFile> PlannedFiles { get; set; } = [];
 
