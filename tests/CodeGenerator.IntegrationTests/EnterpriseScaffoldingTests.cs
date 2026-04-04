@@ -72,7 +72,7 @@ public class EnterpriseScaffoldingTests
             var handleAsync = typeof(CreateCodeGeneratorCommand).GetMethod("HandleAsync", BindingFlags.Instance | BindingFlags.NonPublic);
             Assert.NotNull(handleAsync);
 
-            var task = (Task?)handleAsync!.Invoke(command, ["TempGenerator", workspaceRoot, "net9.0", false, sourceRoot]);
+            var task = (Task?)handleAsync!.Invoke(command, ["TempGenerator", workspaceRoot, "net9.0", false, sourceRoot, false, false]);
             Assert.NotNull(task);
 
             await task!;
