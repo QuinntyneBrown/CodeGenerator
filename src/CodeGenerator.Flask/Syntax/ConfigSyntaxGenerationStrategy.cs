@@ -10,11 +10,14 @@ namespace CodeGenerator.Flask.Syntax;
 public class ConfigSyntaxGenerationStrategy : ISyntaxGenerationStrategy<ConfigModel>
 {
     private readonly ILogger<ConfigSyntaxGenerationStrategy> logger;
+    private readonly ISyntaxGenerator syntaxGenerator;
 
     public ConfigSyntaxGenerationStrategy(
+        ISyntaxGenerator syntaxGenerator,
         ILogger<ConfigSyntaxGenerationStrategy> logger)
     {
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        this.syntaxGenerator = syntaxGenerator ?? throw new ArgumentNullException(nameof(syntaxGenerator));
     }
 
     public async Task<string> GenerateAsync(ConfigModel model, CancellationToken cancellationToken)
@@ -25,7 +28,7 @@ public class ConfigSyntaxGenerationStrategy : ISyntaxGenerationStrategy<ConfigMo
 
         // Collect imports, deduplicating
         var importModules = new HashSet<string> { "os" };
-        builder.AppendLine("import os");
+        builder.AppendLine(await syntaxGenerator.GenerateAsync(new ImportModel("os")));
 
         foreach (var import in model.Imports)
         {
@@ -34,14 +37,7 @@ public class ConfigSyntaxGenerationStrategy : ISyntaxGenerationStrategy<ConfigMo
                 continue;
             }
 
-            if (import.Names.Count > 0)
-            {
-                builder.AppendLine($"from {import.Module} import {string.Join(", ", import.Names)}");
-            }
-            else
-            {
-                builder.AppendLine($"import {import.Module}");
-            }
+            builder.AppendLine(await syntaxGenerator.GenerateAsync(import));
 
             importModules.Add(import.Module);
         }

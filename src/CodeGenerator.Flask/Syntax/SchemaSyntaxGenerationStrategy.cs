@@ -12,13 +12,16 @@ public class SchemaSyntaxGenerationStrategy : ISyntaxGenerationStrategy<SchemaMo
 {
     private readonly ILogger<SchemaSyntaxGenerationStrategy> logger;
     private readonly INamingConventionConverter namingConventionConverter;
+    private readonly ISyntaxGenerator _syntaxGenerator;
 
     public SchemaSyntaxGenerationStrategy(
         INamingConventionConverter namingConventionConverter,
+        ISyntaxGenerator syntaxGenerator,
         ILogger<SchemaSyntaxGenerationStrategy> logger)
     {
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         this.namingConventionConverter = namingConventionConverter ?? throw new ArgumentNullException(nameof(namingConventionConverter));
+        _syntaxGenerator = syntaxGenerator ?? throw new ArgumentNullException(nameof(syntaxGenerator));
     }
 
     public async Task<string> GenerateAsync(SchemaModel model, CancellationToken cancellationToken)
@@ -57,13 +60,14 @@ public class SchemaSyntaxGenerationStrategy : ISyntaxGenerationStrategy<SchemaMo
             }
             else
             {
-                builder.AppendLine($"import {import.Module}");
+                builder.AppendLine(await _syntaxGenerator.GenerateAsync(new ImportModel(import.Module)));
             }
         }
 
         foreach (var kvp in importsByModule)
         {
-            builder.AppendLine($"from {kvp.Key} import {string.Join(", ", kvp.Value)}");
+            var importModel = new ImportModel { Module = kvp.Key, Names = kvp.Value.ToList() };
+            builder.AppendLine(await _syntaxGenerator.GenerateAsync(importModel));
         }
 
         builder.AppendLine();

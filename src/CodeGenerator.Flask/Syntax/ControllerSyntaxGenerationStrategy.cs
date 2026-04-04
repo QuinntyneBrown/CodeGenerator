@@ -12,13 +12,16 @@ public class ControllerSyntaxGenerationStrategy : ISyntaxGenerationStrategy<Cont
 {
     private readonly ILogger<ControllerSyntaxGenerationStrategy> logger;
     private readonly INamingConventionConverter namingConventionConverter;
+    private readonly ISyntaxGenerator _syntaxGenerator;
 
     public ControllerSyntaxGenerationStrategy(
         INamingConventionConverter namingConventionConverter,
+        ISyntaxGenerator syntaxGenerator,
         ILogger<ControllerSyntaxGenerationStrategy> logger)
     {
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         this.namingConventionConverter = namingConventionConverter ?? throw new ArgumentNullException(nameof(namingConventionConverter));
+        _syntaxGenerator = syntaxGenerator ?? throw new ArgumentNullException(nameof(syntaxGenerator));
     }
 
     public async Task<string> GenerateAsync(ControllerModel model, CancellationToken cancellationToken)
@@ -58,14 +61,7 @@ public class ControllerSyntaxGenerationStrategy : ISyntaxGenerationStrategy<Cont
             }
             else
             {
-                var importLine = $"import {import.Module}";
-
-                if (!string.IsNullOrEmpty(import.Alias))
-                {
-                    importLine += $" as {import.Alias}";
-                }
-
-                builder.AppendLine(importLine);
+                builder.AppendLine(await _syntaxGenerator.GenerateAsync(new ImportModel(import.Module) { Alias = import.Alias }));
             }
         }
 
@@ -99,7 +95,8 @@ public class ControllerSyntaxGenerationStrategy : ISyntaxGenerationStrategy<Cont
 
         foreach (var kvp in importsByModule)
         {
-            builder.AppendLine($"from {kvp.Key} import {string.Join(", ", kvp.Value)}");
+            var importModel = new ImportModel { Module = kvp.Key, Names = kvp.Value.ToList() };
+            builder.AppendLine(await _syntaxGenerator.GenerateAsync(importModel));
         }
 
         builder.AppendLine();

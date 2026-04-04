@@ -12,13 +12,16 @@ public class AppFactorySyntaxGenerationStrategy : ISyntaxGenerationStrategy<AppF
 {
     private readonly ILogger<AppFactorySyntaxGenerationStrategy> logger;
     private readonly INamingConventionConverter namingConventionConverter;
+    private readonly ISyntaxGenerator syntaxGenerator;
 
     public AppFactorySyntaxGenerationStrategy(
+        ISyntaxGenerator syntaxGenerator,
         INamingConventionConverter namingConventionConverter,
         ILogger<AppFactorySyntaxGenerationStrategy> logger)
     {
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         this.namingConventionConverter = namingConventionConverter ?? throw new ArgumentNullException(nameof(namingConventionConverter));
+        this.syntaxGenerator = syntaxGenerator ?? throw new ArgumentNullException(nameof(syntaxGenerator));
     }
 
     public async Task<string> GenerateAsync(AppFactoryModel model, CancellationToken cancellationToken)
@@ -32,16 +35,16 @@ public class AppFactorySyntaxGenerationStrategy : ISyntaxGenerationStrategy<AppF
 
         if (model.ErrorHandlers.Count > 0)
         {
-            builder.AppendLine("from flask import Flask, jsonify");
+            builder.AppendLine(await syntaxGenerator.GenerateAsync(new ImportModel("flask", "Flask", "jsonify")));
         }
         else
         {
-            builder.AppendLine("from flask import Flask");
+            builder.AppendLine(await syntaxGenerator.GenerateAsync(new ImportModel("flask", "Flask")));
         }
         renderedModules.Add("flask");
-        builder.AppendLine("from app.extensions import db, migrate");
+        builder.AppendLine(await syntaxGenerator.GenerateAsync(new ImportModel("app.extensions", "db", "migrate")));
         renderedModules.Add("app.extensions");
-        builder.AppendLine($"from app.config import {model.ConfigClass}");
+        builder.AppendLine(await syntaxGenerator.GenerateAsync(new ImportModel("app.config", model.ConfigClass)));
         renderedModules.Add("app.config");
 
         foreach (var blueprint in model.Blueprints)
@@ -49,7 +52,7 @@ public class AppFactorySyntaxGenerationStrategy : ISyntaxGenerationStrategy<AppF
             var bpAlias = blueprint.Name.EndsWith("_bp", StringComparison.OrdinalIgnoreCase)
                 ? blueprint.Name
                 : $"{namingConventionConverter.Convert(NamingConvention.KebobCase, blueprint.Name)}_bp";
-            builder.AppendLine($"from {blueprint.ImportPath} import bp as {bpAlias}");
+            builder.AppendLine(await syntaxGenerator.GenerateAsync(new ImportModel(blueprint.ImportPath, $"bp as {bpAlias}")));
             renderedModules.Add(blueprint.ImportPath);
         }
 
@@ -61,14 +64,7 @@ public class AppFactorySyntaxGenerationStrategy : ISyntaxGenerationStrategy<AppF
                 continue;
             }
 
-            if (import.Names.Count > 0)
-            {
-                builder.AppendLine($"from {import.Module} import {string.Join(", ", import.Names)}");
-            }
-            else
-            {
-                builder.AppendLine($"import {import.Module}");
-            }
+            builder.AppendLine(await syntaxGenerator.GenerateAsync(import));
         }
 
         builder.AppendLine();

@@ -12,13 +12,16 @@ public class TestSyntaxGenerationStrategy : ISyntaxGenerationStrategy<TestModel>
 {
     private readonly ILogger<TestSyntaxGenerationStrategy> logger;
     private readonly INamingConventionConverter namingConventionConverter;
+    private readonly ISyntaxGenerator syntaxGenerator;
 
     public TestSyntaxGenerationStrategy(
+        ISyntaxGenerator syntaxGenerator,
         INamingConventionConverter namingConventionConverter,
         ILogger<TestSyntaxGenerationStrategy> logger)
     {
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         this.namingConventionConverter = namingConventionConverter ?? throw new ArgumentNullException(nameof(namingConventionConverter));
+        this.syntaxGenerator = syntaxGenerator ?? throw new ArgumentNullException(nameof(syntaxGenerator));
     }
 
     public async Task<string> GenerateAsync(TestModel model, CancellationToken cancellationToken)
@@ -27,18 +30,11 @@ public class TestSyntaxGenerationStrategy : ISyntaxGenerationStrategy<TestModel>
 
         var builder = StringBuilderCache.Acquire();
 
-        builder.AppendLine("import pytest");
+        builder.AppendLine(await syntaxGenerator.GenerateAsync(new ImportModel("pytest")));
 
         foreach (var import in model.Imports)
         {
-            if (import.Names.Count > 0)
-            {
-                builder.AppendLine($"from {import.Module} import {string.Join(", ", import.Names)}");
-            }
-            else
-            {
-                builder.AppendLine($"import {import.Module}");
-            }
+            builder.AppendLine(await syntaxGenerator.GenerateAsync(import));
         }
 
         builder.AppendLine();

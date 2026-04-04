@@ -12,13 +12,16 @@ public class RepositorySyntaxGenerationStrategy : ISyntaxGenerationStrategy<Repo
 {
     private readonly ILogger<RepositorySyntaxGenerationStrategy> logger;
     private readonly INamingConventionConverter namingConventionConverter;
+    private readonly ISyntaxGenerator _syntaxGenerator;
 
     public RepositorySyntaxGenerationStrategy(
         INamingConventionConverter namingConventionConverter,
+        ISyntaxGenerator syntaxGenerator,
         ILogger<RepositorySyntaxGenerationStrategy> logger)
     {
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         this.namingConventionConverter = namingConventionConverter ?? throw new ArgumentNullException(nameof(namingConventionConverter));
+        _syntaxGenerator = syntaxGenerator ?? throw new ArgumentNullException(nameof(syntaxGenerator));
     }
 
     public async Task<string> GenerateAsync(RepositoryModel model, CancellationToken cancellationToken)
@@ -34,11 +37,11 @@ public class RepositorySyntaxGenerationStrategy : ISyntaxGenerationStrategy<Repo
         // Track rendered modules to avoid duplicate imports
         var renderedModules = new HashSet<string>();
 
-        builder.AppendLine("from app.repositories.base_repository import BaseRepository");
+        builder.AppendLine(await _syntaxGenerator.GenerateAsync(new ImportModel("app.repositories.base_repository", "BaseRepository")));
         renderedModules.Add("app.repositories.base_repository");
 
         var entityModule = $"app.models.{snakeEntity}";
-        builder.AppendLine($"from {entityModule} import {entityName}");
+        builder.AppendLine(await _syntaxGenerator.GenerateAsync(new ImportModel(entityModule, entityName)));
         renderedModules.Add(entityModule);
 
         foreach (var import in model.Imports)
@@ -48,14 +51,7 @@ public class RepositorySyntaxGenerationStrategy : ISyntaxGenerationStrategy<Repo
                 continue;
             }
 
-            if (import.Names.Count > 0)
-            {
-                builder.AppendLine($"from {import.Module} import {string.Join(", ", import.Names)}");
-            }
-            else
-            {
-                builder.AppendLine($"import {import.Module}");
-            }
+            builder.AppendLine(await _syntaxGenerator.GenerateAsync(import));
 
             renderedModules.Add(import.Module);
         }

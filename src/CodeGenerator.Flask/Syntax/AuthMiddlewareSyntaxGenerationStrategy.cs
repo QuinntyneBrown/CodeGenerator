@@ -12,13 +12,16 @@ public class AuthMiddlewareSyntaxGenerationStrategy : ISyntaxGenerationStrategy<
 {
     private readonly ILogger<AuthMiddlewareSyntaxGenerationStrategy> logger;
     private readonly INamingConventionConverter namingConventionConverter;
+    private readonly ISyntaxGenerator syntaxGenerator;
 
     public AuthMiddlewareSyntaxGenerationStrategy(
+        ISyntaxGenerator syntaxGenerator,
         ILogger<AuthMiddlewareSyntaxGenerationStrategy> logger,
         INamingConventionConverter namingConventionConverter)
     {
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         this.namingConventionConverter = namingConventionConverter ?? throw new ArgumentNullException(nameof(namingConventionConverter));
+        this.syntaxGenerator = syntaxGenerator ?? throw new ArgumentNullException(nameof(syntaxGenerator));
     }
 
     public async Task<string> GenerateAsync(AuthMiddlewareModel model, CancellationToken cancellationToken)
@@ -31,21 +34,14 @@ public class AuthMiddlewareSyntaxGenerationStrategy : ISyntaxGenerationStrategy<
             ? "token_required"
             : namingConventionConverter.Convert(NamingConvention.KebobCase, model.Name);
 
-        builder.AppendLine("import os");
-        builder.AppendLine("from functools import wraps");
-        builder.AppendLine("from flask import request, jsonify, g");
-        builder.AppendLine("import jwt");
+        builder.AppendLine(await syntaxGenerator.GenerateAsync(new ImportModel("os")));
+        builder.AppendLine(await syntaxGenerator.GenerateAsync(new ImportModel("functools", "wraps")));
+        builder.AppendLine(await syntaxGenerator.GenerateAsync(new ImportModel("flask", "request", "jsonify", "g")));
+        builder.AppendLine(await syntaxGenerator.GenerateAsync(new ImportModel("jwt")));
 
         foreach (var import in model.Imports)
         {
-            if (import.Names.Count > 0)
-            {
-                builder.AppendLine($"from {import.Module} import {string.Join(", ", import.Names)}");
-            }
-            else
-            {
-                builder.AppendLine($"import {import.Module}");
-            }
+            builder.AppendLine(await syntaxGenerator.GenerateAsync(import));
         }
 
         builder.AppendLine();

@@ -12,13 +12,16 @@ public class ServiceSyntaxGenerationStrategy : ISyntaxGenerationStrategy<Service
 {
     private readonly ILogger<ServiceSyntaxGenerationStrategy> logger;
     private readonly INamingConventionConverter namingConventionConverter;
+    private readonly ISyntaxGenerator _syntaxGenerator;
 
     public ServiceSyntaxGenerationStrategy(
         INamingConventionConverter namingConventionConverter,
+        ISyntaxGenerator syntaxGenerator,
         ILogger<ServiceSyntaxGenerationStrategy> logger)
     {
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         this.namingConventionConverter = namingConventionConverter ?? throw new ArgumentNullException(nameof(namingConventionConverter));
+        _syntaxGenerator = syntaxGenerator ?? throw new ArgumentNullException(nameof(syntaxGenerator));
     }
 
     public async Task<string> GenerateAsync(ServiceModel model, CancellationToken cancellationToken)
@@ -37,7 +40,7 @@ public class ServiceSyntaxGenerationStrategy : ISyntaxGenerationStrategy<Service
             var repoClass = namingConventionConverter.Convert(NamingConvention.PascalCase, repoRef);
             var repoSnake = namingConventionConverter.Convert(NamingConvention.KebobCase, repoRef);
             var module = $"app.repositories.{repoSnake}";
-            builder.AppendLine($"from {module} import {repoClass}");
+            builder.AppendLine(await _syntaxGenerator.GenerateAsync(new ImportModel(module, repoClass)));
             renderedModules.Add(module);
         }
 
@@ -48,14 +51,7 @@ public class ServiceSyntaxGenerationStrategy : ISyntaxGenerationStrategy<Service
                 continue;
             }
 
-            if (import.Names.Count > 0)
-            {
-                builder.AppendLine($"from {import.Module} import {string.Join(", ", import.Names)}");
-            }
-            else
-            {
-                builder.AppendLine($"import {import.Module}");
-            }
+            builder.AppendLine(await _syntaxGenerator.GenerateAsync(import));
 
             renderedModules.Add(import.Module);
         }

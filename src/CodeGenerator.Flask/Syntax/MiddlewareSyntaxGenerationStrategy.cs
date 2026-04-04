@@ -12,13 +12,16 @@ public class MiddlewareSyntaxGenerationStrategy : ISyntaxGenerationStrategy<Midd
 {
     private readonly ILogger<MiddlewareSyntaxGenerationStrategy> logger;
     private readonly INamingConventionConverter namingConventionConverter;
+    private readonly ISyntaxGenerator syntaxGenerator;
 
     public MiddlewareSyntaxGenerationStrategy(
+        ISyntaxGenerator syntaxGenerator,
         INamingConventionConverter namingConventionConverter,
         ILogger<MiddlewareSyntaxGenerationStrategy> logger)
     {
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         this.namingConventionConverter = namingConventionConverter ?? throw new ArgumentNullException(nameof(namingConventionConverter));
+        this.syntaxGenerator = syntaxGenerator ?? throw new ArgumentNullException(nameof(syntaxGenerator));
     }
 
     public async Task<string> GenerateAsync(MiddlewareModel model, CancellationToken cancellationToken)
@@ -27,19 +30,12 @@ public class MiddlewareSyntaxGenerationStrategy : ISyntaxGenerationStrategy<Midd
 
         var builder = StringBuilderCache.Acquire();
 
-        builder.AppendLine("from functools import wraps");
-        builder.AppendLine("from flask import request, jsonify");
+        builder.AppendLine(await syntaxGenerator.GenerateAsync(new ImportModel("functools", "wraps")));
+        builder.AppendLine(await syntaxGenerator.GenerateAsync(new ImportModel("flask", "request", "jsonify")));
 
         foreach (var import in model.Imports)
         {
-            if (import.Names.Count > 0)
-            {
-                builder.AppendLine($"from {import.Module} import {string.Join(", ", import.Names)}");
-            }
-            else
-            {
-                builder.AppendLine($"import {import.Module}");
-            }
+            builder.AppendLine(await syntaxGenerator.GenerateAsync(import));
         }
 
         builder.AppendLine();
