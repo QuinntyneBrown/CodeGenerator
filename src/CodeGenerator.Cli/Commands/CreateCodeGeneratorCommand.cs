@@ -65,25 +65,34 @@ public class CreateCodeGeneratorCommand : RootCommand
             description: "Show environment info and per-step timing",
             getDefaultValue: () => false);
 
+        var failFastOption = new Option<bool>(
+            aliases: ["--fail-fast"],
+            description: "Abort on first strategy failure",
+            getDefaultValue: () => false);
+
         AddOption(nameOption);
         AddOption(outputOption);
         AddOption(frameworkOption);
         AddOption(slnxOption);
         AddOption(localSourceRootOption);
         AddOption(diagnosticsOption);
+        AddOption(failFastOption);
 
         AddCommand(new InstallCommand(serviceProvider));
         AddCommand(new ScaffoldCommand(serviceProvider));
 
-        this.SetHandler(HandleAsync, nameOption, outputOption, frameworkOption, slnxOption, localSourceRootOption, diagnosticsOption);
+        this.SetHandler(HandleAsync, nameOption, outputOption, frameworkOption, slnxOption, localSourceRootOption, diagnosticsOption, failFastOption);
     }
 
-    private async Task HandleAsync(string name, string outputDirectory, string framework, bool slnx, string? localSourceRoot, bool diagnostics)
+    private async Task HandleAsync(string name, string outputDirectory, string framework, bool slnx, string? localSourceRoot, bool diagnostics, bool failFast)
     {
         var logger = _serviceProvider.GetRequiredService<ILogger<CreateCodeGeneratorCommand>>();
         var fileSystem = _serviceProvider.GetRequiredService<IFileSystem>();
         var artifactGenerator = _serviceProvider.GetRequiredService<IArtifactGenerator>();
         var commandService = _serviceProvider.GetRequiredService<ICommandService>();
+
+        if (failFast && artifactGenerator is ArtifactGenerator concreteGenerator)
+            concreteGenerator.FailFast = true;
         var ct = _serviceProvider.GetService<CancellationToken>() ?? CancellationToken.None;
 
         // Design 54: Initialize correlation ID for observability

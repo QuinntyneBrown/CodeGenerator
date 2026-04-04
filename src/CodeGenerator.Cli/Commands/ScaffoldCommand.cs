@@ -5,6 +5,7 @@ using System.CommandLine;
 using System.Reflection;
 using CodeGenerator.Cli.Rendering;
 using CodeGenerator.Cli.Services;
+using CodeGenerator.Core.Artifacts.Abstractions;
 using CodeGenerator.Core.Configuration;
 using CodeGenerator.Core.Diagnostics;
 using CodeGenerator.Core.Errors;
@@ -68,6 +69,11 @@ public class ScaffoldCommand : Command
             description: "Show environment info and per-step timing",
             getDefaultValue: () => false);
 
+        var failFastOption = new Option<bool>(
+            aliases: ["--fail-fast"],
+            description: "Abort on first strategy failure",
+            getDefaultValue: () => false);
+
         AddOption(configOption);
         AddOption(outputOption);
         AddOption(dryRunOption);
@@ -76,14 +82,32 @@ public class ScaffoldCommand : Command
         AddOption(exportSchemaOption);
         AddOption(initOption);
         AddOption(diagnosticsOption);
+        AddOption(failFastOption);
 
-        this.SetHandler(HandleAsync, configOption, outputOption, dryRunOption, forceOption, validateOption, exportSchemaOption, initOption, diagnosticsOption);
+        this.SetHandler(async (context) =>
+        {
+            var configPath = context.ParseResult.GetValueForOption(configOption);
+            var outputDirectory = context.ParseResult.GetValueForOption(outputOption)!;
+            var dryRun = context.ParseResult.GetValueForOption(dryRunOption);
+            var force = context.ParseResult.GetValueForOption(forceOption);
+            var validate = context.ParseResult.GetValueForOption(validateOption);
+            var exportSchema = context.ParseResult.GetValueForOption(exportSchemaOption);
+            var init = context.ParseResult.GetValueForOption(initOption);
+            var diagnostics = context.ParseResult.GetValueForOption(diagnosticsOption);
+            var failFast = context.ParseResult.GetValueForOption(failFastOption);
+
+            await HandleAsync(configPath, outputDirectory, dryRun, force, validate, exportSchema, init, diagnostics, failFast);
+        });
     }
 
-    private async Task HandleAsync(string? configPath, string outputDirectory, bool dryRun, bool force, bool validate, bool exportSchema, bool init, bool diagnostics)
+    private async Task HandleAsync(string? configPath, string outputDirectory, bool dryRun, bool force, bool validate, bool exportSchema, bool init, bool diagnostics, bool failFast)
     {
         var logger = _serviceProvider.GetRequiredService<ILogger<ScaffoldCommand>>();
         var ct = _serviceProvider.GetService<CancellationToken>() ?? CancellationToken.None;
+
+        // Design 52: Wire --fail-fast to ArtifactGenerator
+        if (failFast && _serviceProvider.GetService<IArtifactGenerator>() is ArtifactGenerator generator)
+            generator.FailFast = true;
 
         // Design 54: Initialize correlation ID for observability
         var correlationId = Guid.NewGuid().ToString();

@@ -9,7 +9,10 @@ using CodeGenerator.Core.Syntax;
 
 [assembly: TypeForwardedTo(typeof(IArtifactGenerator))]
 [assembly: TypeForwardedTo(typeof(IArtifactGenerationStrategy<>))]
-
+[assembly: TypeForwardedTo(typeof(ArtifactGenerationResult))]
+[assembly: TypeForwardedTo(typeof(GeneratedArtifact))]
+[assembly: TypeForwardedTo(typeof(ArtifactError))]
+[assembly: TypeForwardedTo(typeof(ArtifactWarning))]
 [assembly: TypeForwardedTo(typeof(ArtifactModel))]
 [assembly: TypeForwardedTo(typeof(FileModel))]
 [assembly: TypeForwardedTo(typeof(ISyntaxGenerator))]
