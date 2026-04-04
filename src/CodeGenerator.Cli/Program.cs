@@ -3,6 +3,7 @@
 
 using CodeGenerator.Cli.Commands;
 using CodeGenerator.Cli.Configuration;
+using CodeGenerator.Cli.Formatting;
 using CodeGenerator.Cli.Services;
 using CodeGenerator.Core;
 using CodeGenerator.Core.Configuration;
@@ -12,6 +13,17 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.CommandLine;
+
+// Design 53: Wire Ctrl+C cancellation
+using var cts = new CancellationTokenSource();
+Console.CancelKeyPress += (_, e) =>
+{
+    e.Cancel = true;
+    cts.Cancel();
+};
+
+// Design 52/54: Parse --verbose from args before DI setup
+var verbose = args.Contains("--verbose") || args.Contains("-v");
 
 var configuration = new ConfigurationBuilder()
     .AddEnvironmentVariables()
@@ -24,7 +36,7 @@ services.AddSingleton<IConfiguration>(configuration);
 services.AddLogging(builder =>
 {
     builder.AddConsole();
-    builder.SetMinimumLevel(LogLevel.Information);
+    builder.SetMinimumLevel(verbose ? LogLevel.Debug : LogLevel.Information);
 });
 
 // Design 58: Wire 4-tier config (defaults > file > env vars > CLI args)
@@ -48,6 +60,10 @@ if (!Console.IsInputRedirected)
 else
     services.AddSingleton<IInteractivePromptService, NonInteractivePromptService>();
 
+// Design 54: Register error formatter
+services.AddSingleton<IErrorFormatter, ConsoleErrorFormatter>();
+services.AddSingleton<MarkdownErrorFormatter>();
+
 services.AddSingleton<DiagnosticsCollector>();
 services.AddCoreServices(typeof(Program).Assembly);
 services.AddDotNetServices();
@@ -57,38 +73,45 @@ var serviceProvider = services.BuildServiceProvider();
 
 var rootCommand = new CreateCodeGeneratorCommand(serviceProvider);
 
+// Design 52: Add --verbose global option
+rootCommand.AddGlobalOption(new Option<bool>(
+    aliases: ["--verbose", "-v"],
+    description: "Show detailed error output and stack traces"));
+
 try
 {
     return await rootCommand.InvokeAsync(args);
 }
 catch (CliAggregateException ex)
 {
+    var formatter = serviceProvider.GetRequiredService<IErrorFormatter>();
     foreach (var inner in ex.InnerExceptions)
     {
-        Console.Error.WriteLine(inner.Message);
+        Console.Error.WriteLine(inner is CliException cliInner
+            ? formatter.FormatException(cliInner, verbose)
+            : $"ERROR [INTERNAL] {inner.Message}");
     }
 
     return ex.ExitCode;
 }
 catch (CliValidationException ex)
 {
+    var formatter = serviceProvider.GetRequiredService<IErrorFormatter>();
     if (ex.ValidationResult != null)
     {
-        foreach (var error in ex.ValidationResult.Errors)
-        {
-            Console.Error.WriteLine($"{error.PropertyName}: {error.ErrorMessage}");
-        }
+        Console.Error.Write(formatter.FormatValidationResult(ex.ValidationResult));
     }
     else
     {
-        Console.Error.WriteLine(ex.Message);
+        Console.Error.WriteLine(formatter.FormatException(ex, verbose));
     }
 
     return ex.ExitCode;
 }
 catch (CliException ex)
 {
-    Console.Error.WriteLine(ex.Message);
+    var formatter = serviceProvider.GetRequiredService<IErrorFormatter>();
+    Console.Error.WriteLine(formatter.FormatException(ex, verbose));
     return ex.ExitCode;
 }
 catch (OperationCanceledException)
@@ -96,8 +119,13 @@ catch (OperationCanceledException)
     Console.Error.WriteLine("Operation cancelled.");
     return 8;
 }
-catch (Exception)
+catch (Exception ex)
 {
-    Console.Error.WriteLine("An unexpected error occurred.");
+    Console.Error.WriteLine($"ERROR [INTERNAL] An unexpected error occurred.");
+    if (verbose)
+    {
+        Console.Error.WriteLine(ex.ToString());
+    }
+
     return 99;
 }

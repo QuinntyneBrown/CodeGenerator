@@ -7,7 +7,7 @@ namespace CodeGenerator.Core.Scaffold.Services;
 
 public interface IScaffoldEngine
 {
-    Task<ScaffoldResult> ScaffoldAsync(string yaml, string outputPath, bool dryRun = false, bool force = false);
+    Task<ScaffoldResult> ScaffoldAsync(string yaml, string outputPath, bool dryRun = false, bool force = false, CancellationToken ct = default);
 
     ScaffoldResult Validate(string yaml);
 }

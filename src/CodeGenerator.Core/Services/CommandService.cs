@@ -18,8 +18,10 @@ public class CommandService : ICommandService
         this.logger = logger;
     }
 
-    public int Start(string arguments, string workingDirectory = null, bool waitForExit = true)
+    public int Start(string arguments, string workingDirectory = null, bool waitForExit = true, CancellationToken ct = default)
     {
+        ct.ThrowIfCancellationRequested();
+
         workingDirectory ??= Environment.CurrentDirectory;
 
         logger.LogInformation($"{arguments} in {workingDirectory}");

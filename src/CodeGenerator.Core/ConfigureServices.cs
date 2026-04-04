@@ -14,6 +14,7 @@ using CodeGenerator.Core.Validation;
 using CodeGenerator.Core.Syntax;
 using CodeGenerator.Core.Templates;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace CodeGenerator.Core;
 
@@ -52,6 +53,7 @@ public static class ConfigureServices
         services.AddSingleton<IUserInputService, UserInputService>();
         services.AddSingleton<IProjectContextFactory, ProjectContextFactory>();
         services.AddSingleton<IConflictResolver, DefaultConflictResolver>();
+        services.AddSingleton<Artifacts.StrategyExecutor>();
         AddArifactGenerator(services, assembly);
         AddSyntaxGenerator(services, assembly);
     }
@@ -60,7 +62,7 @@ public static class ConfigureServices
     {
         var @interface = typeof(IArtifactGenerationStrategy<>);
 
-        var implementations = assembly.GetTypes()
+        var implementations = SafeGetTypes(assembly)
             .Where(type =>
                 !type.IsAbstract &&
                 type.GetInterfaces().Any(interfaceType =>
@@ -87,7 +89,7 @@ public static class ConfigureServices
     {
         var @interface = typeof(ISyntaxGenerationStrategy<>);
 
-        var implementations = assembly.GetTypes()
+        var implementations = SafeGetTypes(assembly)
             .Where(type =>
                 !type.IsAbstract &&
                 type.GetInterfaces().Any(interfaceType =>
@@ -107,5 +109,17 @@ public static class ConfigureServices
         }
 
         services.AddSingleton<ISyntaxGenerator, SyntaxGenerator>();
+    }
+
+    internal static IEnumerable<Type> SafeGetTypes(Assembly assembly)
+    {
+        try
+        {
+            return assembly.GetTypes();
+        }
+        catch (ReflectionTypeLoadException ex)
+        {
+            return ex.Types.Where(t => t is not null)!;
+        }
     }
 }

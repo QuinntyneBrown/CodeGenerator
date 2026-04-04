@@ -5,5 +5,5 @@ namespace CodeGenerator.Core.Services;
 
 public interface ICommandService
 {
-    int Start(string command, string workingDirectory = null, bool waitForExit = true);
+    int Start(string command, string workingDirectory = null, bool waitForExit = true, CancellationToken ct = default);
 }

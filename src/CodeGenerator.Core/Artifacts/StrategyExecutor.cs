@@ -45,6 +45,11 @@ public class StrategyExecutor
         {
             throw;
         }
+        catch (SkipFileException ex)
+        {
+            _logger.LogDebug("Syntax strategy {StrategyName} signaled skip: {Reason}", strategyName, ex.Message);
+            return Result<string>.Success(string.Empty);
+        }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Syntax strategy {StrategyName} failed for model {ModelType}.", strategyName, modelType);
@@ -88,6 +93,11 @@ public class StrategyExecutor
         catch (OperationCanceledException)
         {
             throw;
+        }
+        catch (SkipFileException ex)
+        {
+            _logger.LogDebug("Artifact strategy {StrategyName} signaled skip: {Reason}", strategyName, ex.Message);
+            return Result<bool>.Success(true);
         }
         catch (Exception ex)
         {

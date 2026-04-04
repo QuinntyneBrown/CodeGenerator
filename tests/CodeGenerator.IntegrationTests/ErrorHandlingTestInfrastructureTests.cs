@@ -185,7 +185,7 @@ public class ErrorHandlingTestInfrastructureTests
             _exitCode = exitCode;
         }
 
-        public int Start(string command, string? workingDirectory = null, bool waitForExit = true)
+        public int Start(string command, string? workingDirectory = null, bool waitForExit = true, CancellationToken ct = default)
         {
             CallCount++;
             return _exitCode;

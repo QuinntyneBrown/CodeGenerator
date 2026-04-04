@@ -28,8 +28,10 @@ public class ScaffoldEngine : IScaffoldEngine
         _logger = logger;
     }
 
-    public async Task<ScaffoldResult> ScaffoldAsync(string yaml, string outputPath, bool dryRun = false, bool force = false)
+    public async Task<ScaffoldResult> ScaffoldAsync(string yaml, string outputPath, bool dryRun = false, bool force = false, CancellationToken ct = default)
     {
+        ct.ThrowIfCancellationRequested();
+
         var result = new ScaffoldResult();
 
         ScaffoldConfiguration config;

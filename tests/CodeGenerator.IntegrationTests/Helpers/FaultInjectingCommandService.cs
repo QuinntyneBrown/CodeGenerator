@@ -21,7 +21,7 @@ public class FaultInjectingCommandService : ICommandService
             : new Random();
     }
 
-    public int Start(string command, string? workingDirectory = null, bool waitForExit = true)
+    public int Start(string command, string? workingDirectory = null, bool waitForExit = true, CancellationToken ct = default)
     {
         if (_options.ProcessExecutionFailureRate > 0.0 && _random.NextDouble() < _options.ProcessExecutionFailureRate)
         {
@@ -29,6 +29,6 @@ public class FaultInjectingCommandService : ICommandService
                 $"Simulated process execution failure for command: {command}");
         }
 
-        return _inner.Start(command, workingDirectory, waitForExit);
+        return _inner.Start(command, workingDirectory, waitForExit, ct);
     }
 }
