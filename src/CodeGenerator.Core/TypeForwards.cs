@@ -9,12 +9,12 @@ using CodeGenerator.Core.Syntax;
 
 [assembly: TypeForwardedTo(typeof(IArtifactGenerator))]
 [assembly: TypeForwardedTo(typeof(IArtifactGenerationStrategy<>))]
-[assembly: TypeForwardedTo(typeof(ArtifactGenerationStrategyBase))]
+
 [assembly: TypeForwardedTo(typeof(ArtifactModel))]
 [assembly: TypeForwardedTo(typeof(FileModel))]
 [assembly: TypeForwardedTo(typeof(ISyntaxGenerator))]
 [assembly: TypeForwardedTo(typeof(ISyntaxGenerationStrategy<>))]
-[assembly: TypeForwardedTo(typeof(SyntaxGenerationStrategyBase))]
+
 [assembly: TypeForwardedTo(typeof(SyntaxModel))]
 [assembly: TypeForwardedTo(typeof(UsingModel))]
 [assembly: TypeForwardedTo(typeof(ITemplateProcessor))]

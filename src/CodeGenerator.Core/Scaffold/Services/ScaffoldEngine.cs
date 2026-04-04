@@ -32,7 +32,10 @@ public class ScaffoldEngine : IScaffoldEngine
     {
         ct.ThrowIfCancellationRequested();
 
-        var result = new ScaffoldResult();
+        var result = new ScaffoldResult
+        {
+            CorrelationId = Diagnostics.DiagnosticContext.Current.CorrelationId,
+        };
 
         ScaffoldConfiguration config;
         try

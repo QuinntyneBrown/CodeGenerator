@@ -1,16 +1,14 @@
 // Copyright (c) Quinntyne Brown. All Rights Reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
-using System.Collections.Concurrent;
 using CodeGenerator.Core.Validation;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace CodeGenerator.Core.Syntax;
 
 public class SyntaxGenerator : ISyntaxGenerator
 {
-    private static readonly ConcurrentDictionary<Type, SyntaxGenerationStrategyBase> _syntaxGenerators = new();
-
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<SyntaxGenerator> _logger;
 
@@ -23,7 +21,7 @@ public class SyntaxGenerator : ISyntaxGenerator
         _logger = logger;
     }
 
-    public Task<string> GenerateAsync<T>(T model)
+    public async Task<string> GenerateAsync<T>(T model)
     {
         if (model is IValidatable validatable)
         {
@@ -41,13 +39,13 @@ public class SyntaxGenerator : ISyntaxGenerator
             }
         }
 
-        var handler = _syntaxGenerators.GetOrAdd(model!.GetType(), static targetType =>
-        {
-            var wrapperType = typeof(SyntaxGenerationStrategyWrapperImplementation<>).MakeGenericType(targetType);
-            var wrapper = Activator.CreateInstance(wrapperType) ?? throw new InvalidOperationException($"Could not create wrapper type for {targetType}");
-            return (SyntaxGenerationStrategyBase)wrapper;
-        });
+        var strategies = _serviceProvider.GetRequiredService<IEnumerable<ISyntaxGenerationStrategy<T>>>();
 
-        return handler.GenerateAsync(_serviceProvider, model, default);
+        var strategy = strategies
+            .Where(x => x.CanHandle(model!))
+            .OrderByDescending(x => x.GetPriority())
+            .First();
+
+        return await strategy.GenerateAsync(model, default);
     }
 }

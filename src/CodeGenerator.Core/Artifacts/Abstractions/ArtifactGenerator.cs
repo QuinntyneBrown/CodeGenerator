@@ -2,29 +2,33 @@
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
 using System.Collections.Concurrent;
-using CodeGenerator.Core.Syntax;
+using System.Reflection;
 using CodeGenerator.Core.Validation;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace CodeGenerator.Core.Artifacts.Abstractions;
 
 public class ArtifactGenerator : IArtifactGenerator
 {
-    private readonly ILogger<ArtifactGenerator> logger;
-    private readonly IServiceProvider serviceProvider;
-    private static readonly ConcurrentDictionary<Type, ArtifactGenerationStrategyBase> _artifactGenerators = new();
+    private readonly ILogger<ArtifactGenerator> _logger;
+    private readonly IServiceProvider _serviceProvider;
+    private readonly ConcurrentDictionary<Type, Func<IServiceProvider, object, CancellationToken, Task>> _dispatchers = new();
+
+    private static readonly MethodInfo DispatchMethod = typeof(ArtifactGenerator)
+        .GetMethod(nameof(DispatchArtifactAsync), BindingFlags.NonPublic | BindingFlags.Static)!;
 
     public ArtifactGenerator(
         ILogger<ArtifactGenerator> logger,
         IServiceProvider serviceProvider)
     {
-        this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        this.serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
     }
 
     public async Task GenerateAsync(object model)
     {
-        logger.LogInformation("Generating artifact for model. {type}", model.GetType());
+        _logger.LogInformation("Generating artifact for model. {type}", model.GetType());
 
         if (model is IValidatable validatable)
         {
@@ -32,7 +36,7 @@ public class ArtifactGenerator : IArtifactGenerator
 
             foreach (var warning in result.Warnings)
             {
-                logger.LogWarning("Validation warning on {Type}.{Prop}: {Msg}",
+                _logger.LogWarning("Validation warning on {Type}.{Prop}: {Msg}",
                     model.GetType().Name, warning.PropertyName, warning.ErrorMessage);
             }
 
@@ -42,13 +46,25 @@ public class ArtifactGenerator : IArtifactGenerator
             }
         }
 
-        var handler = _artifactGenerators.GetOrAdd(model.GetType(), static targetType =>
+        var dispatcher = _dispatchers.GetOrAdd(model.GetType(), static modelType =>
         {
-            var wrapperType = typeof(ArtifactGenerationStrategyWrapperImplementation<>).MakeGenericType(targetType);
-            var wrapper = Activator.CreateInstance(wrapperType) ?? throw new InvalidOperationException($"Could not create wrapper type for {targetType}");
-            return (ArtifactGenerationStrategyBase)wrapper;
+            var genericMethod = DispatchMethod.MakeGenericMethod(modelType);
+            return (Func<IServiceProvider, object, CancellationToken, Task>)
+                Delegate.CreateDelegate(typeof(Func<IServiceProvider, object, CancellationToken, Task>), genericMethod);
         });
 
-        await handler.GenerateAsync(serviceProvider, model, default);
+        await dispatcher(_serviceProvider, model, default);
+    }
+
+    private static async Task DispatchArtifactAsync<T>(IServiceProvider serviceProvider, object model, CancellationToken cancellationToken)
+    {
+        var strategies = serviceProvider.GetRequiredService<IEnumerable<IArtifactGenerationStrategy<T>>>();
+
+        var strategy = strategies
+            .Where(x => x.CanHandle(model))
+            .OrderByDescending(x => x.GetPriority())
+            .First();
+
+        await strategy.GenerateAsync((T)model);
     }
 }

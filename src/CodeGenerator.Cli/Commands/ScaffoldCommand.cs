@@ -83,6 +83,11 @@ public class ScaffoldCommand : Command
     private async Task HandleAsync(string? configPath, string outputDirectory, bool dryRun, bool force, bool validate, bool exportSchema, bool init, bool diagnostics)
     {
         var logger = _serviceProvider.GetRequiredService<ILogger<ScaffoldCommand>>();
+
+        // Design 54: Initialize correlation ID for observability
+        var correlationId = Guid.NewGuid().ToString();
+        DiagnosticContext.Current.CorrelationId = correlationId;
+
         IGenerationTimer timer = diagnostics ? new GenerationTimer() : new NullGenerationTimer();
 
         if (exportSchema)

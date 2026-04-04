@@ -85,6 +85,10 @@ public class CreateCodeGeneratorCommand : RootCommand
         var artifactGenerator = _serviceProvider.GetRequiredService<IArtifactGenerator>();
         var commandService = _serviceProvider.GetRequiredService<ICommandService>();
 
+        // Design 54: Initialize correlation ID for observability
+        var correlationId = Guid.NewGuid().ToString();
+        DiagnosticContext.Current.CorrelationId = correlationId;
+
         IGenerationTimer timer = diagnostics ? new GenerationTimer() : new NullGenerationTimer();
 
         // Design 60: Prompt for missing options in interactive mode
