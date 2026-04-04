@@ -8,16 +8,20 @@ namespace CodeGenerator.Core.UnitTests;
 
 public class ProjectContextFactoryTests
 {
+    private static readonly string Dir = OperatingSystem.IsWindows() ? @"C:\project" : "/project";
+    private static readonly string NonExistent = OperatingSystem.IsWindows() ? @"C:\nonexistent" : "/nonexistent";
+    private static string P(string fileName) => Path.Combine(Dir, fileName);
+
     [Fact]
     public void Create_NonExistentDirectory_ReturnsUnknownType()
     {
         var fs = new MockFileSystem();
         var factory = new ProjectContextFactory(fs);
 
-        var ctx = factory.Create(@"C:\nonexistent");
+        var ctx = factory.Create(NonExistent);
 
         Assert.Equal(ProjectType.Unknown, ctx.Type);
-        Assert.Equal(@"C:\nonexistent", ctx.ProjectDirectory);
+        Assert.Equal(NonExistent, ctx.ProjectDirectory);
     }
 
     [Fact]
@@ -25,11 +29,11 @@ public class ProjectContextFactoryTests
     {
         var fs = new MockFileSystem(new Dictionary<string, MockFileData>
         {
-            [@"C:\project\MyApp.csproj"] = new MockFileData("<Project />")
+            [P("MyApp.csproj")] = new MockFileData("<Project />")
         });
         var factory = new ProjectContextFactory(fs);
 
-        var ctx = factory.Create(@"C:\project");
+        var ctx = factory.Create(Dir);
 
         Assert.Equal(ProjectType.DotNet, ctx.Type);
     }
@@ -39,11 +43,11 @@ public class ProjectContextFactoryTests
     {
         var fs = new MockFileSystem(new Dictionary<string, MockFileData>
         {
-            [@"C:\project\MyApp.sln"] = new MockFileData("")
+            [P("MyApp.sln")] = new MockFileData("")
         });
         var factory = new ProjectContextFactory(fs);
 
-        var ctx = factory.Create(@"C:\project");
+        var ctx = factory.Create(Dir);
 
         Assert.Equal(ProjectType.DotNet, ctx.Type);
     }
@@ -53,11 +57,11 @@ public class ProjectContextFactoryTests
     {
         var fs = new MockFileSystem(new Dictionary<string, MockFileData>
         {
-            [@"C:\project\MyApp.slnx"] = new MockFileData("")
+            [P("MyApp.slnx")] = new MockFileData("")
         });
         var factory = new ProjectContextFactory(fs);
 
-        var ctx = factory.Create(@"C:\project");
+        var ctx = factory.Create(Dir);
 
         Assert.Equal(ProjectType.DotNet, ctx.Type);
     }
@@ -67,11 +71,11 @@ public class ProjectContextFactoryTests
     {
         var fs = new MockFileSystem(new Dictionary<string, MockFileData>
         {
-            [@"C:\project\playwright.config.ts"] = new MockFileData("")
+            [P("playwright.config.ts")] = new MockFileData("")
         });
         var factory = new ProjectContextFactory(fs);
 
-        var ctx = factory.Create(@"C:\project");
+        var ctx = factory.Create(Dir);
 
         Assert.Equal(ProjectType.Playwright, ctx.Type);
     }
@@ -81,11 +85,11 @@ public class ProjectContextFactoryTests
     {
         var fs = new MockFileSystem(new Dictionary<string, MockFileData>
         {
-            [@"C:\project\playwright.config.js"] = new MockFileData("")
+            [P("playwright.config.js")] = new MockFileData("")
         });
         var factory = new ProjectContextFactory(fs);
 
-        var ctx = factory.Create(@"C:\project");
+        var ctx = factory.Create(Dir);
 
         Assert.Equal(ProjectType.Playwright, ctx.Type);
     }
@@ -95,11 +99,11 @@ public class ProjectContextFactoryTests
     {
         var fs = new MockFileSystem(new Dictionary<string, MockFileData>
         {
-            [@"C:\project\.detoxrc.js"] = new MockFileData("")
+            [P(".detoxrc.js")] = new MockFileData("")
         });
         var factory = new ProjectContextFactory(fs);
 
-        var ctx = factory.Create(@"C:\project");
+        var ctx = factory.Create(Dir);
 
         Assert.Equal(ProjectType.Detox, ctx.Type);
     }
@@ -109,11 +113,11 @@ public class ProjectContextFactoryTests
     {
         var fs = new MockFileSystem(new Dictionary<string, MockFileData>
         {
-            [@"C:\project\.detoxrc.json"] = new MockFileData("")
+            [P(".detoxrc.json")] = new MockFileData("")
         });
         var factory = new ProjectContextFactory(fs);
 
-        var ctx = factory.Create(@"C:\project");
+        var ctx = factory.Create(Dir);
 
         Assert.Equal(ProjectType.Detox, ctx.Type);
     }
@@ -123,11 +127,11 @@ public class ProjectContextFactoryTests
     {
         var fs = new MockFileSystem(new Dictionary<string, MockFileData>
         {
-            [@"C:\project\angular.json"] = new MockFileData("{}")
+            [P("angular.json")] = new MockFileData("{}")
         });
         var factory = new ProjectContextFactory(fs);
 
-        var ctx = factory.Create(@"C:\project");
+        var ctx = factory.Create(Dir);
 
         Assert.Equal(ProjectType.Angular, ctx.Type);
     }
@@ -138,11 +142,11 @@ public class ProjectContextFactoryTests
         var packageJson = """{ "dependencies": { "react-native": "0.72.0" } }""";
         var fs = new MockFileSystem(new Dictionary<string, MockFileData>
         {
-            [@"C:\project\package.json"] = new MockFileData(packageJson)
+            [P("package.json")] = new MockFileData(packageJson)
         });
         var factory = new ProjectContextFactory(fs);
 
-        var ctx = factory.Create(@"C:\project");
+        var ctx = factory.Create(Dir);
 
         Assert.Equal(ProjectType.ReactNative, ctx.Type);
     }
@@ -153,11 +157,11 @@ public class ProjectContextFactoryTests
         var packageJson = """{ "dependencies": { "react": "18.0.0" } }""";
         var fs = new MockFileSystem(new Dictionary<string, MockFileData>
         {
-            [@"C:\project\package.json"] = new MockFileData(packageJson)
+            [P("package.json")] = new MockFileData(packageJson)
         });
         var factory = new ProjectContextFactory(fs);
 
-        var ctx = factory.Create(@"C:\project");
+        var ctx = factory.Create(Dir);
 
         Assert.Equal(ProjectType.React, ctx.Type);
     }
@@ -167,11 +171,11 @@ public class ProjectContextFactoryTests
     {
         var fs = new MockFileSystem(new Dictionary<string, MockFileData>
         {
-            [@"C:\project\wsgi.py"] = new MockFileData("")
+            [P("wsgi.py")] = new MockFileData("")
         });
         var factory = new ProjectContextFactory(fs);
 
-        var ctx = factory.Create(@"C:\project");
+        var ctx = factory.Create(Dir);
 
         Assert.Equal(ProjectType.Flask, ctx.Type);
     }
@@ -181,11 +185,11 @@ public class ProjectContextFactoryTests
     {
         var fs = new MockFileSystem(new Dictionary<string, MockFileData>
         {
-            [@"C:\project\app.py"] = new MockFileData("")
+            [P("app.py")] = new MockFileData("")
         });
         var factory = new ProjectContextFactory(fs);
 
-        var ctx = factory.Create(@"C:\project");
+        var ctx = factory.Create(Dir);
 
         Assert.Equal(ProjectType.Flask, ctx.Type);
     }
@@ -195,11 +199,11 @@ public class ProjectContextFactoryTests
     {
         var fs = new MockFileSystem(new Dictionary<string, MockFileData>
         {
-            [@"C:\project\pyproject.toml"] = new MockFileData("")
+            [P("pyproject.toml")] = new MockFileData("")
         });
         var factory = new ProjectContextFactory(fs);
 
-        var ctx = factory.Create(@"C:\project");
+        var ctx = factory.Create(Dir);
 
         Assert.Equal(ProjectType.Python, ctx.Type);
     }
@@ -209,11 +213,11 @@ public class ProjectContextFactoryTests
     {
         var fs = new MockFileSystem(new Dictionary<string, MockFileData>
         {
-            [@"C:\project\setup.py"] = new MockFileData("")
+            [P("setup.py")] = new MockFileData("")
         });
         var factory = new ProjectContextFactory(fs);
 
-        var ctx = factory.Create(@"C:\project");
+        var ctx = factory.Create(Dir);
 
         Assert.Equal(ProjectType.Python, ctx.Type);
     }
@@ -223,11 +227,11 @@ public class ProjectContextFactoryTests
     {
         var fs = new MockFileSystem(new Dictionary<string, MockFileData>
         {
-            [@"C:\project\main.py"] = new MockFileData("")
+            [P("main.py")] = new MockFileData("")
         });
         var factory = new ProjectContextFactory(fs);
 
-        var ctx = factory.Create(@"C:\project");
+        var ctx = factory.Create(Dir);
 
         Assert.Equal(ProjectType.Python, ctx.Type);
     }
@@ -236,10 +240,10 @@ public class ProjectContextFactoryTests
     public void Create_EmptyDirectory_ReturnsUnknown()
     {
         var fs = new MockFileSystem();
-        fs.AddDirectory(@"C:\project");
+        fs.AddDirectory(Dir);
         var factory = new ProjectContextFactory(fs);
 
-        var ctx = factory.Create(@"C:\project");
+        var ctx = factory.Create(Dir);
 
         Assert.Equal(ProjectType.Unknown, ctx.Type);
     }
@@ -248,10 +252,10 @@ public class ProjectContextFactoryTests
     public void Create_ReturnsIProjectContext()
     {
         var fs = new MockFileSystem();
-        fs.AddDirectory(@"C:\project");
+        fs.AddDirectory(Dir);
         var factory = new ProjectContextFactory(fs);
 
-        var ctx = factory.Create(@"C:\project");
+        var ctx = factory.Create(Dir);
 
         Assert.IsAssignableFrom<IProjectContext>(ctx);
     }
