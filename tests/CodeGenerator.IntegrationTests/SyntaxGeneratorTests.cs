@@ -125,6 +125,7 @@ public class SyntaxGeneratorTests
     {
         var pythonModule = new CodeGenerator.Python.Syntax.ModuleModel
         {
+            Name = "test_module",
             Imports = [
                 new CodeGenerator.Python.Syntax.ImportModel("flask", "Flask", "jsonify"),
                 new CodeGenerator.Python.Syntax.ImportModel("os"),
@@ -1427,6 +1428,7 @@ public class SyntaxGeneratorTests
     {
         var pythonModule = new CodeGenerator.Python.Syntax.ModuleModel
         {
+            Name = "test_module",
             Imports = [
                 new CodeGenerator.Python.Syntax.ImportModel("abc", "ABC", "abstractmethod"),
             ],
@@ -1808,6 +1810,7 @@ public class SyntaxGeneratorTests
     {
         var pythonModule = new CodeGenerator.Python.Syntax.ModuleModel
         {
+            Name = "test_module",
             Imports = [
                 new CodeGenerator.Python.Syntax.ImportModel("typing", "List", "Optional", "Dict"),
                 new CodeGenerator.Python.Syntax.ImportModel("datetime"),
@@ -2983,6 +2986,7 @@ public class SyntaxGeneratorTests
     {
         var module = new CodeGenerator.Python.Syntax.ModuleModel
         {
+            Name = "test_module",
             Imports = [],
             Classes = [],
             Functions = [
