@@ -3,6 +3,7 @@
 
 using System.Reflection;
 using CodeGenerator.Core.Artifacts.Abstractions;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using CodeGenerator.Core.Configuration;
 using CodeGenerator.Core.Errors;
 using CodeGenerator.Core.Dependencies;
@@ -21,7 +22,7 @@ public static class ConfigureServices
     public static void AddCoreServices(this IServiceCollection services, Assembly assembly)
     {
         services.AddScoped<IGenerationContext, TemplateGenerationContext>();
-        services.AddSingleton<ICodeGeneratorConfiguration>(sp =>
+        services.TryAddSingleton<ICodeGeneratorConfiguration>(
             new CodeGeneratorConfiguration(
                 defaults: new Dictionary<string, string>(),
                 fileConfig: new Dictionary<string, string>(),

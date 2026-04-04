@@ -4,6 +4,7 @@
 using System.IO.Abstractions;
 using System.IO.Abstractions.TestingHelpers;
 using CodeGenerator.Core.Artifacts;
+using CodeGenerator.Core.Errors;
 using CodeGenerator.Core.Services;
 
 namespace CodeGenerator.Core.UnitTests;
@@ -16,7 +17,7 @@ public class GenerationContextTests
         var fs = new MockFileSystem();
         var cmd = new NoOpCommandService();
 
-        var ctx = new GenerationContext(true, fs, cmd);
+        var ctx = new GenerationContext(true, fs, cmd, NullRollbackService.Instance);
 
         Assert.True(ctx.DryRun);
     }
@@ -27,7 +28,7 @@ public class GenerationContextTests
         var fs = new MockFileSystem();
         var cmd = new NoOpCommandService();
 
-        var ctx = new GenerationContext(false, fs, cmd);
+        var ctx = new GenerationContext(false, fs, cmd, NullRollbackService.Instance);
 
         Assert.False(ctx.DryRun);
     }
@@ -38,7 +39,7 @@ public class GenerationContextTests
         var fs = new MockFileSystem();
         var cmd = new NoOpCommandService();
 
-        var ctx = new GenerationContext(false, fs, cmd);
+        var ctx = new GenerationContext(false, fs, cmd, NullRollbackService.Instance);
 
         Assert.NotNull(ctx.Result);
         Assert.True(ctx.Result.IsSuccess);
@@ -51,7 +52,7 @@ public class GenerationContextTests
         var fs = new MockFileSystem();
         var cmd = new NoOpCommandService();
 
-        var ctx = new GenerationContext(false, fs, cmd);
+        var ctx = new GenerationContext(false, fs, cmd, NullRollbackService.Instance);
 
         Assert.Same(fs, ctx.FileSystem);
     }
@@ -62,7 +63,7 @@ public class GenerationContextTests
         var fs = new MockFileSystem();
         var cmd = new NoOpCommandService();
 
-        var ctx = new GenerationContext(false, fs, cmd);
+        var ctx = new GenerationContext(false, fs, cmd, NullRollbackService.Instance);
 
         Assert.Same(cmd, ctx.CommandService);
     }
@@ -73,7 +74,7 @@ public class GenerationContextTests
         var fs = new MockFileSystem();
         var cmd = new NoOpCommandService();
 
-        var ctx = new GenerationContext(false, fs, cmd);
+        var ctx = new GenerationContext(false, fs, cmd, NullRollbackService.Instance);
 
         Assert.IsAssignableFrom<Artifacts.IGenerationContext>(ctx);
     }

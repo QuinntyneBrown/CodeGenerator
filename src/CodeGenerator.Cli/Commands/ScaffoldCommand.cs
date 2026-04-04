@@ -4,7 +4,10 @@
 using System.CommandLine;
 using System.Reflection;
 using CodeGenerator.Cli.Rendering;
+using CodeGenerator.Cli.Services;
+using CodeGenerator.Core.Configuration;
 using CodeGenerator.Core.Diagnostics;
+using CodeGenerator.Core.Errors;
 using CodeGenerator.Core.Scaffold.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -28,10 +31,12 @@ public class ScaffoldCommand : Command
             IsRequired = false,
         };
 
+        var config = serviceProvider.GetService<ICodeGeneratorConfiguration>();
+
         var outputOption = new Option<string>(
             aliases: ["-o", "--output"],
             description: "Override output directory",
-            getDefaultValue: () => Directory.GetCurrentDirectory());
+            getDefaultValue: () => config?.GetValue("output") ?? Directory.GetCurrentDirectory());
 
         var dryRunOption = new Option<bool>(
             aliases: ["--dry-run"],
@@ -106,8 +111,32 @@ public class ScaffoldCommand : Command
 
                 if (!File.Exists(configPath))
                 {
-                    logger.LogError("No configuration file specified and no scaffold.yaml found in current directory.");
-                    return;
+                    // Design 60: Try interactive config file selection
+                    var promptService = _serviceProvider.GetService<IInteractivePromptService>();
+                    if (promptService is { IsInteractive: true })
+                    {
+                        var candidates = Directory.GetFiles(outputDirectory, "*.yaml")
+                            .Concat(Directory.GetFiles(outputDirectory, "*.yml"))
+                            .Select(Path.GetFileName)
+                            .Where(f => f is not null)
+                            .Cast<string>()
+                            .ToList();
+
+                        if (candidates.Count > 0)
+                        {
+                            var selected = promptService.PromptForConfigFile(outputDirectory, candidates);
+                            if (selected is not null)
+                            {
+                                configPath = Path.Combine(outputDirectory, selected);
+                            }
+                        }
+                    }
+
+                    if (!File.Exists(configPath))
+                    {
+                        logger.LogError("No configuration file specified and no scaffold.yaml found in current directory.");
+                        return;
+                    }
                 }
             }
 
@@ -145,43 +174,58 @@ public class ScaffoldCommand : Command
             return;
         }
 
+        // Design 59: Wrap scaffold with rollback (skip for dry-run)
+        using var scope = _serviceProvider.CreateScope();
+        var rollbackService = scope.ServiceProvider.GetRequiredService<IGenerationRollbackService>();
+
         Core.Scaffold.Models.ScaffoldResult result;
-        using (timer.TimeStep("Scaffold files"))
+        try
         {
-            result = await engine.ScaffoldAsync(yaml, outputDirectory, dryRun, force);
-        }
-
-        if (!result.ValidationResult.IsValid)
-        {
-            foreach (var error in result.ValidationResult.Errors)
+            using (timer.TimeStep("Scaffold files"))
             {
-                logger.LogError("Validation error [{Property}]: {Message}", error.PropertyName, error.ErrorMessage);
+                result = await engine.ScaffoldAsync(yaml, outputDirectory, dryRun, force);
             }
 
-            RenderDiagnosticsIfEnabled(diagnostics, timer);
-            return;
-        }
-
-        if (dryRun)
-        {
-            logger.LogInformation("Dry run - files that would be created:");
-            foreach (var file in result.PlannedFiles)
+            if (!result.ValidationResult.IsValid)
             {
-                logger.LogInformation("  {Action}: {Path}", file.Action, file.Path);
+                foreach (var error in result.ValidationResult.Errors)
+                {
+                    logger.LogError("Validation error [{Property}]: {Message}", error.PropertyName, error.ErrorMessage);
+                }
+
+                RenderDiagnosticsIfEnabled(diagnostics, timer);
+                return;
             }
 
-            RenderDiagnosticsIfEnabled(diagnostics, timer);
-            return;
-        }
-
-        logger.LogInformation("Scaffolding complete. {Count} files created.", result.PlannedFiles.Count);
-
-        foreach (var cmd in result.PostCommandResults)
-        {
-            if (!cmd.Success)
+            if (dryRun)
             {
-                logger.LogWarning("Post-scaffold command failed: {Command} (exit code {ExitCode})", cmd.Command, cmd.ExitCode);
+                logger.LogInformation("Dry run - files that would be created:");
+                foreach (var file in result.PlannedFiles)
+                {
+                    logger.LogInformation("  {Action}: {Path}", file.Action, file.Path);
+                }
+
+                RenderDiagnosticsIfEnabled(diagnostics, timer);
+                return;
             }
+
+            rollbackService.Commit();
+
+            logger.LogInformation("Scaffolding complete. {Count} files created.", result.PlannedFiles.Count);
+
+            foreach (var cmd in result.PostCommandResults)
+            {
+                if (!cmd.Success)
+                {
+                    logger.LogWarning("Post-scaffold command failed: {Command} (exit code {ExitCode})", cmd.Command, cmd.ExitCode);
+                }
+            }
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException && !dryRun)
+        {
+            logger.LogError(ex, "Scaffold failed, rolling back...");
+            rollbackService.Rollback();
+            throw;
         }
 
         RenderDiagnosticsIfEnabled(diagnostics, timer);

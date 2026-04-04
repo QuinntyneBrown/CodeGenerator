@@ -30,4 +30,18 @@ public static class ResultExtensions
 
     public static Result<T> ToResult<T>(this T? value, ErrorInfo errorIfNull) where T : class =>
         value is not null ? Result<T>.Success(value) : Result<T>.Failure(errorIfNull);
+
+    public static Result<U> Select<T, U>(this Result<T> result, Func<T, U> selector) =>
+        result.Map(selector);
+
+    public static Result<U> SelectMany<T, U>(this Result<T> result, Func<T, Result<U>> selector) =>
+        result.Bind(selector);
+
+    public static Result<T> Where<T>(this Result<T> result, Func<T, bool> predicate, ErrorInfo errorIfFalse) =>
+        result.IsSuccess && !predicate(result.Value)
+            ? Result<T>.Failure(errorIfFalse)
+            : result;
+
+    public static Result Combine(params Result[] results) =>
+        ((IEnumerable<Result>)results).Combine();
 }

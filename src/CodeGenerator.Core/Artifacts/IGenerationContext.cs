@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
 using System.IO.Abstractions;
+using CodeGenerator.Core.Errors;
 using CodeGenerator.Core.Services;
 
 namespace CodeGenerator.Core.Artifacts;
@@ -15,4 +16,6 @@ public interface IGenerationContext
     IFileSystem FileSystem { get; }
 
     ICommandService CommandService { get; }
+
+    IGenerationRollbackService RollbackService { get; }
 }

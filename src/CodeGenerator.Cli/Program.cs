@@ -2,7 +2,10 @@
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
 using CodeGenerator.Cli.Commands;
+using CodeGenerator.Cli.Configuration;
+using CodeGenerator.Cli.Services;
 using CodeGenerator.Core;
+using CodeGenerator.Core.Configuration;
 using CodeGenerator.Core.Diagnostics;
 using CodeGenerator.Core.Errors;
 using Microsoft.Extensions.Configuration;
@@ -23,6 +26,27 @@ services.AddLogging(builder =>
     builder.AddConsole();
     builder.SetMinimumLevel(LogLevel.Information);
 });
+
+// Design 58: Wire 4-tier config (defaults > file > env vars > CLI args)
+var configLoader = new ConfigurationLoader();
+var fileConfig = await configLoader.LoadAsync(Directory.GetCurrentDirectory());
+var defaults = ConfigBootstrap.GetBuiltInDefaults();
+var fileTier = ConfigFileMapper.ToFlatDictionary(fileConfig);
+var envTier = EnvironmentVariableMapper.Map(configuration);
+
+services.AddSingleton<IConfigurationLoader>(configLoader);
+services.AddSingleton<ICodeGeneratorConfiguration>(
+    new CodeGeneratorConfiguration(
+        defaults: defaults,
+        fileConfig: fileTier,
+        envConfig: envTier,
+        cliConfig: new Dictionary<string, string>()));
+
+// Design 60: Register interactive prompt service with TTY detection
+if (!Console.IsInputRedirected)
+    services.AddSingleton<IInteractivePromptService, SpectrePromptService>();
+else
+    services.AddSingleton<IInteractivePromptService, NonInteractivePromptService>();
 
 services.AddSingleton<DiagnosticsCollector>();
 services.AddCoreServices(typeof(Program).Assembly);

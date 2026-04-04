@@ -6,8 +6,10 @@ using System.IO.Abstractions;
 using System.Reflection;
 using System.Text;
 using CodeGenerator.Cli.Rendering;
+using CodeGenerator.Cli.Services;
 using CodeGenerator.Cli.Validation;
 using CodeGenerator.Core.Artifacts.Abstractions;
+using CodeGenerator.Core.Configuration;
 using CodeGenerator.Core.Diagnostics;
 using CodeGenerator.Core.Errors;
 using CodeGenerator.Core.Services;
@@ -30,27 +32,29 @@ public class CreateCodeGeneratorCommand : RootCommand
     {
         _serviceProvider = serviceProvider;
 
+        var config = serviceProvider.GetService<ICodeGeneratorConfiguration>();
+
         var nameOption = new Option<string>(
             aliases: ["-n", "--name"],
             description: "The name of the solution to create")
         {
-            IsRequired = true
+            IsRequired = false
         };
 
         var outputOption = new Option<string>(
             aliases: ["-o", "--output"],
             description: "The output directory (defaults to current directory)",
-            getDefaultValue: () => Directory.GetCurrentDirectory());
+            getDefaultValue: () => config?.GetValue("output") ?? Directory.GetCurrentDirectory());
 
         var frameworkOption = new Option<string>(
             aliases: ["-f", "--framework"],
             description: "The target framework (e.g. net8.0, net9.0)",
-            getDefaultValue: () => "net9.0");
+            getDefaultValue: () => config?.GetValue("framework") ?? "net9.0");
 
         var slnxOption = new Option<bool>(
             aliases: ["--slnx"],
             description: "Use .slnx (XML-based) solution format instead of .sln",
-            getDefaultValue: () => false);
+            getDefaultValue: () => config?.GetValue<bool>("slnx", false) ?? false);
 
         var localSourceRootOption = new Option<string?>(
             aliases: ["--local-source-root"],
@@ -83,6 +87,27 @@ public class CreateCodeGeneratorCommand : RootCommand
 
         IGenerationTimer timer = diagnostics ? new GenerationTimer() : new NullGenerationTimer();
 
+        // Design 60: Prompt for missing options in interactive mode
+        var promptService = _serviceProvider.GetService<IInteractivePromptService>();
+        if (string.IsNullOrWhiteSpace(name) && promptService != null)
+        {
+            var partial = new GenerationOptions
+            {
+                Name = name ?? string.Empty,
+                OutputDirectory = outputDirectory,
+                Framework = framework,
+                Slnx = slnx,
+                LocalSourceRoot = localSourceRoot,
+            };
+
+            var prompted = promptService.PromptForMissingOptions(partial);
+            name = prompted.Name;
+            outputDirectory = prompted.OutputDirectory;
+            framework = prompted.Framework;
+            slnx = prompted.Slnx;
+            localSourceRoot = prompted.LocalSourceRoot;
+        }
+
         // Step 1: Validate before any generation
         using (timer.TimeStep("Validate options"))
         {
@@ -110,10 +135,16 @@ public class CreateCodeGeneratorCommand : RootCommand
             }
         }
 
+        // Design 59: Wrap generation with rollback protection
+        using var scope = _serviceProvider.CreateScope();
+        var rollbackService = scope.ServiceProvider.GetRequiredService<IGenerationRollbackService>();
+
         // Step 2: Proceed with generation
         logger.LogInformation("Creating code generator solution: {Name}", name);
         logger.LogInformation("Output directory: {OutputDirectory}", outputDirectory);
 
+        try
+        {
         // Create Solution Model
         var solution = new SolutionModel(name, outputDirectory);
 
@@ -156,10 +187,15 @@ public class CreateCodeGeneratorCommand : RootCommand
         using (timer.TimeStep("Create directories"))
         {
             Directory.CreateDirectory(solution.SolutionDirectory);
+            rollbackService.TrackDirectoryCreated(solution.SolutionDirectory);
             Directory.CreateDirectory(solution.SrcDirectory);
+            rollbackService.TrackDirectoryCreated(solution.SrcDirectory);
             Directory.CreateDirectory(project.Directory);
+            rollbackService.TrackDirectoryCreated(project.Directory);
             Directory.CreateDirectory(Path.Combine(project.Directory, "Commands"));
+            rollbackService.TrackDirectoryCreated(Path.Combine(project.Directory, "Commands"));
             Directory.CreateDirectory(Path.Combine(solution.SolutionDirectory, "eng", "scripts"));
+            rollbackService.TrackDirectoryCreated(Path.Combine(solution.SolutionDirectory, "eng", "scripts"));
         }
 
         // Create solution file
@@ -210,6 +246,8 @@ public class CreateCodeGeneratorCommand : RootCommand
                 ".bat"));
         }
 
+        rollbackService.Commit();
+
         logger.LogInformation("Solution created successfully at: {Path}", solution.SolutionDirectory);
         logger.LogInformation("");
         logger.LogInformation("Next steps:");
@@ -220,6 +258,18 @@ public class CreateCodeGeneratorCommand : RootCommand
         logger.LogInformation("");
         logger.LogInformation("To install as a global tool:");
         logger.LogInformation("  eng\\scripts\\install-cli.bat");
+        }
+        catch (Exception ex) when (ex is not CliException and not OperationCanceledException)
+        {
+            logger.LogError(ex, "Generation failed, rolling back...");
+            rollbackService.Rollback();
+            throw;
+        }
+        catch (CliException)
+        {
+            rollbackService.Rollback();
+            throw;
+        }
 
         if (diagnostics)
         {

@@ -10,6 +10,8 @@ public class RetryOptions
     public double BackoffMultiplier { get; set; } = 2.0;
     public TimeSpan MaxDelay { get; set; } = TimeSpan.FromSeconds(5);
 
+    public Func<Exception, bool>? ShouldRetry { get; set; }
+
     public static RetryOptions FileWrite => new()
     {
         MaxAttempts = 3,

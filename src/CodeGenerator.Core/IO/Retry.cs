@@ -22,7 +22,7 @@ public static class Retry
             {
                 return await action().ConfigureAwait(false);
             }
-            catch (Exception ex) when (attempt < options.MaxAttempts && IsTransient(ex))
+            catch (Exception ex) when (attempt < options.MaxAttempts && (options.ShouldRetry?.Invoke(ex) ?? IsTransient(ex)))
             {
                 lastException = ex;
                 var actualDelay = delay < options.MaxDelay ? delay : options.MaxDelay;
