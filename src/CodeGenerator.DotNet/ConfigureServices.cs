@@ -7,6 +7,7 @@ using CodeGenerator.DotNet.Artifacts;
 using CodeGenerator.DotNet.Artifacts.Files.Factories;
 using CodeGenerator.DotNet.Artifacts.Files.Services;
 using CodeGenerator.DotNet.Artifacts.FullStack;
+using CodeGenerator.DotNet.Artifacts.JwtAuthMvp;
 using CodeGenerator.DotNet.Artifacts.Git;
 using CodeGenerator.DotNet.Artifacts.PlantUml.Services;
 using CodeGenerator.DotNet.Artifacts.Projects.Factories;
@@ -43,6 +44,7 @@ public static class ConfigureServices
         services.AddSingleton(new Observable<INotification>());
         services.AddSingleton<ICodeGeneratorEventContainer, CodeGeneratorEventContainer>();
         services.AddSingleton<IFullStackFactory, FullStackFactory>();
+        services.AddSingleton<IJwtAuthenticatedMvpFactory, JwtAuthenticatedMvpFactory>();
         services.AddSingleton<IDocumentFactory, DocumentFactory>();
         services.AddSingleton<IGitService, GitService>();
         services.AddSingleton<ICodeFormatterService, DotnetCodeFormatterService>();
