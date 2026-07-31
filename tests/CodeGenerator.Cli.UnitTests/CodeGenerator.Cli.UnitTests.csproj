@@ -23,4 +23,9 @@
     <ProjectReference Include="..\..\src\CodeGenerator.Cli\CodeGenerator.Cli.csproj" />
     <ProjectReference Include="..\..\src\CodeGenerator.Core\CodeGenerator.Core.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <!-- Lets a test resolve repository-relative paths deterministically. See TestPaths. -->
+    <AssemblyMetadata Include="RepositoryRoot" Value="$(MSBuildThisFileDirectory)..\.." />
+  </ItemGroup>
 </Project>

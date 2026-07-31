@@ -164,16 +164,16 @@ public class ScaffoldCommand : Command
 
                     if (!File.Exists(configPath))
                     {
-                        logger.LogError("No configuration file specified and no scaffold.yaml found in current directory.");
-                        return;
+                        throw new CliConfigurationException(
+                            $"No configuration file specified and no scaffold.yaml found in '{outputDirectory}'. "
+                            + "Pass --config <path>, or run 'create-code-cli scaffold --init' to create one.");
                     }
                 }
             }
 
             if (!File.Exists(configPath))
             {
-                logger.LogError("Configuration file not found: {Path}", configPath);
-                return;
+                throw new CliConfigurationException($"Configuration file not found: {configPath}");
             }
 
             yaml = await File.ReadAllTextAsync(configPath);
@@ -187,17 +187,13 @@ public class ScaffoldCommand : Command
             {
                 var validationResult = engine.Validate(yaml);
 
-                if (validationResult.ValidationResult.IsValid)
+                if (!validationResult.ValidationResult.IsValid)
                 {
-                    logger.LogInformation("Configuration is valid.");
+                    RenderDiagnosticsIfEnabled(diagnostics, timer);
+                    throw new CliValidationException(validationResult.ValidationResult);
                 }
-                else
-                {
-                    foreach (var error in validationResult.ValidationResult.Errors)
-                    {
-                        logger.LogError("Validation error [{Property}]: {Message}", error.PropertyName, error.ErrorMessage);
-                    }
-                }
+
+                logger.LogInformation("Configuration is valid.");
             }
 
             RenderDiagnosticsIfEnabled(diagnostics, timer);
@@ -218,13 +214,8 @@ public class ScaffoldCommand : Command
 
             if (!result.ValidationResult.IsValid)
             {
-                foreach (var error in result.ValidationResult.Errors)
-                {
-                    logger.LogError("Validation error [{Property}]: {Message}", error.PropertyName, error.ErrorMessage);
-                }
-
                 RenderDiagnosticsIfEnabled(diagnostics, timer);
-                return;
+                throw new CliValidationException(result.ValidationResult);
             }
 
             if (dryRun)

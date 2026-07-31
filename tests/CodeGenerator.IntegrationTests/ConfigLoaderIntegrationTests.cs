@@ -114,8 +114,11 @@ public class ConfigLoaderIntegrationTests
         var defaults = ConfigBootstrap.GetBuiltInDefaults();
 
         Assert.Equal("net9.0", defaults["framework"]);
-        Assert.Equal(".", defaults["output"]);
         Assert.Equal("false", defaults["slnx"]);
+
+        // "output" is deliberately absent: a "." default shadowed each command's
+        // Directory.GetCurrentDirectory() fallback and then failed path validation.
+        Assert.False(defaults.ContainsKey("output"));
     }
 
     [Fact]
@@ -138,7 +141,7 @@ public class ConfigLoaderIntegrationTests
             resolved[kvp.Key] = kvp.Value;
 
         Assert.Equal("net8.0", resolved["framework"]);
-        Assert.Equal(".", resolved["output"]);
         Assert.Equal("false", resolved["slnx"]);
+        Assert.False(resolved.ContainsKey("output"));
     }
 }

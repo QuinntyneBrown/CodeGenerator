@@ -44,7 +44,25 @@ public class FileSystemRules
         if (string.IsNullOrWhiteSpace(path))
             return false;
 
-        var parent = _fileSystem.Path.GetDirectoryName(path);
-        return parent is not null && _fileSystem.Directory.Exists(parent);
+        // Resolve to a full path first. Path.GetDirectoryName(".") and
+        // Path.GetDirectoryName("mydir") both return string.Empty, which would
+        // reject every bare relative directory the user is most likely to type.
+        string fullPath;
+        try
+        {
+            fullPath = _fileSystem.Path.GetFullPath(path);
+        }
+        catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            return false;
+        }
+
+        var parent = _fileSystem.Path.GetDirectoryName(fullPath);
+
+        // A rooted path such as "C:\" or "/" has no parent; the path is itself a root.
+        if (string.IsNullOrEmpty(parent))
+            return _fileSystem.Directory.Exists(fullPath);
+
+        return _fileSystem.Directory.Exists(parent);
     }
 }

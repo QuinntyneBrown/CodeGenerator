@@ -15,8 +15,15 @@ public static class ConfigFileMapper
         if (config.Defaults.Output is not null)
             result["output"] = config.Defaults.Output;
 
+        // solutionFormat is authored as "sln" or "slnx", but the resolved key is the
+        // boolean `slnx`. Convert here: Convert.ChangeType would throw FormatException
+        // on both natural values, surfacing as an exit code 99 during option construction.
         if (config.Defaults.SolutionFormat is not null)
-            result["slnx"] = config.Defaults.SolutionFormat;
+        {
+            result["slnx"] = string.Equals(config.Defaults.SolutionFormat, "slnx", StringComparison.OrdinalIgnoreCase)
+                ? "true"
+                : "false";
+        }
 
         if (config.Templates.Author is not null)
             result["templates.author"] = config.Templates.Author;

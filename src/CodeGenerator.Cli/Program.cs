@@ -1,6 +1,7 @@
 // Copyright (c) Quinntyne Brown. All Rights Reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
+using CodeGenerator.Cli;
 using CodeGenerator.Cli.Commands;
 using CodeGenerator.Cli.Configuration;
 using CodeGenerator.Cli.Formatting;
@@ -13,6 +14,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.CommandLine;
+using System.CommandLine.Builder;
+using System.CommandLine.Parsing;
 
 // Design 53: Wire Ctrl+C cancellation
 using var cts = new CancellationTokenSource();
@@ -77,58 +80,23 @@ var serviceProvider = services.BuildServiceProvider();
 var rootCommand = new CreateCodeGeneratorCommand(serviceProvider);
 
 // Design 52: Add --verbose global option
-rootCommand.AddGlobalOption(new Option<bool>(
-    aliases: ["--verbose", "-v"],
-    description: "Show detailed error output and stack traces"));
+rootCommand.AddGlobalOption(CliOptions.CreateVerbose());
 
-try
-{
-    return await rootCommand.InvokeAsync(args);
-}
-catch (CliAggregateException ex)
-{
-    var formatter = serviceProvider.GetRequiredService<IErrorFormatter>();
-    foreach (var inner in ex.InnerExceptions)
-    {
-        Console.Error.WriteLine(inner is CliException cliInner
-            ? formatter.FormatException(cliInner, verbose)
-            : $"ERROR [INTERNAL] {inner.Message}");
-    }
+var errorFormatter = serviceProvider.GetRequiredService<IErrorFormatter>();
 
-    return ex.ExitCode;
-}
-catch (CliValidationException ex)
-{
-    var formatter = serviceProvider.GetRequiredService<IErrorFormatter>();
-    if (ex.ValidationResult != null)
-    {
-        Console.Error.Write(formatter.FormatValidationResult(ex.ValidationResult));
-    }
-    else
-    {
-        Console.Error.WriteLine(formatter.FormatException(ex, verbose));
-    }
+// The exception handler must be installed as middleware rather than as a try/catch
+// around InvokeAsync. System.CommandLine catches every handler exception inside the
+// invocation pipeline, so a surrounding catch block never runs — its own default
+// handler writes a raw stack trace and returns exit code 1, which would flatten the
+// whole CliExitCodes taxonomy to a single value.
+var parser = new CommandLineBuilder(rootCommand)
+    .UseHelp()
+    .UseVersionOption()
+    .UseParseErrorReporting(CliExitCodes.ValidationError)
+    .UseExceptionHandler(
+        (exception, context) =>
+            context.ExitCode = ExitCodeMapper.Map(exception, verbose, errorFormatter, Console.Error),
+        errorExitCode: CliExitCodes.UnexpectedError)
+    .Build();
 
-    return ex.ExitCode;
-}
-catch (CliException ex)
-{
-    var formatter = serviceProvider.GetRequiredService<IErrorFormatter>();
-    Console.Error.WriteLine(formatter.FormatException(ex, verbose));
-    return ex.ExitCode;
-}
-catch (OperationCanceledException)
-{
-    Console.Error.WriteLine("Operation cancelled.");
-    return 8;
-}
-catch (Exception ex)
-{
-    Console.Error.WriteLine($"ERROR [INTERNAL] An unexpected error occurred.");
-    if (verbose)
-    {
-        Console.Error.WriteLine(ex.ToString());
-    }
-
-    return 99;
-}
+return await parser.InvokeAsync(args);

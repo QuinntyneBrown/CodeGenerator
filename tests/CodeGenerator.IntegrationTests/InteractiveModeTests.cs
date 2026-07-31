@@ -5,6 +5,8 @@ using CodeGenerator.Cli.Services;
 using CodeGenerator.Cli.Validation;
 using Xunit;
 
+using CodeGenerator.Core.Errors;
+
 namespace CodeGenerator.IntegrationTests;
 
 public class InteractiveModeTests
@@ -29,7 +31,7 @@ public class InteractiveModeTests
             Slnx = false,
         };
 
-        var ex = Assert.Throws<InvalidOperationException>(
+        var ex = Assert.Throws<CliValidationException>(
             () => service.PromptForMissingOptions(partial));
 
         Assert.Contains("--name", ex.Message);
@@ -65,7 +67,7 @@ public class InteractiveModeTests
             Slnx = false,
         };
 
-        Assert.Throws<InvalidOperationException>(
+        Assert.Throws<CliValidationException>(
             () => service.PromptForMissingOptions(partial));
     }
 

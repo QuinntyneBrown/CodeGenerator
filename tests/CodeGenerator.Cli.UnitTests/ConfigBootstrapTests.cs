@@ -17,11 +17,15 @@ public class ConfigBootstrapTests
     }
 
     [Fact]
-    public void GetBuiltInDefaults_ContainsOutput()
+    public void GetBuiltInDefaults_OmitsOutput()
     {
         var defaults = ConfigBootstrap.GetBuiltInDefaults();
 
-        Assert.True(defaults.ContainsKey("output"));
+        // An "output" default of "." shadowed each command's
+        // `?? Directory.GetCurrentDirectory()` fallback, and "." was then rejected
+        // by ParentDirectoryExists — so the tool could not run without an explicit
+        // --output. Commands supply the current directory themselves instead.
+        Assert.False(defaults.ContainsKey("output"));
     }
 
     [Fact]

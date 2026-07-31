@@ -7,10 +7,13 @@ public static class ConfigBootstrap
 {
     public static Dictionary<string, string> GetBuiltInDefaults()
     {
+        // "output" is deliberately absent. Supplying "." here would shadow the
+        // `?? Directory.GetCurrentDirectory()` fallback on every --output option,
+        // and a bare "." fails ParentDirectoryExists. Commands fall back to the
+        // current directory themselves when no tier supplies a value.
         return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
             ["framework"] = "net9.0",
-            ["output"] = ".",
             ["slnx"] = "false",
         };
     }

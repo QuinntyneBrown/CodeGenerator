@@ -5,6 +5,8 @@ using CodeGenerator.Cli.Services;
 using CodeGenerator.Cli.Validation;
 using Xunit;
 
+using CodeGenerator.Core.Errors;
+
 namespace CodeGenerator.IntegrationTests;
 
 public class InteractivePromptsIntegrationTests
@@ -29,7 +31,7 @@ public class InteractivePromptsIntegrationTests
             Slnx = false,
         };
 
-        var ex = Assert.Throws<InvalidOperationException>(
+        var ex = Assert.Throws<CliValidationException>(
             () => service.PromptForMissingOptions(partial));
 
         Assert.Contains("--name", ex.Message);
@@ -58,7 +60,7 @@ public class InteractivePromptsIntegrationTests
     {
         var service = new NonInteractivePromptService();
 
-        var ex = Assert.Throws<InvalidOperationException>(
+        var ex = Assert.Throws<CliValidationException>(
             () => service.PromptForConfigFile(@"C:\project", new[] { "config1.json", "config2.json" }));
 
         Assert.Contains("interactive mode is not available", ex.Message);
