@@ -146,10 +146,16 @@ public class InputValidationLayerTests
         var fileSystem = new MockFileSystem();
         var validator = new GenerationOptionsValidator(fileSystem);
 
+        // Built from the mock filesystem's own root rather than a hardcoded "C:\...".
+        // On Linux a Windows-style path is an ordinary relative name, so it would resolve
+        // under the current directory and its parent would exist.
+        var missingParent = fileSystem.Path.Combine(
+            fileSystem.Directory.GetCurrentDirectory(), "nonexistent", "output");
+
         var options = new GenerationOptions
         {
             Name = "MyApp",
-            OutputDirectory = @"C:\nonexistent\output",
+            OutputDirectory = missingParent,
             Framework = "net9.0",
             Slnx = false,
         };
