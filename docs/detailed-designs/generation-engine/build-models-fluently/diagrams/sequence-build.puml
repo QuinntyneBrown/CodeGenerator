@@ -1,0 +1,48 @@
+@startuml
+title UML sequence behaviour — Describe a controller in one chain
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam defaultFontName Arial
+skinparam ArrowColor #344054
+skinparam rectangle {
+  BorderColor #344054
+  FontColor #101828
+}
+skinparam package {
+  BorderColor #667085
+  FontColor #101828
+  BackgroundColor #F9FAFB
+}
+actor "Developer or coding agent" as actor
+box "Frontend — Consuming application code" #E0F2FE
+  participant "Caller" as caller
+end box
+box "Backend — CodeGenerator.Flask builders" #ECFDF3
+  participant "ControllerBuilder" as builder
+  participant "ControllerModel" as model
+end box
+box "Backend — CodeGenerator.Core generation engine" #D1FADF
+  participant "ArtifactGenerator" as gen
+end box
+
+actor -> caller : Describe an Order controller
+caller -> builder : For("Order")
+builder --> caller : Builder instance (L2-012)
+caller -> builder : WithCrud("Order")
+builder --> caller : Same builder instance (L2-011)
+caller -> builder : WithUrlPrefix("/api/orders")
+builder --> caller : Same builder instance (L2-011)
+caller -> builder : Build()
+builder -> builder : Validate required inputs (L2-011)
+alt Required input missing
+  builder --> caller : Validation error naming the property
+else Configuration complete
+  builder -> model : Construct with five CRUD routes
+  model --> builder : ControllerModel
+  builder --> caller : ControllerModel
+  caller -> gen : GenerateAsync(model, ct)
+  gen --> caller : ArtifactGenerationResult
+end
+caller --> actor : Generated controller reported
+@enduml

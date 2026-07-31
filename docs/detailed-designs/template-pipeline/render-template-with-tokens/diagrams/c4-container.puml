@@ -1,0 +1,20 @@
+@startuml
+!include <C4/C4_Container>
+LAYOUT_WITH_LEGEND()
+title Containers — Render a template with tokens
+
+System_Boundary(codegen, "CodeGenerator") {
+  Container(core, "CodeGenerator.Core", ".NET library", "LiquidTemplateProcessor, filters, shared file system")
+  Container(coretpl, "Core embedded templates", "Embedded resources", "Shared macros and fragments")
+  Container(dotnet, "CodeGenerator.DotNet", ".NET library", "27 template categories embedded as resources")
+  Container(others, "Other target packages", ".NET libraries", "Package-specific embedded templates")
+}
+System_Ext(dotliquid, "DotLiquid", "Template engine library")
+System_Ext(fs, "Local filesystem", "Rendered output")
+
+Rel(core, dotliquid, "Parses and renders through", "In-process")
+Rel(core, coretpl, "Resolves includes from", "Manifest resources")
+Rel(dotnet, core, "Renders templates through", "ITemplateProcessor")
+Rel(others, core, "Renders templates through", "ITemplateProcessor")
+Rel(core, fs, "Emits rendered text to", "File IO")
+@enduml

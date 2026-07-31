@@ -1,0 +1,102 @@
+@startuml
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam defaultFontName Arial
+skinparam ArrowColor #344054
+skinparam class {
+  BorderColor #344054
+  FontColor #101828
+  BackgroundColor #F9FAFB
+}
+title Class structure — Verify and diagnose a run
+
+interface IPostGenerationVerifier {
+  +Name: string
+  +VerifyAsync(projectDirectory: string, options: VerificationOptions): Task<VerificationStepResult>
+}
+
+class VerificationRunner {
+  -_verifiers: IEnumerable<IPostGenerationVerifier>
+  +RunAllAsync(options: VerificationOptions): Task<VerificationResult>
+}
+
+class VerificationOptions {
+  +SolutionDirectory: string
+  +ProjectPath: string
+  +TreatWarningsAsErrors: bool
+  +Timeout: TimeSpan
+}
+
+class VerificationResult {
+  +Steps: List<VerificationStepResult>
+}
+
+class VerificationStepResult {
+  +VerifierName: string
+  +Passed: bool
+  +FailureReason: string
+  +Duration: TimeSpan
+}
+
+class DiagnosticContext {
+  +{static} Current: DiagnosticContext
+  +CorrelationId: string
+  +CurrentStrategy: string
+  +ModelType: string
+  +CurrentPhase: DiagnosticPhase
+}
+
+enum DiagnosticPhase {
+  Parse
+  Validate
+  Generate
+  Write
+  Verify
+}
+
+interface IGenerationTimer {
+  +TimeStep(name: string): IDisposable
+  +GetEntries(): IEnumerable<TimingEntry>
+  +TotalElapsed: TimeSpan
+}
+
+class GenerationTimer {
+}
+
+class NullGenerationTimer {
+}
+
+class TimingEntry {
+  +Name: string
+  +Duration: TimeSpan
+}
+
+class DiagnosticsCollector {
+  +CollectEnvironment(cliVersion: string): EnvironmentInfo
+}
+
+class EnvironmentInfo {
+  +RuntimeVersion: string
+  +OperatingSystem: string
+  +CliVersion: string
+}
+
+class DiagnosticsReport {
+  +Environment: EnvironmentInfo
+  +Steps: List<TimingEntry>
+  +TotalDuration: TimeSpan
+}
+
+VerificationRunner o-- IPostGenerationVerifier : executes
+VerificationRunner --> VerificationResult : produces
+VerificationRunner ..> VerificationOptions : reads
+VerificationResult *-- VerificationStepResult
+DiagnosticContext --> DiagnosticPhase : records
+GenerationTimer ..|> IGenerationTimer
+NullGenerationTimer ..|> IGenerationTimer
+IGenerationTimer --> TimingEntry : yields
+DiagnosticsCollector --> EnvironmentInfo : collects
+DiagnosticsReport --> EnvironmentInfo : reports
+DiagnosticsReport *-- TimingEntry
+@enduml

@@ -1,0 +1,28 @@
+@startuml
+!include <C4/C4_Component>
+LAYOUT_WITH_LEGEND()
+title Components — Generate a .NET solution
+
+Container_Boundary(dotnet, "CodeGenerator.DotNet") {
+  Component(solstrat, "Solution strategies", "C# classes", "Realize SolutionModel as .sln or .slnx")
+  Component(projstrat, "Project strategies", "C# classes", "Realize ProjectModel as .csproj and folders")
+  Component(syntax, "C# syntax strategies", "C# classes", "Classes, interfaces, records, enums, methods, controllers")
+  Component(ddd, "DDD and CQRS generators", "C# classes", "Entities, aggregates, value objects, commands, queries, handlers, validators")
+  Component(analysis, "ICodeAnalysisService", "Roslyn service", "Analyses existing C# source")
+  Component(di, "IDependencyInjectionService", "C# service", "Generates service registration code")
+  Component(gitsvc, "IGitService", "LibGit2Sharp service", "Initializes the repository")
+  Component(openapi, "OpenApiDocumentGenerationStrategy", "C# class", "Emits an OpenAPI document")
+  Component(specflow, "ISpecFlowService", "C# service", "Emits Gherkin feature files")
+}
+ComponentDb(fs, "Local filesystem", "Disk", "Generated solution tree")
+
+Rel(solstrat, projstrat, "Realizes each project through")
+Rel(projstrat, syntax, "Renders project sources through")
+Rel(syntax, ddd, "Composes domain constructs through")
+Rel(syntax, analysis, "Inspects existing sources through")
+Rel(projstrat, di, "Emits registration code through")
+Rel(solstrat, gitsvc, "Initializes repository through")
+Rel(projstrat, openapi, "Emits API contract through")
+Rel(projstrat, specflow, "Emits feature files through")
+Rel(solstrat, fs, "Writes to", "File IO")
+@enduml

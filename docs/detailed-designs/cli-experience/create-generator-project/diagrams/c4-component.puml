@@ -1,0 +1,32 @@
+@startuml
+!include <C4/C4_Component>
+LAYOUT_WITH_LEGEND()
+title Components — Create a code generator project
+
+Container_Boundary(cli, "create-code-cli") {
+  Component(root, "CreateCodeGeneratorCommand", "System.CommandLine RootCommand", "Declares options and orchestrates generation")
+  Component(install, "InstallCommand", "System.CommandLine Command", "Writes the Claude skill file")
+  Component(options, "GenerationOptions", "C# class", "Name, output, framework, slnx, local source root")
+  Component(validator, "GenerationOptionsValidator", "C# class", "Applies CommonRules and FileSystemRules")
+  Component(versions, "PackageVersions", "C# static class", "Versions stamped into generated package references")
+  Component(completions, "CompletionProvider", "C# static class", "Framework, name, and output completions")
+  Component(shell, "ShellDetector", "C# static class", "Detects PowerShell, zsh, bash, or fish")
+}
+Container_Boundary(core, "CodeGenerator.Core") {
+  Component(gen, "ArtifactGenerator", "C# class", "Realizes each generated file")
+  Component(rollback, "GenerationRollbackService", "C# class", "Undoes the run on failure")
+  Component(cmdsvc, "ICommandService", "C# interface", "Runs dotnet SDK commands")
+}
+ComponentDb(fs, "Local filesystem", "Disk", "Generated starter solution")
+
+Rel(root, options, "Binds parsed arguments into")
+Rel(root, validator, "Validates through")
+Rel(root, versions, "Stamps package references from")
+Rel(root, gen, "Generates each file through")
+Rel(root, rollback, "Tracks and commits through")
+Rel(root, cmdsvc, "Creates and registers the solution through")
+Rel(root, completions, "Offers completions through")
+Rel(completions, shell, "Targets the shell reported by")
+Rel(install, fs, "Writes SKILL.md to", "File IO")
+Rel(gen, fs, "Writes generated files to", "File IO")
+@enduml

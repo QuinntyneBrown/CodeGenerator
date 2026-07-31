@@ -1,0 +1,77 @@
+@startuml
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam defaultFontName Arial
+skinparam ArrowColor #344054
+skinparam class {
+  BorderColor #344054
+  FontColor #101828
+  BackgroundColor #F9FAFB
+}
+title Class structure — Build models fluently
+
+interface IBuilder {
+  +Build(): object
+}
+
+abstract class BuilderBase {
+  #Validate(): ValidationResult
+  +Build(): object
+}
+
+class ControllerBuilder {
+  +{static} For(name: string): ControllerBuilder
+  +WithCrud(entity: string): ControllerBuilder
+  +WithUrlPrefix(prefix: string): ControllerBuilder
+  +WithService(field: string, type: string): ControllerBuilder
+  +Build(): ControllerModel
+}
+
+class ComponentBuilder {
+  +{static} For(name: string): ComponentBuilder
+  +WithProp(name: string, type: string): ComponentBuilder
+  +WithHook(hook: string): ComponentBuilder
+  +WithImport(from: string, symbol: string): ComponentBuilder
+  +Build(): ComponentModel
+}
+
+class PageObjectBuilder {
+  +{static} For(name: string): PageObjectBuilder
+  +WithLocator(name: string, selector: string): PageObjectBuilder
+  +WithAction(name: string): PageObjectBuilder
+  +Build(): PageObjectModel
+}
+
+class ControllerModel {
+  +Name: string
+  +UrlPrefix: string
+  +Routes: List<RouteModel>
+}
+
+class ComponentModel {
+  +Name: string
+  +Props: List<PropertyModel>
+  +Hooks: List<string>
+}
+
+class PageObjectModel {
+  +Name: string
+  +Locators: List<LocatorModel>
+}
+
+class ValidationResult {
+  +IsValid: bool
+  +Errors: List<ValidationError>
+  +Warnings: List<ValidationError>
+}
+
+BuilderBase ..|> IBuilder
+ControllerBuilder --|> BuilderBase
+ComponentBuilder --|> BuilderBase
+PageObjectBuilder --|> BuilderBase
+ControllerBuilder --> ControllerModel : builds
+ComponentBuilder --> ComponentModel : builds
+PageObjectBuilder --> PageObjectModel : builds
+BuilderBase ..> ValidationResult : reports through
+@enduml

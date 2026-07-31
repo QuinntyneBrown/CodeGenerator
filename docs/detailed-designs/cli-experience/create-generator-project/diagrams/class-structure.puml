@@ -1,0 +1,83 @@
+@startuml
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam defaultFontName Arial
+skinparam ArrowColor #344054
+skinparam class {
+  BorderColor #344054
+  FontColor #101828
+  BackgroundColor #F9FAFB
+}
+title Class structure — Create a code generator project
+
+class CreateCodeGeneratorCommand {
+  -_serviceProvider: IServiceProvider
+  -HandleAsync(name, output, framework, slnx, localSourceRoot, diagnostics, failFast): Task
+  -GenerateCliProjectContent(name, framework, localSourceRoot, dir): string
+  -GenerateProgramContent(name): string
+  -GenerateInstallCliBatContent(name): string
+}
+
+class InstallCommand {
+  -HandleAsync(outputDirectory: string): Task
+}
+
+class GenerationOptions {
+  +Name: string
+  +OutputDirectory: string
+  +Framework: string
+  +Slnx: bool
+  +LocalSourceRoot: string
+}
+
+class GenerationOptionsValidator {
+  -_validator: Validator<GenerationOptions>
+  -_fsRules: FileSystemRules
+  +Validate(options: GenerationOptions): ValidationResult
+}
+
+class CommonRules {
+  +{static} IsNotEmpty(value: string): bool
+  +{static} IsValidCSharpIdentifier(value: string): bool
+  +{static} IsValidNamespace(value: string): bool
+  +{static} IsValidFilePath(value: string): bool
+  +{static} IsSupportedFrameworkVersion(value: string): bool
+}
+
+class FileSystemRules {
+  -_fileSystem: IFileSystem
+  +IsWritableDirectory(path: string): bool
+  +ParentDirectoryExists(path: string): bool
+}
+
+class PackageVersions {
+  +{static} Core: string
+  +{static} DotNet: string
+  +{static} AsTokenDictionary(): Dictionary<string, object>
+}
+
+class CompletionProvider {
+  +{static} GetFrameworkCompletions(context): IEnumerable<CompletionItem>
+  +{static} GetNameCompletions(context): IEnumerable<CompletionItem>
+  +{static} GetOutputCompletions(context): IEnumerable<CompletionItem>
+}
+
+class ShellDetector {
+  +{static} DetectShell(): string
+}
+
+class CliValidationException {
+  +ValidationResult: ValidationResult
+  +ExitCode: int
+}
+
+CreateCodeGeneratorCommand --> InstallCommand : registers as subcommand
+CreateCodeGeneratorCommand ..> GenerationOptions : binds
+CreateCodeGeneratorCommand ..> GenerationOptionsValidator : validates through
+CreateCodeGeneratorCommand ..> PackageVersions : stamps references from
+CreateCodeGeneratorCommand ..> CliValidationException : raises on failure
+GenerationOptionsValidator ..> CommonRules : applies
+GenerationOptionsValidator --> FileSystemRules : applies
+CompletionProvider ..> ShellDetector : targets shell reported by
+@enduml

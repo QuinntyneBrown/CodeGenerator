@@ -1,0 +1,81 @@
+@startuml
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam defaultFontName Arial
+skinparam ArrowColor #344054
+skinparam class {
+  BorderColor #344054
+  FontColor #101828
+  BackgroundColor #F9FAFB
+}
+title Class structure — Generate an artifact from a model
+
+interface IArtifactGenerator {
+  +GenerateAsync(model: object, ct: CancellationToken): Task<ArtifactGenerationResult>
+}
+
+class ArtifactGenerator {
+  -_dispatchers: ConcurrentDictionary<Type, Func>
+  +FailFast: bool
+  +GenerateAsync(model: object, ct: CancellationToken): Task<ArtifactGenerationResult>
+  -DispatchArtifactAsync(sp, model, failFast, ct): Task<ArtifactGenerationResult>
+}
+
+interface "IArtifactGenerationStrategy<T>" as Strategy {
+  +CanHandle(model: object): bool
+  +GetPriority(): int
+  +GenerateAsync(target: T): Task
+}
+
+class ArtifactGenerationResult {
+  +Succeeded: List<GeneratedArtifact>
+  +Failed: List<ArtifactError>
+  +Warnings: List<ArtifactWarning>
+  +MergedValidation: ValidationResult
+  +HasErrors: bool
+  +IsFullSuccess: bool
+  +ToSummary(): string
+}
+
+class GeneratedArtifact {
+  +FilePath: string
+  +StrategyName: string
+  +SizeBytes: long
+  +Duration: TimeSpan
+}
+
+class ArtifactError {
+  +StrategyName: string
+  +ModelType: string
+  +Error: ErrorInfo
+}
+
+class ArtifactWarning {
+  +StrategyName: string
+  +Message: string
+  +Severity: ErrorSeverity
+}
+
+interface IValidatable {
+  +Validate(): ValidationResult
+}
+
+class SkipFileException {
+}
+
+class ModelValidationException {
+  +ValidationResult: ValidationResult
+  +ModelType: Type
+}
+
+ArtifactGenerator ..|> IArtifactGenerator
+ArtifactGenerator ..> Strategy : invokes
+ArtifactGenerator --> ArtifactGenerationResult : returns
+ArtifactGenerator ..> IValidatable : validates
+ArtifactGenerator ..> ModelValidationException : raises
+Strategy ..> SkipFileException : signals skip with
+ArtifactGenerationResult *-- GeneratedArtifact
+ArtifactGenerationResult *-- ArtifactError
+ArtifactGenerationResult *-- ArtifactWarning
+@enduml

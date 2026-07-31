@@ -1,0 +1,89 @@
+@startuml
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam defaultFontName Arial
+skinparam ArrowColor #344054
+skinparam class {
+  BorderColor #344054
+  FontColor #101828
+  BackgroundColor #F9FAFB
+}
+title Class structure — Flask target package as the representative shape
+
+class ProjectModel {
+  +Name: string
+  +Directory: string
+  +Blueprints: List<BlueprintModel>
+  +Files: List<FileModel>
+}
+
+class BlueprintModel {
+  +Name: string
+  +UrlPrefix: string
+}
+
+class AppFactoryModel {
+  +Name: string
+  +Blueprints: List<string>
+  +ConfigClass: string
+}
+
+class ControllerModel {
+  +Name: string
+  +UrlPrefix: string
+  +Routes: List<RouteModel>
+  +Services: List<ServiceReference>
+}
+
+class ModelModel {
+  +Name: string
+  +TableName: string
+  +Columns: List<PropertyModel>
+}
+
+class RepositoryModel {
+  +Name: string
+  +EntityName: string
+}
+
+class ServiceModel {
+  +Name: string
+  +RepositoryName: string
+}
+
+class SchemaModel {
+  +Name: string
+  +Fields: List<PropertyModel>
+}
+
+class AuthMiddlewareModel {
+  +Name: string
+  +TokenHeader: string
+}
+
+interface "ISyntaxGenerationStrategy<T>" as Strategy {
+  +GenerateAsync(model: T, ct: CancellationToken): Task<string>
+}
+
+interface IProjectFactory {
+  +Create(name: string, directory: string): ProjectModel
+}
+
+interface IModelFactory {
+  +Create(): SyntaxModel
+}
+
+ProjectModel *-- BlueprintModel
+ProjectModel --> AppFactoryModel : configured by
+BlueprintModel --> ControllerModel : exposes
+ControllerModel --> ServiceModel : calls
+ServiceModel --> RepositoryModel : reads through
+RepositoryModel --> ModelModel : persists
+ControllerModel --> SchemaModel : serializes with
+ControllerModel --> AuthMiddlewareModel : guarded by
+Strategy ..> ControllerModel : renders
+Strategy ..> ModelModel : renders
+IProjectFactory --> ProjectModel : assembles
+IModelFactory ..> Strategy : supplies models to
+@enduml

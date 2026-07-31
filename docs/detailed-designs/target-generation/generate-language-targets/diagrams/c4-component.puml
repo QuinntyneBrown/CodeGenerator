@@ -1,0 +1,30 @@
+@startuml
+!include <C4/C4_Component>
+LAYOUT_WITH_LEGEND()
+title Components — Repeating shape of a target package
+
+Container_Boundary(pkg, "CodeGenerator.Flask (representative target package)") {
+  Component(config, "ConfigureServices", "C# static class", "AddFlaskServices registers every strategy")
+  Component(projfactory, "ProjectFactory", "C# class", "Assembles the project model")
+  Component(filefactory, "FileFactory", "C# class", "Assembles file models")
+  Component(modelfactory, "ModelFactory", "C# class", "Constructs syntax models")
+  Component(projstrategy, "ProjectGenerationStrategy", "C# class", "Realizes the project on disk")
+  Component(bp, "BlueprintGenerationStrategy", "C# class", "Realizes a Blueprint")
+  Component(syntax, "Syntax strategies", "C# classes", "Controller, model, repository, service, schema, middleware")
+  Component(builders, "ControllerBuilder and ModelBuilder", "C# classes", "Fluent model construction")
+}
+Container_Boundary(core, "CodeGenerator.Core") {
+  Component(engine, "ArtifactGenerator", "C# class", "Dispatches to registered strategies")
+  Component(proc, "LiquidTemplateProcessor", "C# class", "Renders package templates")
+}
+ComponentDb(fs, "Local filesystem", "Disk", "Generated project")
+
+Rel(config, engine, "Registers strategies with")
+Rel(engine, projstrategy, "Dispatches project model to")
+Rel(projstrategy, projfactory, "Assembles model through")
+Rel(projstrategy, bp, "Delegates blueprint generation to")
+Rel(projstrategy, syntax, "Renders sources through")
+Rel(syntax, proc, "Renders templates through")
+Rel(builders, modelfactory, "Constructs models through")
+Rel(filefactory, fs, "Writes files to", "File IO")
+@enduml

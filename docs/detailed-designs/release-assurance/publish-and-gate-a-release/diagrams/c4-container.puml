@@ -1,0 +1,22 @@
+@startuml
+!include <C4/C4_Container>
+LAYOUT_WITH_LEGEND()
+title Containers — Publish and gate a release
+
+Person(maintainer, "Maintainer", "Pushes a change")
+System_Boundary(codegen, "CodeGenerator") {
+  Container(sln, "CodeGenerator solution", ".NET solution", "Ten publishable projects and twelve test projects")
+  Container(tests, "Test projects", "xUnit", "Unit tests per package and one integration suite")
+  Container(cliproj, "CodeGenerator.Cli", ".NET tool project", "Packs as create-code-cli")
+  Container(manifests, "Dependency manifests", "JSON resources", "Package versions per framework key")
+}
+System_Ext(ci, "GitHub Actions", "test job and publish job")
+System_Ext(nuget, "NuGet", "Package registry")
+
+Rel(maintainer, ci, "Triggers by pushing", "Git push")
+Rel(ci, sln, "Restores and builds in Release")
+Rel(ci, tests, "Runs as the quality gate")
+Rel(ci, cliproj, "Packs as a global tool")
+Rel(ci, nuget, "Pushes with --skip-duplicate", "HTTPS")
+Rel(sln, manifests, "Resolves generated package versions from")
+@enduml

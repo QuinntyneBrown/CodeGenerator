@@ -1,0 +1,16 @@
+@startuml
+!include <C4/C4_Context>
+LAYOUT_WITH_LEGEND()
+title System Context — Generate a .NET solution
+
+Person(dev, "Developer or coding agent", "Describes a solution as models")
+System(codegen, "CodeGenerator", "Model-driven code generation framework")
+System_Ext(sdk, "dotnet SDK", "Creates solution files and registers projects")
+System_Ext(nuget, "NuGet", "Supplies package references for generated projects")
+System_Ext(fs, "Local filesystem", "Holds the generated solution")
+
+Rel(dev, codegen, "Describes the solution to")
+Rel(codegen, sdk, "Runs dotnet new and dotnet sln add", "Shell")
+Rel(codegen, fs, "Writes projects and C# sources to", "File IO")
+Rel(sdk, nuget, "Restores package references from", "HTTPS")
+@enduml

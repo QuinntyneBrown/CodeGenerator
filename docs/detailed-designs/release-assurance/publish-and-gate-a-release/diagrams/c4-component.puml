@@ -1,0 +1,29 @@
+@startuml
+!include <C4/C4_Component>
+LAYOUT_WITH_LEGEND()
+title Components — Publish and gate a release
+
+Container_Boundary(ci, "CI and CD workflow") {
+  Component(restore, "Restore dependencies", "Workflow step", "dotnet restore over the solution")
+  Component(build, "Build", "Workflow step", "dotnet build in Release configuration")
+  Component(unit, "Run Unit Tests", "Workflow step", "Quality gate for the publish job")
+  Component(detect, "Detect changed packages", "Workflow step", "Diffs the last commit and bumps patch versions")
+  Component(pack, "Pack changed projects", "Workflow step", "dotnet pack into artifacts")
+  Component(push, "Publish to NuGet", "Workflow step", "dotnet nuget push with --skip-duplicate")
+  Component(commit, "Commit version bumps", "Workflow step", "Commits with [skip ci]")
+}
+Container_Boundary(core, "CodeGenerator.Core and Cli") {
+  Component(resolver, "DependencyResolver", "C# class", "Disk manifest, then embedded resource, then failure")
+  Component(versions, "PackageVersions", "C# static class", "Versions stamped into generated projects")
+}
+ComponentDb(nuget, "NuGet", "Package registry", "Published packages and the global tool")
+
+Rel(restore, build, "Gates")
+Rel(build, unit, "Gates")
+Rel(unit, detect, "Gates the publish job")
+Rel(detect, pack, "Selects projects for")
+Rel(pack, push, "Supplies packages to")
+Rel(push, nuget, "Pushes to", "HTTPS")
+Rel(push, commit, "Precedes")
+Rel(resolver, versions, "Complements for generated references")
+@enduml

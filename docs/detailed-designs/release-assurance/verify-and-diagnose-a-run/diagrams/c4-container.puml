@@ -1,0 +1,20 @@
+@startuml
+!include <C4/C4_Container>
+LAYOUT_WITH_LEGEND()
+title Containers — Verify and diagnose a run
+
+Person(dev, "Developer or coding agent", "Requests verification and diagnostics")
+System_Boundary(codegen, "CodeGenerator") {
+  Container(cli, "create-code-cli", ".NET global tool", "Installs the timer and renders the report")
+  Container(core, "CodeGenerator.Core", ".NET library", "Verification runner, diagnostics collector, timers")
+}
+System_Ext(sdk, "dotnet SDK", "Build and test verifiers")
+System_Ext(console, "Terminal", "Report output")
+System_Ext(fs, "Local filesystem", "Generated output")
+
+Rel(dev, cli, "Runs with --diagnostics", "Terminal")
+Rel(cli, core, "Times steps and collects the environment through", "Dependency injection")
+Rel(core, sdk, "Runs verifiers through", "Shell")
+Rel(core, fs, "Verifies output in", "File IO")
+Rel(cli, console, "Renders the report to", "Standard output")
+@enduml

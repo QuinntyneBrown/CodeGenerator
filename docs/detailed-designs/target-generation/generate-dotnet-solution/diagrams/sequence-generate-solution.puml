@@ -1,0 +1,60 @@
+@startuml
+title UML sequence behaviour — Generate a layered .NET solution
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam defaultFontName Arial
+skinparam ArrowColor #344054
+skinparam rectangle {
+  BorderColor #344054
+  FontColor #101828
+}
+skinparam package {
+  BorderColor #667085
+  FontColor #101828
+  BackgroundColor #F9FAFB
+}
+actor "Developer or coding agent" as actor
+box "Frontend — create-code-cli terminal session" #E0F2FE
+  participant "Command handler" as cmd
+end box
+box "Backend — CodeGenerator.Core generation engine" #D1FADF
+  participant "ArtifactGenerator" as gen
+end box
+box "Backend — CodeGenerator.DotNet strategies" #ECFDF3
+  participant "Solution strategy" as sol
+  participant "Project strategy" as proj
+  participant "C# syntax strategies" as syntax
+  participant "IGitService" as git
+end box
+box "Backend — Infrastructure" #FFF4E5
+  participant "dotnet SDK" as sdk
+  database "Local filesystem" as fs
+end box
+
+actor -> cmd : Request a layered solution
+cmd -> gen : GenerateAsync(SolutionModel, ct)
+gen -> sol : GenerateAsync(SolutionModel)
+sol -> fs : Create solution and source directories
+sol -> sdk : dotnet new sln or slnx per SolutionExtension (L2-031)
+sdk --> sol : Solution file created
+loop For each project in the solution
+  sol -> proj : GenerateAsync(ProjectModel)
+  proj -> fs : Write .csproj with target framework and references (L2-031)
+  loop For each source file in the project
+    proj -> syntax : Render class, controller, or domain construct (L2-032)
+    syntax --> proj : C# source text
+    proj -> fs : Write source file
+  end
+  proj -> sdk : dotnet sln add project path (L2-031)
+  sdk --> proj : Project registered
+  proj --> sol : Project complete
+end
+opt Repository initialization requested
+  sol -> git : Initialize repository (L2-035)
+  git --> sol : Repository initialized
+end
+sol --> gen : Solution complete
+gen --> cmd : ArtifactGenerationResult
+cmd --> actor : Report the generated solution path
+@enduml

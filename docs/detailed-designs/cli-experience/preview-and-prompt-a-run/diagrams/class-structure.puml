@@ -1,0 +1,89 @@
+@startuml
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam defaultFontName Arial
+skinparam ArrowColor #344054
+skinparam class {
+  BorderColor #344054
+  FontColor #101828
+  BackgroundColor #F9FAFB
+}
+title Class structure — Preview and prompt a run
+
+interface IConsoleRenderer {
+  +WriteHeader(title: string): void
+  +WriteStep(current: int, total: int, description: string): void
+  +WriteStepComplete(current: int, total: int, description: string): void
+  +WriteSuccess(message: string): void
+  +WriteError(message: string): void
+  +WriteWarning(message: string): void
+  +WriteInfo(message: string): void
+  +WriteTree(rootLabel: string, files: IReadOnlyList<GeneratedFileEntry>): void
+  +WriteSummary(result: GenerationResult): void
+}
+
+class SpectreConsoleRenderer {
+  -_console: IAnsiConsole
+}
+
+class PlainConsoleRenderer {
+}
+
+interface IDryRunOutputFormatter {
+  +Render(result: GenerationResult): void
+}
+
+class DryRunOutputFormatter {
+  +{static} FormatSize(bytes: long): string
+}
+
+interface ICommandService {
+  +Start(command: string, workingDirectory: string, waitForExit: bool, ct: CancellationToken): int
+}
+
+class DryRunCommandService {
+  -_result: GenerationResult
+}
+
+class NoOpCommandService {
+}
+
+class GenerationResult {
+  +GeneratedFiles: List<GeneratedFileEntry>
+  +SkippedCommands: List<SkippedCommandEntry>
+}
+
+class PlannedFile {
+  +Path: string
+  +Action: string
+}
+
+interface IInteractivePromptService {
+  +IsInteractive: bool
+  +PromptForMissingOptions(partial: GenerationOptions): GenerationOptions
+  +PromptForConfigFile(directory: string, candidates: IReadOnlyList<string>): string
+}
+
+class SpectrePromptService {
+}
+
+class NonInteractivePromptService {
+}
+
+class TtyDetector {
+  +{static} IsInteractiveTerminal(): bool
+}
+
+SpectreConsoleRenderer ..|> IConsoleRenderer
+PlainConsoleRenderer ..|> IConsoleRenderer
+DryRunOutputFormatter ..|> IDryRunOutputFormatter
+DryRunOutputFormatter ..> IConsoleRenderer : writes through
+DryRunCommandService ..|> ICommandService
+NoOpCommandService ..|> ICommandService
+DryRunCommandService --> GenerationResult : records suppressed commands in
+GenerationResult *-- PlannedFile
+SpectrePromptService ..|> IInteractivePromptService
+NonInteractivePromptService ..|> IInteractivePromptService
+TtyDetector ..> IInteractivePromptService : selects implementation for
+@enduml

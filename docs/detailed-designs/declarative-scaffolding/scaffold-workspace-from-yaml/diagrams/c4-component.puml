@@ -1,0 +1,30 @@
+@startuml
+!include <C4/C4_Component>
+LAYOUT_WITH_LEGEND()
+title Components — Scaffold a workspace from YAML
+
+Container_Boundary(core, "CodeGenerator.Core") {
+  Component(engine, "ScaffoldEngine", "C# class", "Stages parse, validate, orchestrate, post-commands")
+  Component(parser, "YamlConfigParser", "C# class", "Deserializes YAML into ScaffoldConfiguration")
+  Component(validator, "ConfigValidator", "C# class", "Total validation including path traversal rejection")
+  Component(orch, "ScaffoldOrchestrator", "C# class", "Expands the configuration into planned files")
+  Component(solscaf, "SolutionScaffolder", "C# class", "Realizes declared solutions")
+  Component(projscaf, "ProjectScaffolder", "C# class", "Realizes declared projects")
+  Component(refs, "CrossProjectReferenceResolver", "C# class", "Resolves references between projects")
+  Component(post, "PostScaffoldExecutor", "C# class", "Runs declared commands in the output root")
+  Component(exporter, "SchemaExporter", "C# class", "Exports JSON Schema and starter YAML")
+  Component(result, "ScaffoldResult", "C# class", "Validation, planned files, command results, duration")
+}
+ComponentDb(fs, "Local filesystem", "Disk", "Generated workspace")
+
+Rel(engine, parser, "Parses through")
+Rel(engine, validator, "Validates through")
+Rel(engine, orch, "Orchestrates through")
+Rel(orch, solscaf, "Realizes solutions through")
+Rel(orch, projscaf, "Realizes projects through")
+Rel(projscaf, refs, "Resolves references through")
+Rel(orch, fs, "Writes planned files to", "File IO")
+Rel(engine, post, "Runs post-scaffold commands through")
+Rel(engine, result, "Accumulates outcome into")
+Rel(exporter, fs, "Writes starter scaffold.yaml to", "File IO")
+@enduml

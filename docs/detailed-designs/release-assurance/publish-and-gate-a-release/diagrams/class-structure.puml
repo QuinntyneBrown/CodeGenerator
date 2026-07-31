@@ -1,0 +1,63 @@
+@startuml
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam defaultFontName Arial
+skinparam ArrowColor #344054
+skinparam class {
+  BorderColor #344054
+  FontColor #101828
+  BackgroundColor #F9FAFB
+}
+title Class structure — Publish and gate a release
+
+interface IDependencyResolver {
+  +GetVersion(framework: string, packageName: string): string
+  +GetAllPackages(framework: string): IReadOnlyDictionary<string, string>
+}
+
+class DependencyResolver {
+  -_cache: ConcurrentDictionary<string, DependencyManifest>
+  -GetOrLoadManifest(framework: string): DependencyManifest
+}
+
+class DependencyManifest {
+  +Packages: Dictionary<string, string>
+}
+
+class PackageVersions {
+  +{static} Core: string
+  +{static} DotNet: string
+  +{static} Angular: string
+  +{static} React: string
+  +{static} Flask: string
+  +{static} Python: string
+  +{static} Playwright: string
+  +{static} Detox: string
+  +{static} ReactNative: string
+  +{static} AsTokenDictionary(): Dictionary<string, object>
+}
+
+class CliVersion {
+  +{static} Current: string
+}
+
+class CreateCodeGeneratorCommand {
+  -GetPackageReferences(): string
+  -GetProjectReferences(localSourceRoot: string, projectDirectory: string): string
+}
+
+class FileNotFoundException {
+}
+
+class KeyNotFoundException {
+}
+
+DependencyResolver ..|> IDependencyResolver
+DependencyResolver --> DependencyManifest : loads and caches
+DependencyResolver ..> FileNotFoundException : raises when no manifest is found
+DependencyResolver ..> KeyNotFoundException : raises for an absent package
+CreateCodeGeneratorCommand ..> PackageVersions : stamps generated references from
+PackageVersions ..> DependencyManifest : parallels for generated projects
+CliVersion ..> PackageVersions : reported alongside
+@enduml

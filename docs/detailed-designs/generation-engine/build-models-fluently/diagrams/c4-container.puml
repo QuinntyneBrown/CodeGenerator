@@ -1,0 +1,26 @@
+@startuml
+!include <C4/C4_Container>
+LAYOUT_WITH_LEGEND()
+title Containers — Build models fluently
+
+Person(dev, "Developer or coding agent", "Describes artifacts in a few chained calls")
+System_Boundary(codegen, "CodeGenerator") {
+  Container(core, "CodeGenerator.Core", ".NET library", "BuilderBase, IBuilder, generation engine")
+  Container(flask, "CodeGenerator.Flask", ".NET library", "ControllerBuilder, ModelBuilder")
+  Container(react, "CodeGenerator.React", ".NET library", "ComponentBuilder, StoreBuilder")
+  Container(rn, "CodeGenerator.ReactNative", ".NET library", "ScreenBuilder, NavigationBuilder")
+  Container(py, "CodeGenerator.Python", ".NET library", "ClassBuilder, FunctionBuilder")
+  Container(tests, "Playwright and Detox packages", ".NET libraries", "PageObjectBuilder, TestSpecBuilder")
+}
+
+Rel(dev, flask, "Chains calls on", "C# API")
+Rel(dev, react, "Chains calls on", "C# API")
+Rel(dev, rn, "Chains calls on", "C# API")
+Rel(dev, py, "Chains calls on", "C# API")
+Rel(dev, tests, "Chains calls on", "C# API")
+Rel(flask, core, "Inherits BuilderBase from")
+Rel(react, core, "Inherits BuilderBase from")
+Rel(rn, core, "Inherits BuilderBase from")
+Rel(py, core, "Inherits BuilderBase from")
+Rel(tests, core, "Inherits BuilderBase from")
+@enduml

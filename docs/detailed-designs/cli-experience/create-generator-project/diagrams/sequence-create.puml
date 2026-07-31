@@ -1,0 +1,65 @@
+@startuml
+title UML sequence behaviour — Create a starter code generator solution
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam defaultFontName Arial
+skinparam ArrowColor #344054
+skinparam rectangle {
+  BorderColor #344054
+  FontColor #101828
+}
+skinparam package {
+  BorderColor #667085
+  FontColor #101828
+  BackgroundColor #F9FAFB
+}
+actor "Developer or coding agent" as actor
+box "Frontend — create-code-cli terminal session" #E0F2FE
+  participant "CreateCodeGeneratorCommand" as root
+end box
+box "Backend — CodeGenerator.Cli validation" #ECFDF3
+  participant "GenerationOptionsValidator" as validator
+  participant "PackageVersions" as versions
+end box
+box "Backend — CodeGenerator.Core generation engine" #D1FADF
+  participant "ArtifactGenerator" as gen
+  participant "GenerationRollbackService" as rollback
+end box
+box "Backend — Infrastructure" #FFF4E5
+  participant "dotnet SDK" as sdk
+  database "Local filesystem" as fs
+end box
+
+actor -> root : create-code-cli -n MyGen -o ./out
+root -> validator : Validate(options)
+validator -> validator : Require valid namespace name and net framework (L2-057)
+validator -> validator : Require existing parent directory (L2-057)
+alt Validation failed
+  validator --> root : Errors
+  root --> actor : CliValidationException, exit code 1, nothing created (L2-057)
+else Validation passed
+  validator --> root : Valid with any warnings
+  opt Name exceeds 128 characters
+    root --> actor : Warning about filesystem limits, run continues (L2-058)
+  end
+  root -> fs : Create solution, source, command, and script directories
+  root -> rollback : Track each created directory
+  root -> sdk : dotnet new sln or slnx
+  sdk --> root : Solution file created
+  root -> versions : Read package versions
+  versions --> root : Version per generator package
+  root -> gen : Generate .csproj with package or project references (L2-048)
+  gen -> fs : Write .csproj
+  loop For each generated command source
+    root -> gen : Generate Program, AppRootCommand, HelloWorld, EnterpriseSolution (L2-053)
+    gen -> fs : Write source file
+  end
+  root -> sdk : dotnet sln add project path
+  sdk --> root : Project registered
+  root -> gen : Generate eng/scripts/install-cli.bat (L2-048)
+  gen -> fs : Write install script
+  root -> rollback : Commit
+  root --> actor : Report path and next steps
+end
+@enduml

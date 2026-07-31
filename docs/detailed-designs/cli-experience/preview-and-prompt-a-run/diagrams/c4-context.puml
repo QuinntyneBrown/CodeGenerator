@@ -1,0 +1,14 @@
+@startuml
+!include <C4/C4_Context>
+LAYOUT_WITH_LEGEND()
+title System Context — Preview and prompt a run
+
+Person(dev, "Developer", "Previews a run interactively before committing to it")
+System_Ext(pipeline, "Automation pipeline", "Runs the tool with input redirected")
+System(codegen, "CodeGenerator", "Model-driven code generation framework")
+System_Ext(fs, "Local filesystem", "Written only when the run is not a preview")
+
+Rel(dev, codegen, "Runs interactively with --dry-run")
+Rel(pipeline, codegen, "Runs unattended with redirected input")
+Rel(codegen, fs, "Writes only when not previewing", "File IO")
+@enduml

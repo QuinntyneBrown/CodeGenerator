@@ -1,0 +1,58 @@
+@startuml
+title UML sequence behaviour — Generate a Flask project
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam defaultFontName Arial
+skinparam ArrowColor #344054
+skinparam rectangle {
+  BorderColor #344054
+  FontColor #101828
+}
+skinparam package {
+  BorderColor #667085
+  FontColor #101828
+  BackgroundColor #F9FAFB
+}
+actor "Developer or coding agent" as actor
+box "Frontend — Consuming application code" #E0F2FE
+  participant "Startup registration" as startup
+end box
+box "Backend — CodeGenerator.Core generation engine" #D1FADF
+  participant "ServiceCollection" as di
+  participant "ArtifactGenerator" as gen
+end box
+box "Backend — CodeGenerator.Flask strategies" #ECFDF3
+  participant "ProjectGenerationStrategy" as proj
+  participant "Syntax strategies" as syntax
+end box
+box "Backend — Infrastructure" #FFF4E5
+  participant "Python and pip" as py
+  database "Local filesystem" as fs
+end box
+
+actor -> startup : Register the Flask target
+startup -> di : AddCoreServices(assembly)
+startup -> di : AddFlaskServices() (L2-030)
+di --> startup : Strategies registered as singletons
+startup -> gen : GenerateAsync(ProjectModel, ct)
+gen -> proj : GenerateAsync(ProjectModel)
+proj -> fs : Create project directories
+proj -> syntax : Render app factory (L2-024)
+syntax --> proj : create_app source
+loop For each blueprint
+  proj -> syntax : Render controller, model, repository, service, schema (L2-024)
+  syntax --> proj : Rendered sources
+  proj -> fs : Write source files
+end
+proj -> syntax : Render config, middleware, environment file, Dockerfile (L2-024)
+syntax --> proj : Rendered sources
+proj -> fs : Write remaining files
+opt Virtual environment requested
+  proj -> py : Create venv and install requirements
+  py --> proj : Environment ready
+end
+proj --> gen : Project complete
+gen --> startup : ArtifactGenerationResult
+startup --> actor : Report the generated project path
+@enduml

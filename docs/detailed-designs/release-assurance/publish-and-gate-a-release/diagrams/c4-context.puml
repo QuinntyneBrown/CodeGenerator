@@ -1,0 +1,19 @@
+@startuml
+!include <C4/C4_Context>
+LAYOUT_WITH_LEGEND()
+title System Context — Publish and gate a release
+
+Person(maintainer, "Maintainer", "Pushes a change to the default branch")
+Person(consumer, "Consuming developer", "Installs the tool and references the packages")
+System(codegen, "CodeGenerator", "Model-driven code generation framework")
+System_Ext(ci, "GitHub Actions", "Runs the CI and CD workflow")
+System_Ext(nuget, "NuGet", "Distributes the packages and the global tool")
+System_Ext(repo, "Git repository", "Holds the sources and the version bump commit")
+
+Rel(maintainer, repo, "Pushes a change to")
+Rel(repo, ci, "Triggers", "Push event")
+Rel(ci, codegen, "Restores, builds, and tests")
+Rel(ci, nuget, "Packs and pushes changed packages to", "HTTPS")
+Rel(ci, repo, "Commits the version bump to", "Git")
+Rel(consumer, nuget, "Installs packages and the tool from", "HTTPS")
+@enduml

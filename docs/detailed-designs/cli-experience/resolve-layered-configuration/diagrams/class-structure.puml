@@ -1,0 +1,62 @@
+@startuml
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam defaultFontName Arial
+skinparam ArrowColor #344054
+skinparam class {
+  BorderColor #344054
+  FontColor #101828
+  BackgroundColor #F9FAFB
+}
+title Class structure — Resolve layered configuration
+
+interface ICodeGeneratorConfiguration {
+  +GetValue(key: string): string
+  +GetValue(key: string, defaultValue: T): T
+  +HasKey(key: string): bool
+  +GetAll(): IReadOnlyDictionary<string, string>
+  +GetSection(prefix: string): IReadOnlyDictionary<string, string>
+}
+
+class CodeGeneratorConfiguration {
+  -_resolved: Dictionary<string, string>
+  +CodeGeneratorConfiguration(defaults, fileConfig, envConfig, cliConfig)
+}
+
+class ConfigBootstrap {
+  +{static} GetBuiltInDefaults(): Dictionary<string, string>
+}
+
+interface IConfigurationLoader {
+  +LoadAsync(directory: string): Task<CodeGeneratorConfig>
+}
+
+class ConfigurationLoader {
+  +LoadAsync(directory: string): Task<CodeGeneratorConfig>
+}
+
+class CodeGeneratorConfig {
+  +Framework: string
+  +Output: string
+  +Slnx: bool
+  +Templates: TemplateSettings
+}
+
+class ConfigFileMapper {
+  +{static} ToFlatDictionary(config: CodeGeneratorConfig): Dictionary<string, string>
+}
+
+class EnvironmentVariableMapper {
+  -{static} KeyMap: Dictionary<string, string>
+  +{static} Map(configuration: IConfiguration): Dictionary<string, string>
+}
+
+CodeGeneratorConfiguration ..|> ICodeGeneratorConfiguration
+ConfigurationLoader ..|> IConfigurationLoader
+ConfigurationLoader --> CodeGeneratorConfig : returns
+ConfigFileMapper ..> CodeGeneratorConfig : flattens
+ConfigBootstrap ..> CodeGeneratorConfiguration : supplies defaults tier
+ConfigFileMapper ..> CodeGeneratorConfiguration : supplies file tier
+EnvironmentVariableMapper ..> CodeGeneratorConfiguration : supplies environment tier
+@enduml

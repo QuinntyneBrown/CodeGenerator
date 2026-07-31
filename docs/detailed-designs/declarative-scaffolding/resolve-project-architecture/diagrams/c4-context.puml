@@ -1,0 +1,12 @@
+@startuml
+!include <C4/C4_Context>
+LAYOUT_WITH_LEGEND()
+title System Context — Resolve a project architecture
+
+Person(dev, "Developer or coding agent", "Declares an architecture pattern rather than a project list")
+System(codegen, "CodeGenerator", "Model-driven code generation framework")
+System_Ext(fs, "Local filesystem", "Holds the configuration and the expanded layers")
+
+Rel(dev, codegen, "Declares an architecture to")
+Rel(codegen, fs, "Writes the expanded layers to", "File IO")
+@enduml

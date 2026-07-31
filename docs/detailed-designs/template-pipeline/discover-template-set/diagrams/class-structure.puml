@@ -1,0 +1,87 @@
+@startuml
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam defaultFontName Arial
+skinparam ArrowColor #344054
+skinparam class {
+  BorderColor #344054
+  FontColor #101828
+  BackgroundColor #F9FAFB
+}
+title Class structure — Discover a template set
+
+interface IConventionTemplateDiscovery {
+  +Discover(styleRoot: string, sourceType: TemplateSourceType): TemplateFilePlan
+  +DiscoverFromEmbeddedResources(assembly: Assembly, prefix: string): TemplateFilePlan
+}
+
+class ConventionTemplateDiscovery {
+  -StripLiquidExtension(path: string): string
+  -StripUnderscorePrefix(path: string): string
+  -ExtractPlaceholders(path: string): List<FilenamePlaceholder>
+}
+
+class TemplateFilePlan {
+  +StyleRoot: string
+  +SourceType: TemplateSourceType
+  +Entries: List<TemplateFileEntry>
+}
+
+class TemplateFileEntry {
+  +TemplatePath: string
+  +OutputRelativePath: string
+  +TemplateContent: string
+  +RequiresIteration: bool
+  +Placeholders: List<FilenamePlaceholder>
+}
+
+class FilenamePlaceholder {
+  +FullMatch: string
+  +TokenName: string
+  +Filter: string
+}
+
+interface IFilenamePlaceholderResolver {
+  +Analyze(filename: string): FilenamePlaceholderResult
+  +Resolve(filename: string, tokens: IDictionary<string, object>): string
+}
+
+interface IStyleRegistry {
+  +Register(style: StyleDefinition): void
+  +GetStyle(language: string, styleName: string): StyleDefinition
+  +GetStyles(language: string): IReadOnlyList<StyleDefinition>
+  +GetLanguages(): IReadOnlyList<string>
+  +DiscoverStyles(templatesRoot: string): void
+}
+
+class StyleDefinition {
+  +Language: string
+  +Name: string
+  +Root: string
+  +CommonRoot: string
+}
+
+class TemplateSetInfo {
+  +Description: string
+  +Priority: int
+  +MainProjectName: string
+  +OutputDirectory: string
+  +DefaultTokens: Dictionary<string, string>
+  +RequiredTokens: List<string>
+  +SrcLayout: bool
+}
+
+class TemplatePartitioner {
+  +Partition(plan: TemplateFilePlan): Regular and PostProcessing entries
+}
+
+ConventionTemplateDiscovery ..|> IConventionTemplateDiscovery
+ConventionTemplateDiscovery --> TemplateFilePlan : produces
+TemplateFilePlan *-- TemplateFileEntry
+TemplateFileEntry *-- FilenamePlaceholder
+ConventionTemplateDiscovery ..> IFilenamePlaceholderResolver : extracts through
+IStyleRegistry --> StyleDefinition : registers
+StyleDefinition --> TemplateSetInfo : described by
+TemplatePartitioner ..> TemplateFilePlan : partitions
+@enduml

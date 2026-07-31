@@ -1,0 +1,142 @@
+@startuml
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam defaultFontName Arial
+skinparam ArrowColor #344054
+skinparam class {
+  BorderColor #344054
+  FontColor #101828
+  BackgroundColor #F9FAFB
+}
+title Class structure — Ingest and normalize an external schema
+
+interface ISchemaFormatDetector {
+  +Detect(content: string, filePath: string): SchemaFormat
+}
+
+enum SchemaFormat {
+  PlantUml
+  OpenApi
+  JsonSchema
+  Avro
+  Proto
+}
+
+interface ISchemaNormalizer {
+  +Normalize(content: string): NormalizedSchema
+}
+
+class SchemaNormalizerDispatcher {
+  +Normalize(content: string, format: SchemaFormat): NormalizedSchema
+}
+
+class NormalizedSchema {
+  +SourceFormat: SchemaFormat
+  +Entities: List<NormalizedEntity>
+  +Relationships: List<NormalizedRelationship>
+  +Endpoints: List<NormalizedEndpoint>
+  +Metadata: Dictionary<string, object>
+}
+
+class NormalizedEntity {
+  +Name: string
+  +Namespace: string
+  +Stereotype: EntityStereotype
+  +Properties: List<NormalizedProperty>
+  +Methods: List<NormalizedMethod>
+}
+
+class NormalizedProperty {
+  +Name: string
+  +Type: string
+  +IsRequired: bool
+  +IsCollection: bool
+  +CollectionItemType: string
+  +DefaultValue: string
+}
+
+class NormalizedMethod {
+  +Name: string
+  +ReturnType: string
+  +Parameters: List<NormalizedParameter>
+}
+
+class NormalizedRelationship {
+  +SourceEntity: string
+  +TargetEntity: string
+  +Type: RelationshipType
+  +SourceCardinality: string
+  +TargetCardinality: string
+}
+
+class NormalizedEndpoint {
+  +Path: string
+  +HttpMethod: string
+  +OperationId: string
+  +RequestType: string
+  +ResponseType: string
+  +RequiresAuthentication: bool
+  +Parameters: List<NormalizedEndpointParameter>
+}
+
+class NormalizedEndpointParameter {
+  +Name: string
+  +Type: string
+  +Location: ParameterLocation
+  +IsRequired: bool
+}
+
+enum EntityStereotype {
+  None
+  Entity
+  Aggregate
+  ValueObject
+  Enum
+  Interface
+}
+
+enum RelationshipType {
+  Association
+  Aggregation
+  Composition
+  Inheritance
+  Implementation
+  Dependency
+}
+
+enum ParameterLocation {
+  Query
+  Path
+  Header
+  Cookie
+  Body
+}
+
+interface IPlantUmlParserService {
+  +Parse(content: string): NormalizedSchema
+}
+
+interface IPlantUmlValidationService {
+  +Validate(content: string): ValidationResult
+}
+
+class SchemaFormatDetectionException {
+}
+
+ISchemaFormatDetector --> SchemaFormat : returns
+SchemaNormalizerDispatcher ..> ISchemaNormalizer : dispatches to
+ISchemaNormalizer --> NormalizedSchema : produces
+NormalizedSchema *-- NormalizedEntity
+NormalizedSchema *-- NormalizedRelationship
+NormalizedSchema *-- NormalizedEndpoint
+NormalizedEntity *-- NormalizedProperty
+NormalizedEntity *-- NormalizedMethod
+NormalizedEntity --> EntityStereotype : classified as
+NormalizedRelationship --> RelationshipType : typed as
+NormalizedEndpoint *-- NormalizedEndpointParameter
+NormalizedEndpointParameter --> ParameterLocation : located in
+IPlantUmlParserService ..|> ISchemaNormalizer
+IPlantUmlValidationService ..> IPlantUmlParserService : gates
+ISchemaFormatDetector ..> SchemaFormatDetectionException : raises
+@enduml

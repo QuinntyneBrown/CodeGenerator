@@ -1,0 +1,50 @@
+@startuml
+title UML sequence behaviour — Surface a validation failure with a classified exit code
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam defaultFontName Arial
+skinparam ArrowColor #344054
+skinparam rectangle {
+  BorderColor #344054
+  FontColor #101828
+}
+skinparam package {
+  BorderColor #667085
+  FontColor #101828
+  BackgroundColor #F9FAFB
+}
+actor "Developer" as actor
+participant "Automation pipeline" as pipeline
+box "Frontend — create-code-cli terminal session" #E0F2FE
+  participant "Program handler chain" as program
+  participant "Command handler" as cmd
+end box
+box "Backend — CodeGenerator.Core validation" #D1FADF
+  participant "Validator<T>" as validator
+  participant "ValidationResult" as result
+end box
+box "Backend — CodeGenerator.Cli formatting" #ECFDF3
+  participant "ConsoleErrorFormatter" as formatter
+end box
+
+actor -> program : Run a command with invalid options
+program -> program : Parse --verbose before dependency injection
+program -> cmd : Invoke the command
+cmd -> validator : Validate(options)
+loop For each configured rule
+  validator -> result : Accumulate every failure, do not stop at the first (L2-060)
+end
+result --> validator : Errors and warnings
+alt Result is valid
+  validator --> cmd : Valid, run proceeds
+else Result has errors
+  validator --> cmd : Invalid
+  cmd --> program : CliValidationException carrying the result (L2-062)
+  program -> formatter : FormatValidationResult(result)
+  formatter --> program : One line per error with its property name (L2-064)
+  program -> program : Omit the stack trace unless --verbose (L2-064)
+  program --> actor : Formatted failure on standard error
+  program --> pipeline : Exit code 1 for a validation failure (L2-061)
+end
+@enduml

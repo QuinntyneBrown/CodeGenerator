@@ -1,0 +1,88 @@
+@startuml
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam defaultFontName Arial
+skinparam ArrowColor #344054
+skinparam class {
+  BorderColor #344054
+  FontColor #101828
+  BackgroundColor #F9FAFB
+}
+title Class structure — Generate a .NET solution
+
+class SolutionModel {
+  +Name: string
+  +SolutionDirectory: string
+  +SrcDirectory: string
+  +SolutionExtension: string
+  +Projects: List<ProjectModel>
+}
+
+class ProjectModel {
+  +Name: string
+  +Directory: string
+  +Path: string
+  +ProjectType: DotNetProjectType
+  +Files: List<FileModel>
+  +Packages: List<PackageModel>
+  +ProjectReferences: List<ProjectReferenceModel>
+}
+
+enum DotNetProjectType {
+  Console
+  ClassLibrary
+  WebApi
+  Test
+}
+
+class PackageModel {
+  +Name: string
+  +Version: string
+}
+
+class ProjectReferenceModel {
+  +Name: string
+  +Path: string
+}
+
+class ContentFileModel {
+  +Name: string
+  +Directory: string
+  +Extension: string
+  +Content: string
+}
+
+class ClassModel {
+  +Name: string
+  +AccessModifier: string
+  +Properties: List<PropertyModel>
+  +Methods: List<MethodModel>
+  +Attributes: List<AttributeModel>
+}
+
+class GitModel {
+  +Directory: string
+}
+
+class OpenApiDocumentModel {
+  +Title: string
+  +Version: string
+  +Endpoints: List<EndpointModel>
+}
+
+class SpecFlowFeatureFileModel {
+  +FeatureName: string
+  +Scenarios: List<ScenarioModel>
+}
+
+SolutionModel *-- ProjectModel
+ProjectModel --> DotNetProjectType : typed as
+ProjectModel *-- PackageModel
+ProjectModel *-- ProjectReferenceModel
+ProjectModel *-- ContentFileModel
+ContentFileModel ..> ClassModel : rendered from
+SolutionModel ..> GitModel : initialized through
+ProjectModel ..> OpenApiDocumentModel : documents API with
+ProjectModel ..> SpecFlowFeatureFileModel : specifies behaviour with
+@enduml

@@ -1,0 +1,63 @@
+@startuml
+title UML sequence behaviour — Turn a template folder into a file plan
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam defaultFontName Arial
+skinparam ArrowColor #344054
+skinparam rectangle {
+  BorderColor #344054
+  FontColor #101828
+}
+skinparam package {
+  BorderColor #667085
+  FontColor #101828
+  BackgroundColor #F9FAFB
+}
+actor "Developer or coding agent" as actor
+box "Frontend — create-code-cli terminal session" #E0F2FE
+  participant "Generation request" as req
+end box
+box "Backend — CodeGenerator.Core template discovery" #D1FADF
+  participant "StyleRegistry" as registry
+  participant "ConventionTemplateDiscovery" as disc
+  participant "TemplateSetInfoLoader" as info
+  participant "FilenamePlaceholderResolver" as resolver
+  participant "TemplatePartitioner" as part
+end box
+box "Backend — Infrastructure" #FFF4E5
+  database "Template style root" as root
+  database "Local filesystem" as fs
+end box
+
+actor -> req : Request generation for a language and style
+req -> registry : GetStyle(language, style)
+alt Style not registered
+  registry --> req : KeyNotFoundException naming language and style (L2-020)
+else Style registered
+  registry --> req : StyleDefinition with style root and _common root (L2-020)
+  req -> disc : Discover(styleRoot, sourceType)
+  disc -> root : Enumerate *.liquid recursively
+  root --> disc : Template files in deterministic order (L2-017)
+  disc -> disc : Reject relative paths containing ".."
+  disc -> disc : Strip .liquid, strip leading underscore (L2-018)
+  disc -> resolver : Analyze each output file name
+  resolver --> disc : Placeholders and iteration flag (L2-019)
+  disc --> req : TemplateFilePlan (cached for the process, L2-096)
+  req -> info : Load template set metadata
+  info --> req : Default tokens and required tokens (L2-021)
+  alt Required token absent
+    req --> actor : Validation error naming the missing token (L2-021)
+  else Tokens complete
+    req -> part : Partition(plan)
+    part --> req : Regular entries, then post-processing entries (L2-022)
+    loop For each planned entry
+      req -> resolver : Resolve file name against tokens
+      resolver --> req : Output path, one per entity when iterating (L2-019)
+      req -> fs : Write rendered file
+      fs --> req : Write acknowledged
+    end
+    req --> actor : Report generated files
+  end
+end
+@enduml

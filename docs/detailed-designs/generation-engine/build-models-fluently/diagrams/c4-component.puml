@@ -1,0 +1,27 @@
+@startuml
+!include <C4/C4_Component>
+LAYOUT_WITH_LEGEND()
+title Components — Build models fluently
+
+Container_Boundary(core, "CodeGenerator.Core") {
+  Component(ibuilder, "IBuilder", "C# interface", "Builder contract")
+  Component(base, "BuilderBase", "C# abstract class", "Chaining and Build validation")
+  Component(engine, "IArtifactGenerator", "C# interface", "Consumes the built model")
+}
+Container_Boundary(pkgs, "Target packages") {
+  Component(ctrl, "ControllerBuilder", "C# class", "Flask controller with CRUD routes")
+  Component(comp, "ComponentBuilder", "C# class", "React component with props and hooks")
+  Component(screen, "ScreenBuilder", "C# class", "React Native screen")
+  Component(page, "PageObjectBuilder", "C# class", "Playwright and Detox page objects")
+  Component(model, "Generation model", "C# class", "Result of Build()")
+}
+
+Rel(base, ibuilder, "Implements")
+Rel(ctrl, base, "Inherits")
+Rel(comp, base, "Inherits")
+Rel(screen, base, "Inherits")
+Rel(page, base, "Inherits")
+Rel(ctrl, model, "Produces from Build()")
+Rel(comp, model, "Produces from Build()")
+Rel(model, engine, "Submitted to")
+@enduml

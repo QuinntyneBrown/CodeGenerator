@@ -1,0 +1,16 @@
+@startuml
+!include <C4/C4_Container>
+LAYOUT_WITH_LEGEND()
+title Containers — Resolve a project architecture
+
+System_Boundary(codegen, "CodeGenerator") {
+  Container(cli, "create-code-cli", ".NET global tool", "Supplies the configuration to the engine")
+  Container(core, "CodeGenerator.Core", ".NET library", "Validator, architecture resolver, scaffolders")
+  Container(dotnet, "CodeGenerator.DotNet", ".NET library", "Realizes each resolved .NET layer")
+}
+System_Ext(fs, "Local filesystem", "Expanded layer projects")
+
+Rel(cli, core, "Submits the parsed configuration to", "IScaffoldEngine")
+Rel(core, dotnet, "Realizes resolved layers through", "Dependency injection")
+Rel(dotnet, fs, "Writes layer projects to", "File IO")
+@enduml

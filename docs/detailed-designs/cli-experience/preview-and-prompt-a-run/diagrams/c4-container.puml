@@ -1,0 +1,18 @@
+@startuml
+!include <C4/C4_Container>
+LAYOUT_WITH_LEGEND()
+title Containers — Preview and prompt a run
+
+Person(dev, "Developer", "Runs the tool from a terminal")
+System_Boundary(codegen, "CodeGenerator") {
+  Container(cli, "create-code-cli", ".NET global tool", "Renderers, formatters, prompt services, TTY detection")
+  Container(core, "CodeGenerator.Core", ".NET library", "Scaffold engine and dry-run command substitution")
+}
+System_Ext(console, "Terminal", "Displays the plan and collects answers")
+System_Ext(fs, "Local filesystem", "Generated files")
+
+Rel(dev, console, "Reads the plan on and answers prompts at")
+Rel(cli, console, "Renders the plan and prompts to", "ANSI or plain text")
+Rel(cli, core, "Runs the scaffold with dryRun set", "IScaffoldEngine")
+Rel(core, fs, "Writes only when dryRun is false", "File IO")
+@enduml

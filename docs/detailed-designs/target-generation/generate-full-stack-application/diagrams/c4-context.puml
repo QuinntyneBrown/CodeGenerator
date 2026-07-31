@@ -1,0 +1,16 @@
+@startuml
+!include <C4/C4_Context>
+LAYOUT_WITH_LEGEND()
+title System Context — Generate a full-stack application
+
+Person(dev, "Developer or coding agent", "Names an application and declares its entities and pages")
+System(codegen, "CodeGenerator", "Model-driven code generation framework")
+System_Ext(sdk, "dotnet SDK", "Builds the generated backend")
+System_Ext(node, "Node and npm", "Installs and builds the generated frontend")
+System_Ext(fs, "Local filesystem", "Holds the generated application")
+
+Rel(dev, codegen, "Requests a full-stack application from")
+Rel(codegen, fs, "Writes backend and frontend projects to", "File IO")
+Rel(codegen, sdk, "Invokes for backend projects", "Shell")
+Rel(codegen, node, "Invokes for frontend projects", "Shell")
+@enduml

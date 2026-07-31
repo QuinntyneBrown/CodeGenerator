@@ -1,0 +1,85 @@
+@startuml
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam defaultFontName Arial
+skinparam ArrowColor #344054
+skinparam class {
+  BorderColor #344054
+  FontColor #101828
+  BackgroundColor #F9FAFB
+}
+title Class structure — Generate a full-stack application
+
+interface IFullStackFactory {
+  +CreateAsync(options: FullStackCreateOptions): Task<FullStackModel>
+}
+
+class FullStackCreateOptions {
+  +Name: string
+  +Directory: string
+  +SolutionDirectory: string
+  +FrontendProjectName: string
+}
+
+class FullStackModel {
+  +Solution: SolutionModel
+  +FrontendProject: ProjectModel
+  +BackendProject: ProjectModel
+}
+
+interface IJwtAuthenticatedMvpFactory {
+  +GenerateAsync(options: JwtAuthenticatedMvpOptions, ct: CancellationToken): Task
+}
+
+class JwtAuthenticatedMvpFactory {
+  -ReadManifest(assembly: Assembly): List<ManifestEntry>
+  -BuildRootTokens(options): Dictionary<string, object>
+  -RenderEntityScoped(path, content, options): void
+  -RenderPageScoped(path, content, options): void
+  -WriteRendered(content, tokens, directory, relPath): void
+}
+
+class JwtAuthenticatedMvpOptions {
+  +Name: string
+  +Directory: string
+  +Entities: List<JwtAuthMvpEntity>
+  +Components: List<JwtAuthMvpFrontendComponent>
+  +Pages: List<JwtAuthMvpFrontendPage>
+}
+
+class JwtAuthMvpEntity {
+  +Name: string
+  +Properties: List<JwtAuthMvpProperty>
+}
+
+class JwtAuthMvpProperty {
+  +Name: string
+  +Type: string
+}
+
+class JwtAuthMvpFrontendComponent {
+  +Name: string
+  +Library: string
+}
+
+class JwtAuthMvpFrontendPage {
+  +Name: string
+  +Route: string
+  +RequiresAuth: bool
+}
+
+FullStackFactory ..|> IFullStackFactory
+FullStackFactory ..> FullStackCreateOptions : reads
+FullStackFactory --> FullStackModel : produces
+JwtAuthenticatedMvpFactory ..|> IJwtAuthenticatedMvpFactory
+JwtAuthenticatedMvpFactory ..> JwtAuthenticatedMvpOptions : reads
+JwtAuthenticatedMvpOptions *-- JwtAuthMvpEntity
+JwtAuthenticatedMvpOptions *-- JwtAuthMvpFrontendComponent
+JwtAuthenticatedMvpOptions *-- JwtAuthMvpFrontendPage
+JwtAuthMvpEntity *-- JwtAuthMvpProperty
+
+class FullStackFactory {
+  +CreateAsync(options: FullStackCreateOptions): Task<FullStackModel>
+}
+@enduml

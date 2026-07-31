@@ -1,0 +1,65 @@
+@startuml
+title UML sequence behaviour — Preview a scaffold, then run it
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam defaultFontName Arial
+skinparam ArrowColor #344054
+skinparam rectangle {
+  BorderColor #344054
+  FontColor #101828
+}
+skinparam package {
+  BorderColor #667085
+  FontColor #101828
+  BackgroundColor #F9FAFB
+}
+actor "Developer" as actor
+box "Frontend — create-code-cli terminal session" #E0F2FE
+  participant "ScaffoldCommand" as cmd
+  participant "TtyDetector" as tty
+  participant "IInteractivePromptService" as prompt
+  participant "DryRunOutputFormatter" as formatter
+end box
+box "Backend — CodeGenerator.Core scaffold engine" #D1FADF
+  participant "ScaffoldEngine" as engine
+  participant "DryRunCommandService" as drycmd
+end box
+box "Backend — Infrastructure" #FFF4E5
+  database "Local filesystem" as fs
+end box
+
+actor -> cmd : create-code-cli scaffold --dry-run
+cmd -> tty : IsInteractiveTerminal()
+alt Standard input is redirected
+  tty --> cmd : Not interactive
+  cmd -> prompt : Resolve NonInteractivePromptService (L2-071)
+else Terminal attached
+  tty --> cmd : Interactive
+  cmd -> prompt : Resolve SpectrePromptService (L2-071)
+end
+opt No --config and no scaffold.yaml
+  cmd -> fs : List *.yaml and *.yml in the output directory
+  fs --> cmd : Candidate files
+  alt Interactive and candidates exist
+    cmd -> prompt : PromptForConfigFile(directory, candidates)
+    prompt --> cmd : Selected file (L2-073)
+  else No candidates or not interactive
+    cmd --> actor : Report that no configuration was found (L2-073)
+  end
+end
+cmd -> engine : ScaffoldAsync(yaml, output, dryRun true, force, ct)
+engine -> engine : Compute planned files without writing (L2-068)
+engine -> drycmd : Start(post-scaffold command)
+drycmd --> engine : Command recorded, no process launched (L2-070)
+engine --> cmd : ScaffoldResult with planned files
+cmd -> formatter : Render(result)
+formatter -> formatter : Format byte counts in human-readable units (L2-075)
+formatter --> actor : Plan listing each path and action (L2-069)
+actor -> cmd : Re-run without --dry-run
+cmd -> engine : ScaffoldAsync(yaml, output, dryRun false, force, ct)
+engine -> fs : Write exactly the previously reported files (L2-069)
+fs --> engine : Files written
+engine --> cmd : ScaffoldResult
+cmd --> actor : Report generated files and duration
+@enduml

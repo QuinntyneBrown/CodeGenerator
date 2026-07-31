@@ -1,0 +1,99 @@
+@startuml
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam defaultFontName Arial
+skinparam ArrowColor #344054
+skinparam class {
+  BorderColor #344054
+  FontColor #101828
+  BackgroundColor #F9FAFB
+}
+title Class structure — Scaffold a workspace from YAML
+
+interface IScaffoldEngine {
+  +ScaffoldAsync(yaml, outputPath, dryRun, force, ct): Task<ScaffoldResult>
+  +Validate(yaml: string): ScaffoldResult
+}
+
+class ScaffoldEngine {
+  -_parser: IYamlConfigParser
+  -_validator: IConfigValidator
+  -_orchestrator: IScaffoldOrchestrator
+  -_postScaffoldExecutor: IPostScaffoldExecutor
+}
+
+class ScaffoldConfiguration {
+  +Name: string
+  +Version: string
+  +Description: string
+  +OutputPath: string
+  +GlobalVariables: Dictionary<string, string>
+  +GitInit: bool
+  +PostScaffoldCommands: List<string>
+  +Solutions: List<SolutionDefinition>
+  +Projects: List<ProjectDefinition>
+}
+
+class SolutionDefinition {
+  +Name: string
+  +Projects: List<string>
+}
+
+class ProjectDefinition {
+  +Name: string
+  +Type: ScaffoldProjectType
+  +Path: string
+  +Framework: string
+  +References: List<string>
+  +Directories: List<DirectoryDefinition>
+  +Files: List<FileDefinition>
+}
+
+class FileDefinition {
+  +Name: string
+  +Content: string
+  +Template: string
+  +Source: string
+  +Encoding: string
+}
+
+class DirectoryDefinition {
+  +Path: string
+}
+
+class ScaffoldResult {
+  +ValidationResult: ValidationResult
+  +PlannedFiles: List<PlannedFile>
+  +PostCommandResults: List<CommandResult>
+  +Errors: List<ErrorInfo>
+  +Duration: TimeSpan
+  +CorrelationId: string
+  +Success: bool
+}
+
+class PlannedFile {
+  +Path: string
+  +Action: string
+}
+
+interface IPostScaffoldExecutor {
+  +Execute(commands: List<string>, workingDirectory: string): List<CommandResult>
+}
+
+interface ISchemaExporter {
+  +ExportJsonSchema(): string
+  +GenerateStarterYaml(): string
+}
+
+ScaffoldEngine ..|> IScaffoldEngine
+ScaffoldEngine ..> ScaffoldConfiguration : parses into
+ScaffoldEngine --> ScaffoldResult : returns
+ScaffoldEngine ..> IPostScaffoldExecutor : runs commands through
+ScaffoldConfiguration *-- SolutionDefinition
+ScaffoldConfiguration *-- ProjectDefinition
+ProjectDefinition *-- FileDefinition
+ProjectDefinition *-- DirectoryDefinition
+ScaffoldResult *-- PlannedFile
+ISchemaExporter ..> ScaffoldConfiguration : describes
+@enduml

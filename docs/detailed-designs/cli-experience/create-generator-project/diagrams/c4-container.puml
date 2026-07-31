@@ -1,0 +1,25 @@
+@startuml
+!include <C4/C4_Container>
+LAYOUT_WITH_LEGEND()
+title Containers — Create a code generator project
+
+Person(dev, "Developer or coding agent", "Runs the global tool")
+System_Boundary(codegen, "CodeGenerator") {
+  Container(cli, "create-code-cli", ".NET global tool", "Root command plus install and scaffold subcommands")
+  Container(core, "CodeGenerator.Core", ".NET library", "Generation engine and validation")
+  Container(dotnet, "CodeGenerator.DotNet", ".NET library", "Solution and project strategies")
+}
+System_Boundary(generated, "Generated starter solution") {
+  Container(starter, "MyGen.Cli", ".NET console tool", "AppRootCommand, HelloWorldCommand, EnterpriseSolutionCommand")
+  Container(script, "install-cli.bat", "Batch script", "Packs and installs the starter tool globally")
+}
+System_Ext(fs, "Local filesystem", "Generated solution tree")
+
+Rel(dev, cli, "Runs with name, output, and framework", "Terminal")
+Rel(cli, core, "Validates and generates through", "IArtifactGenerator")
+Rel(core, dotnet, "Dispatches solution and project models to", "Dependency injection")
+Rel(cli, fs, "Writes the starter solution to", "File IO")
+Rel(fs, starter, "Materializes")
+Rel(fs, script, "Materializes")
+Rel(script, starter, "Packs and installs")
+@enduml

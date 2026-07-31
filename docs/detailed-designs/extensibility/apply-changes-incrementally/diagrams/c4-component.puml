@@ -1,0 +1,25 @@
+@startuml
+!include <C4/C4_Component>
+LAYOUT_WITH_LEGEND()
+title Components — Apply changes incrementally
+
+Container_Boundary(core, "CodeGenerator.Core") {
+  Component(factory, "ProjectContextFactory", "C# class", "Detects the project type from marker files")
+  Component(context, "ProjectContext", "C# class", "Existing project directory and detected type")
+  Component(strategy, "AddFileStrategy", "C# artifact strategy", "Adds one file to an existing project")
+  Component(resolver, "DefaultConflictResolver", "C# class", "Returns Error for every conflict")
+  Component(model, "AddFileModel", "C# class", "File to add, its path and content")
+  Component(incmodel, "IncrementalProjectModel", "C# class", "Several files to add in one operation")
+  Component(rollback, "GenerationRollbackService", "C# scoped service", "Reverses an added file on failure")
+}
+ComponentDb(project, "Existing project", "Filesystem", "Marker files and existing sources")
+
+Rel(factory, project, "Inspects top-level file names in")
+Rel(factory, context, "Produces")
+Rel(strategy, context, "Targets")
+Rel(strategy, model, "Realizes")
+Rel(incmodel, strategy, "Adds each listed file through")
+Rel(strategy, resolver, "Resolves collisions through")
+Rel(strategy, rollback, "Tracks the added file with")
+Rel(strategy, project, "Writes added files to", "File IO")
+@enduml

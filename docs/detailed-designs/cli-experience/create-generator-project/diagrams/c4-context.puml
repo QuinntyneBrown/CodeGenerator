@@ -1,0 +1,16 @@
+@startuml
+!include <C4/C4_Context>
+LAYOUT_WITH_LEGEND()
+title System Context — Create a code generator project
+
+Person(dev, "Developer or coding agent", "Bootstraps a new code generator CLI")
+System(codegen, "CodeGenerator", "Model-driven code generation framework")
+System_Ext(sdk, "dotnet SDK", "Creates the solution and registers the project")
+System_Ext(nuget, "NuGet", "Supplies CodeGenerator packages to the generated project")
+System_Ext(fs, "Local filesystem", "Holds the generated starter solution")
+
+Rel(dev, codegen, "Runs create-code-cli against")
+Rel(codegen, sdk, "Runs dotnet new sln and dotnet sln add", "Shell")
+Rel(codegen, fs, "Writes the starter solution to", "File IO")
+Rel(sdk, nuget, "Restores generated package references from", "HTTPS")
+@enduml

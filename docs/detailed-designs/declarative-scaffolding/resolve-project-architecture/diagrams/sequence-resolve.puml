@@ -1,0 +1,59 @@
+@startuml
+title UML sequence behaviour — Expand a clean-architecture project
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam defaultFontName Arial
+skinparam ArrowColor #344054
+skinparam rectangle {
+  BorderColor #344054
+  FontColor #101828
+}
+skinparam package {
+  BorderColor #667085
+  FontColor #101828
+  BackgroundColor #F9FAFB
+}
+actor "Developer or coding agent" as actor
+box "Frontend — create-code-cli terminal session" #E0F2FE
+  participant "ScaffoldCommand" as cmd
+end box
+box "Backend — CodeGenerator.Core scaffold engine" #D1FADF
+  participant "ConfigValidator" as validator
+  participant "ArchitectureResolver" as resolver
+  participant "ScaffoldOrchestrator" as orch
+end box
+box "Backend — CodeGenerator.DotNet strategies" #ECFDF3
+  participant "ProjectScaffolder" as scaffolder
+  participant "EntityGenerator" as entities
+end box
+box "Backend — Infrastructure" #FFF4E5
+  database "Local filesystem" as fs
+end box
+
+actor -> cmd : Declare a project with architecture clean-architecture
+cmd -> validator : Validate(configuration)
+validator -> validator : Require name, semver version, at least one project (L2-041)
+validator -> validator : Require unique names and resolvable references (L2-042)
+alt Validation failed
+  validator --> cmd : Every collected error
+  cmd --> actor : Report each error, nothing written
+else Validation passed
+  validator --> cmd : Valid
+  cmd -> resolver : Resolve(projectDefinition)
+  resolver -> resolver : Expand into Domain, Application, Infrastructure, Api (L2-044)
+  resolver -> resolver : Wire Application to Domain, Infrastructure to Application, Api to both (L2-044)
+  resolver -> resolver : Assign entities to Domain, services to Infrastructure, endpoints to Api (L2-044)
+  resolver --> cmd : ResolvedArchitecture with four layers
+  cmd -> orch : Orchestrate the resolved layers
+  loop For each resolved layer
+    orch -> scaffolder : Realize layer at src/<layer name>
+    scaffolder -> entities : Generate assigned entities
+    entities --> scaffolder : Entity sources
+    scaffolder -> fs : Write layer project and sources
+    fs --> scaffolder : Written
+  end
+  orch --> cmd : Planned files
+  cmd --> actor : Report the four generated layers
+end
+@enduml

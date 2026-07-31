@@ -1,0 +1,29 @@
+@startuml
+!include <C4/C4_Component>
+LAYOUT_WITH_LEGEND()
+title Components — Ingest and normalize an external schema
+
+Container_Boundary(core, "CodeGenerator.Core") {
+  Component(detector, "SchemaFormatDetector", "C# class", "Extension first, then content inspection")
+  Component(dispatcher, "SchemaNormalizerDispatcher", "C# class", "Selects the normalizer for the detected format")
+  Component(jsonnorm, "JsonSchemaNormalizer", "C# class", "Normalizes JSON Schema documents")
+  Component(normalized, "NormalizedSchema", "C# class", "Entities, relationships, endpoints, metadata")
+  Component(inputval, "JsonSchemaInputValidator", "C# class", "Validates input against a registered schema")
+}
+Container_Boundary(dotnet, "CodeGenerator.DotNet") {
+  Component(pumlvalid, "PlantUmlValidationService", "C# class", "Rejects malformed diagrams before parsing")
+  Component(pumlparse, "PlantUmlParserService", "C# class", "Parses class and sequence diagrams")
+  Component(pumlmodel, "PlantUmlSolutionModelFactory", "C# class", "Builds a solution model from a parsed diagram")
+  Component(seq, "SequenceToSolutionPlantUmlService", "C# class", "Derives a solution shape from a sequence diagram")
+}
+
+Rel(detector, dispatcher, "Selects a normalizer through")
+Rel(dispatcher, jsonnorm, "Dispatches JSON Schema to")
+Rel(dispatcher, pumlparse, "Dispatches PlantUML to")
+Rel(pumlvalid, pumlparse, "Gates")
+Rel(pumlparse, pumlmodel, "Supplies parsed elements to")
+Rel(seq, pumlmodel, "Contributes participants to")
+Rel(jsonnorm, normalized, "Produces")
+Rel(pumlparse, normalized, "Produces")
+Rel(inputval, normalized, "Validates documents feeding")
+@enduml

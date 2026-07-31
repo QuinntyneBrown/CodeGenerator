@@ -1,0 +1,14 @@
+@startuml
+!include <C4/C4_Context>
+LAYOUT_WITH_LEGEND()
+title System Context — Render a template with tokens
+
+Person(author, "Template author", "Writes Liquid templates shipped with a target package")
+Person(dev, "Developer or coding agent", "Supplies the token values for a run")
+System(codegen, "CodeGenerator", "Model-driven code generation framework")
+System_Ext(fs, "Local filesystem", "Receives rendered files")
+
+Rel(author, codegen, "Embeds templates in")
+Rel(dev, codegen, "Supplies tokens to")
+Rel(codegen, fs, "Writes rendered files to", "File IO")
+@enduml

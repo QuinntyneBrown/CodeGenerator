@@ -1,0 +1,14 @@
+@startuml
+!include <C4/C4_Context>
+LAYOUT_WITH_LEGEND()
+title System Context — Discover a template set
+
+Person(author, "Template author", "Organizes Liquid files into language and style folders")
+Person(dev, "Developer or coding agent", "Requests generation for a language and style")
+System(codegen, "CodeGenerator", "Model-driven code generation framework")
+System_Ext(fs, "Local filesystem", "Holds template style roots and generated output")
+
+Rel(author, fs, "Organizes template folders on")
+Rel(dev, codegen, "Requests a style from")
+Rel(codegen, fs, "Discovers templates from and writes output to", "File IO")
+@enduml

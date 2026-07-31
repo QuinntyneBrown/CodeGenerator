@@ -1,0 +1,71 @@
+@startuml
+title UML sequence behaviour — Scaffold a JWT-authenticated MVP
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam defaultFontName Arial
+skinparam ArrowColor #344054
+skinparam rectangle {
+  BorderColor #344054
+  FontColor #101828
+}
+skinparam package {
+  BorderColor #667085
+  FontColor #101828
+  BackgroundColor #F9FAFB
+}
+actor "Developer or coding agent" as actor
+box "Frontend — create-code-cli terminal session" #E0F2FE
+  participant "Command handler" as cmd
+end box
+box "Backend — CodeGenerator.DotNet MVP factory" #ECFDF3
+  participant "JwtAuthenticatedMvpFactory" as mvp
+end box
+box "Backend — CodeGenerator.Core template pipeline" #D1FADF
+  participant "LiquidTemplateProcessor" as proc
+end box
+box "Backend — Infrastructure" #FFF4E5
+  database "JwtAuthMvp manifest" as manifest
+  database "Local filesystem" as fs
+end box
+
+actor -> cmd : Request a JWT-authenticated MVP
+cmd -> mvp : GenerateAsync(options, ct)
+alt Name or Directory is empty
+  mvp --> cmd : ArgumentException, nothing written (L2-034)
+else Options complete
+  mvp -> manifest : Read manifest entries
+  alt Manifest missing or empty
+    manifest --> mvp : No entries
+    mvp --> cmd : Warning logged, run completes (L2-034)
+  else Manifest has entries
+    manifest --> mvp : Ordered template entries
+    mvp -> mvp : Build root tokens
+    mvp -> fs : Create output directory
+    loop For each manifest entry
+      mvp -> mvp : Throw if cancellation requested (L2-034)
+      alt Entry path starts with _entity/
+        loop For each declared entity
+          mvp -> mvp : Bind Entity, EntityLower, EntityKebab, EntityProperties
+          mvp -> proc : Render content and relative path
+          proc --> mvp : Rendered file
+          mvp -> fs : Write one file per entity (L2-034)
+        end
+      else Entry path starts with _page/
+        loop For each declared page
+          mvp -> mvp : Bind page name, route, and RequiresAuth
+          mvp -> proc : Render content and relative path
+          proc --> mvp : Rendered file with route guard when RequiresAuth
+          mvp -> fs : Write one file per page (L2-034)
+        end
+      else Root-scoped entry
+        mvp -> proc : Render against root tokens
+        proc --> mvp : Rendered file
+        mvp -> fs : Write once (L2-034)
+      end
+    end
+    mvp --> cmd : Scaffold complete
+  end
+end
+cmd --> actor : Report the generated application path
+@enduml

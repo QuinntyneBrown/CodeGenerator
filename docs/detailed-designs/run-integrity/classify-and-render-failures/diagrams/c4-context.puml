@@ -1,0 +1,15 @@
+@startuml
+!include <C4/C4_Context>
+LAYOUT_WITH_LEGEND()
+title System Context — Classify and render failures
+
+Person(dev, "Developer", "Reads the failure and fixes the input")
+System_Ext(pipeline, "Automation pipeline", "Branches on the process exit code")
+System(codegen, "CodeGenerator", "Model-driven code generation framework")
+System_Ext(console, "Terminal", "Receives standard error output")
+
+Rel(dev, console, "Reads failures on")
+Rel(codegen, console, "Writes the formatted failure to", "Standard error")
+Rel(codegen, pipeline, "Returns a classified exit code to", "Process exit")
+Rel(pipeline, codegen, "Invokes")
+@enduml

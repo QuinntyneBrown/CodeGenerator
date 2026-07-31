@@ -1,0 +1,77 @@
+@startuml
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam defaultFontName Arial
+skinparam ArrowColor #344054
+skinparam class {
+  BorderColor #344054
+  FontColor #101828
+  BackgroundColor #F9FAFB
+}
+title Class structure — Render a template with tokens
+
+interface ITemplateProcessor {
+  +Process(template: string, tokens: IDictionary<string, object>): string
+  +Process(template: string, tokens: IDictionary<string, object>, ignoreTokens: string[]): string
+}
+
+class LiquidTemplateProcessor {
+  -_fileSystem: SharedTemplateFileSystem
+  +Process(template, tokens): string
+  +Process(template, tokens, ignoreTokens): string
+  -ThrowIfSkipFileError(template): void
+}
+
+class CodeGeneratorFilters {
+  +{static} Pascal(input: string): string
+  +{static} Camel(input: string): string
+  +{static} Snake(input: string): string
+  +{static} Kebab(input: string): string
+  +{static} Title(input: string): string
+  +{static} Allcaps(input: string): string
+  +{static} Namespace(input: string): string
+  +{static} Strip_namespace(input: string): string
+  +{static} Pluralize(input: string): string
+  +{static} Singularize(input: string): string
+  +{static} Schema_type(context, input: string): string
+}
+
+interface INamingConventionConverter {
+  +Convert(convention: NamingConvention, value: string, pluralize: bool): string
+}
+
+enum NamingConvention {
+  PascalCase
+  CamelCase
+  SnakeCase
+  TitleCase
+  AllCaps
+  KebobCase
+  None
+}
+
+class SharedTemplateFileSystem {
+  -_assemblies: IEnumerable<Assembly>
+  +ReadTemplateFile(context, templateName: string): string
+}
+
+class ExitTag {
+}
+
+class SkipFileException {
+}
+
+class TokensBuilder {
+  +Build(): IDictionary<string, object>
+}
+
+LiquidTemplateProcessor ..|> ITemplateProcessor
+LiquidTemplateProcessor --> SharedTemplateFileSystem : resolves includes with
+LiquidTemplateProcessor ..> CodeGeneratorFilters : registers
+LiquidTemplateProcessor ..> ExitTag : registers
+CodeGeneratorFilters ..> INamingConventionConverter : converts through
+INamingConventionConverter ..> NamingConvention : selects
+ExitTag ..> SkipFileException : raises
+TokensBuilder ..> LiquidTemplateProcessor : supplies tokens to
+@enduml

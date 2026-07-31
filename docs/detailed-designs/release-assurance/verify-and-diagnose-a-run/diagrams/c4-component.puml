@@ -1,0 +1,31 @@
+@startuml
+!include <C4/C4_Component>
+LAYOUT_WITH_LEGEND()
+title Components — Verify and diagnose a run
+
+Container_Boundary(core, "CodeGenerator.Core") {
+  Component(runner, "VerificationRunner", "C# class", "Runs verifiers in order, skips after a build failure")
+  Component(verifier, "IPostGenerationVerifier", "C# interface", "One named check over generated output")
+  Component(options, "VerificationOptions", "C# class", "Solution directory, warnings as errors, 120 second timeout")
+  Component(result, "VerificationResult", "C# class", "Per-step pass, reason, and duration")
+  Component(diagctx, "DiagnosticContext", "C# ambient context", "Correlation identifier, strategy, model type, phase")
+  Component(collector, "DiagnosticsCollector", "C# class", "Collects runtime, operating system, tool version")
+  Component(timer, "GenerationTimer", "C# class", "Times each named step")
+  Component(nulltimer, "NullGenerationTimer", "C# class", "Inert timer used without --diagnostics")
+  Component(report, "DiagnosticsReport", "C# class", "Environment, steps, total duration")
+}
+Container_Boundary(cli, "create-code-cli") {
+  Component(renderer, "DiagnosticsRenderer", "C# class", "Renders the report to the console")
+}
+ComponentDb(fs, "Local filesystem", "Disk", "Generated output under verification")
+
+Rel(runner, verifier, "Executes in registration order")
+Rel(runner, options, "Reads timeout and warning policy from")
+Rel(runner, result, "Records each step into")
+Rel(verifier, fs, "Checks output in", "File IO")
+Rel(timer, report, "Supplies timing entries to")
+Rel(collector, report, "Supplies environment to")
+Rel(nulltimer, report, "Supplies no entries to")
+Rel(diagctx, report, "Correlates")
+Rel(renderer, report, "Renders")
+@enduml

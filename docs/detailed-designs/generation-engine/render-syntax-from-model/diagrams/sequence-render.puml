@@ -1,0 +1,55 @@
+@startuml
+title UML sequence behaviour — Render one construct to source text
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam defaultFontName Arial
+skinparam ArrowColor #344054
+skinparam rectangle {
+  BorderColor #344054
+  FontColor #101828
+}
+skinparam package {
+  BorderColor #667085
+  FontColor #101828
+  BackgroundColor #F9FAFB
+}
+box "Backend — Target package artifact strategy" #ECFDF3
+  participant "Artifact strategy" as caller
+end box
+box "Backend — CodeGenerator.Core syntax engine" #D1FADF
+  participant "SyntaxGenerator" as gen
+  participant "Dispatcher cache" as cache
+  participant "StrategyExecutor" as exec
+end box
+box "Backend — Target package syntax strategy" #ECFDF3
+  participant "ISyntaxGenerationStrategy" as strategy
+  participant "StringBuilderCache" as sb
+end box
+box "Backend — Infrastructure" #FFF4E5
+  participant "DiagnosticContext" as diag
+end box
+
+caller -> gen : GenerateAsync(model)
+gen -> gen : Validate model when IValidatable
+gen -> cache : Get dispatcher for model.GetType() (L2-008)
+cache --> gen : Compiled dispatch delegate
+gen -> gen : Filter by CanHandle, order by priority (L2-009)
+alt No eligible strategy
+  gen --> caller : Failure identifying the unmatched model type (L2-009)
+else One strategy selected
+  gen -> exec : ExecuteSyntaxStrategyAsync(strategy, model, ct)
+  exec -> diag : Record strategy, model type, phase Generate
+  exec -> strategy : GenerateAsync(model, ct)
+  strategy -> sb : Acquire pooled buffer (L2-095)
+  sb --> strategy : StringBuilder
+  alt Strategy renders text
+    strategy --> exec : Rendered source text
+    exec --> gen : Result.Success(text)
+  else Strategy throws
+    strategy --> exec : Exception
+    exec --> gen : Result.Failure(PLUGIN_STRATEGY_EXEC_FAILED) (L2-010)
+  end
+  gen --> caller : Rendered text or failure
+end
+@enduml

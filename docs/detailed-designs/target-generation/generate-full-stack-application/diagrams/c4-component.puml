@@ -1,0 +1,27 @@
+@startuml
+!include <C4/C4_Component>
+LAYOUT_WITH_LEGEND()
+title Components — Generate a full-stack application
+
+Container_Boundary(dotnet, "CodeGenerator.DotNet") {
+  Component(fsfactory, "FullStackFactory", "C# class", "Assembles solution, backend, and frontend models")
+  Component(fsstrategy, "FullStackGenerationStrategy", "C# class", "Realizes a FullStackModel")
+  Component(mvp, "JwtAuthenticatedMvpFactory", "C# class", "Renders the MVP manifest end to end")
+  Component(scopes, "Template scoping", "C# private methods", "Root, _entity, and _page rendering")
+  Component(tokens, "Root and entity token builders", "C# private methods", "Binds Entity, EntityLower, EntityKebab, EntityProperties")
+}
+Container_Boundary(core, "CodeGenerator.Core") {
+  Component(proc, "LiquidTemplateProcessor", "C# class", "Renders template content and relative paths")
+  Component(gen, "ArtifactGenerator", "C# class", "Realizes the assembled model")
+}
+ComponentDb(manifest, "JwtAuthMvp manifest", "Embedded resource", "Ordered template entries")
+ComponentDb(fs, "Local filesystem", "Disk", "Generated application")
+
+Rel(fsfactory, fsstrategy, "Produces a model realized by")
+Rel(fsstrategy, gen, "Submits nested models to")
+Rel(mvp, manifest, "Reads entries from")
+Rel(mvp, scopes, "Selects scope by path prefix")
+Rel(scopes, tokens, "Binds scoped tokens through")
+Rel(scopes, proc, "Renders content and paths through")
+Rel(mvp, fs, "Writes rendered files to", "File IO")
+@enduml

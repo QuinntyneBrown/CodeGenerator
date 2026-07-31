@@ -1,0 +1,58 @@
+@startuml
+title UML sequence behaviour — Resolve a setting across four tiers
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam defaultFontName Arial
+skinparam ArrowColor #344054
+skinparam rectangle {
+  BorderColor #344054
+  FontColor #101828
+}
+skinparam package {
+  BorderColor #667085
+  FontColor #101828
+  BackgroundColor #F9FAFB
+}
+actor "Developer or coding agent" as actor
+box "Frontend — create-code-cli terminal session" #E0F2FE
+  participant "Program" as program
+  participant "ScaffoldCommand" as cmd
+end box
+box "Backend — CodeGenerator.Cli configuration tiers" #ECFDF3
+  participant "ConfigBootstrap" as bootstrap
+  participant "ConfigurationLoader" as loader
+  participant "EnvironmentVariableMapper" as envmap
+end box
+box "Backend — CodeGenerator.Core configuration" #D1FADF
+  participant "CodeGeneratorConfiguration" as config
+end box
+box "Backend — Infrastructure" #FFF4E5
+  database "Local filesystem" as fs
+  participant "Shell environment" as env
+end box
+
+actor -> program : create-code-cli scaffold --verbose
+program -> program : Parse --verbose from raw arguments before DI (L2-051)
+program -> bootstrap : GetBuiltInDefaults()
+bootstrap --> program : framework net9.0, output ".", slnx false (L2-054)
+program -> loader : LoadAsync(currentDirectory)
+loader -> fs : Search .codegenerator.json upward to the root (L2-055)
+alt File found in an ancestor directory
+  fs --> loader : Configuration file content
+  loader --> program : Parsed file configuration
+else No file in the ancestor chain
+  fs --> loader : No match
+  loader --> program : Empty configuration (L2-055)
+end
+program -> envmap : Map(configuration)
+envmap -> env : Read the five CODEGEN_ variables
+env --> envmap : Values present in the environment
+envmap --> program : Environment tier, unset variables omitted (L2-056)
+program -> config : Merge defaults, file, environment, command line (L2-054)
+config --> program : Case-insensitive resolved view
+program -> cmd : Construct with the resolved view
+cmd -> config : GetValue("output")
+config --> cmd : Value from the highest tier that set it (L2-054)
+cmd --> actor : Run the command with resolved defaults
+@enduml

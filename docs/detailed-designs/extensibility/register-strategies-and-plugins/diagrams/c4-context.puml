@@ -1,0 +1,14 @@
+@startuml
+!include <C4/C4_Context>
+LAYOUT_WITH_LEGEND()
+title System Context — Register strategies and plugins
+
+Person(dev, "Developer or coding agent", "Writes strategies for their own model types")
+Person(author, "Plugin author", "Ships a strategy assembly independently")
+System(codegen, "CodeGenerator", "Model-driven code generation framework")
+System_Ext(plugindirs, "Plugin directories", "Base directory plugins folder and user .codegen/plugins")
+
+Rel(dev, codegen, "Registers a consumer assembly with")
+Rel(author, plugindirs, "Installs a strategy assembly into")
+Rel(codegen, plugindirs, "Discovers candidate assemblies in", "File IO")
+@enduml

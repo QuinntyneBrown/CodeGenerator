@@ -1,0 +1,67 @@
+@startuml
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam defaultFontName Arial
+skinparam ArrowColor #344054
+skinparam class {
+  BorderColor #344054
+  FontColor #101828
+  BackgroundColor #F9FAFB
+}
+title Class structure — Render syntax from a model
+
+interface ISyntaxGenerator {
+  +GenerateAsync(model: T): Task<string>
+}
+
+class SyntaxGenerator {
+  -_dispatchers: ConcurrentDictionary<Type, Func>
+  +GenerateAsync(model: T): Task<string>
+  -DispatchSyntaxAsync(sp, model, ct): Task<string>
+}
+
+interface "ISyntaxGenerationStrategy<T>" as Strategy {
+  +CanHandle(model: object): bool
+  +GetPriority(): int
+  +GenerateAsync(model: T, ct: CancellationToken): Task<string>
+}
+
+class StrategyExecutor {
+  +ExecuteSyntaxStrategyAsync(strategy, model, ct): Task<Result<string>>
+  +ExecuteArtifactStrategyAsync(strategy, model): Task<Result<bool>>
+}
+
+class "Result<T>" as ResultT {
+  +IsSuccess: bool
+  +Value: T
+  +Error: ErrorInfo
+}
+
+class ErrorInfo {
+  +Code: string
+  +Message: string
+  +Category: ErrorCategory
+  +Details: Dictionary<string, object>
+  +StackTrace: string
+}
+
+class DiagnosticContext {
+  +CorrelationId: string
+  +CurrentStrategy: string
+  +ModelType: string
+  +CurrentPhase: DiagnosticPhase
+}
+
+class SyntaxModel {
+  +Usings: List<UsingModel>
+}
+
+SyntaxGenerator ..|> ISyntaxGenerator
+SyntaxGenerator ..> Strategy : selects one
+StrategyExecutor ..> Strategy : executes
+StrategyExecutor --> ResultT : returns
+StrategyExecutor --> DiagnosticContext : publishes to
+ResultT --> ErrorInfo : carries on failure
+Strategy ..> SyntaxModel : renders
+@enduml

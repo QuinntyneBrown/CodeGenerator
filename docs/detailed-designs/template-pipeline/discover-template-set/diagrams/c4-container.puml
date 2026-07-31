@@ -1,0 +1,16 @@
+@startuml
+!include <C4/C4_Container>
+LAYOUT_WITH_LEGEND()
+title Containers — Discover a template set
+
+System_Boundary(codegen, "CodeGenerator") {
+  Container(core, "CodeGenerator.Core", ".NET library", "Discovery, style registry, placeholder resolution")
+  Container(packages, "Target packages", ".NET libraries", "Embedded template resources per language")
+}
+System_Ext(styleroot, "Template style root", "Filesystem directory tree of {language}/{style}")
+System_Ext(fs, "Local filesystem", "Generated project files")
+
+Rel(core, styleroot, "Walks recursively for *.liquid", "File IO")
+Rel(core, packages, "Enumerates embedded template resources from", "Assembly manifest")
+Rel(core, fs, "Writes planned output files to", "File IO")
+@enduml

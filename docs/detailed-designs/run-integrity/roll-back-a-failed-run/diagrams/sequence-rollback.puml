@@ -1,0 +1,67 @@
+@startuml
+title UML sequence behaviour — Fail part-way and reverse the run
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam defaultFontName Arial
+skinparam ArrowColor #344054
+skinparam rectangle {
+  BorderColor #344054
+  FontColor #101828
+}
+skinparam package {
+  BorderColor #667085
+  FontColor #101828
+  BackgroundColor #F9FAFB
+}
+actor "Developer or coding agent" as actor
+box "Frontend — create-code-cli terminal session" #E0F2FE
+  participant "Command handler" as cmd
+end box
+box "Backend — CodeGenerator.Core run integrity" #D1FADF
+  participant "GenerationRollbackService" as rollback
+  participant "Retry" as retry
+  participant "CommandService" as cmdsvc
+end box
+box "Backend — Target package strategies" #ECFDF3
+  participant "Artifact strategy" as strategy
+end box
+box "Backend — Infrastructure" #FFF4E5
+  database "Local filesystem" as fs
+  participant "System shell" as shell
+end box
+
+actor -> cmd : Run a generation
+cmd -> rollback : Open scoped unit of work
+cmd -> fs : Create solution and project directories
+cmd -> rollback : TrackDirectoryCreated for each (L2-065)
+cmd -> strategy : Generate the first file
+strategy -> retry : Write through retry
+retry -> fs : Attempt write
+alt Transient IOException
+  fs --> retry : IOException
+  retry -> retry : Back off exponentially, bounded by MaxDelay (L2-087)
+  retry -> fs : Reattempt
+end
+fs --> retry : Written
+retry --> strategy : Success
+strategy -> rollback : TrackFileCreated (L2-065)
+cmd -> cmdsvc : Run dotnet sln add
+cmdsvc -> shell : cmd.exe /C or bash -c in the working directory (L2-089)
+alt Command fails and the run throws
+  shell --> cmdsvc : Non-zero exit
+  cmdsvc --> cmd : Failure
+  cmd -> rollback : Rollback()
+  rollback -> fs : Delete created files, restore backups, remove empty directories LIFO (L2-066)
+  fs --> rollback : Reversal outcomes, individual failures recorded not thrown (L2-066)
+  rollback --> cmd : RollbackReport
+  cmd --> actor : Report the failure with the run reversed
+else Run completes
+  shell --> cmdsvc : Exit code zero
+  cmdsvc --> cmd : Success
+  cmd -> rollback : Commit()
+  rollback -> fs : Delete backup files, best effort (L2-067)
+  rollback --> cmd : Run is now irreversible (L2-067)
+  cmd --> actor : Report the generated output
+end
+@enduml

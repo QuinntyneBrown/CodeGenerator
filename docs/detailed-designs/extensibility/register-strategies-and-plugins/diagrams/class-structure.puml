@@ -1,0 +1,82 @@
+@startuml
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam defaultFontName Arial
+skinparam ArrowColor #344054
+skinparam class {
+  BorderColor #344054
+  FontColor #101828
+  BackgroundColor #F9FAFB
+}
+title Class structure — Register strategies and plugins
+
+class ConfigureServices {
+  +{static} AddCoreServices(services, assembly: Assembly): void
+  +{static} AddArifactGenerator(services, assembly: Assembly): void
+  +{static} AddSyntaxGenerator(services, assembly: Assembly): void
+  -{static} SafeGetTypes(assembly: Assembly): IEnumerable<Type>
+}
+
+interface "IArtifactGenerationStrategy<T>" as ArtStrategy {
+  +CanHandle(model: object): bool
+  +GetPriority(): int
+}
+
+interface "ISyntaxGenerationStrategy<T>" as SynStrategy {
+  +CanHandle(model: object): bool
+  +GetPriority(): int
+}
+
+interface IStrategyRegistry {
+  +Register(strategy: object): void
+  +Resolve(modelType: Type): object
+}
+
+class StrategyRegistry {
+}
+
+interface IPluginDiscoveryService {
+  +DiscoverAsync(): Task<IReadOnlyList<DiscoveredPlugin>>
+}
+
+class DirectoryPluginDiscovery {
+}
+
+class ExplicitPluginDiscovery {
+}
+
+class CompositePluginDiscovery {
+  -_sources: IEnumerable<IPluginDiscoveryService>
+}
+
+class DiscoveredPlugin {
+  +AssemblyPath: string
+  +Source: PluginSource
+}
+
+enum PluginSource {
+  Directory
+  Explicit
+}
+
+interface ICliPlugin {
+  +Register(services: IServiceCollection): void
+}
+
+class CliPluginException {
+  +ExitCode: int
+}
+
+ConfigureServices ..> ArtStrategy : registers implementations of
+ConfigureServices ..> SynStrategy : registers implementations of
+StrategyRegistry ..|> IStrategyRegistry
+DirectoryPluginDiscovery ..|> IPluginDiscoveryService
+ExplicitPluginDiscovery ..|> IPluginDiscoveryService
+CompositePluginDiscovery ..|> IPluginDiscoveryService
+CompositePluginDiscovery o-- IPluginDiscoveryService : aggregates
+IPluginDiscoveryService --> DiscoveredPlugin : yields
+DiscoveredPlugin --> PluginSource : attributed to
+DiscoveredPlugin ..> ICliPlugin : loaded as
+CompositePluginDiscovery ..> CliPluginException : reports load failure as
+@enduml

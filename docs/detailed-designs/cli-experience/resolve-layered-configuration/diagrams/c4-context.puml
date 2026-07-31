@@ -1,0 +1,16 @@
+@startuml
+!include <C4/C4_Context>
+LAYOUT_WITH_LEGEND()
+title System Context — Resolve layered configuration
+
+Person(dev, "Developer or coding agent", "Sets options on the command line")
+Person(maintainer, "Repository maintainer", "Commits a .codegenerator.json for the repository")
+System(codegen, "CodeGenerator", "Model-driven code generation framework")
+System_Ext(env, "Shell environment", "Supplies CODEGEN_ variables")
+System_Ext(fs, "Local filesystem", "Holds .codegenerator.json in the directory tree")
+
+Rel(dev, codegen, "Passes command-line arguments to")
+Rel(maintainer, fs, "Commits the configuration file to")
+Rel(codegen, fs, "Discovers the configuration file by walking upward from", "File IO")
+Rel(codegen, env, "Reads CODEGEN_ variables from")
+@enduml

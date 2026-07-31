@@ -1,0 +1,14 @@
+@startuml
+!include <C4/C4_Context>
+LAYOUT_WITH_LEGEND()
+title System Context — Generate an artifact from a model
+
+Person(dev, "Developer or coding agent", "Describes artifacts as object models")
+System(codegen, "CodeGenerator", "Model-driven code generation framework")
+System_Ext(fs, "Local filesystem", "Holds generated solutions, projects, and files")
+System_Ext(toolchain, "Language toolchains", "dotnet, npm, python, pip")
+
+Rel(dev, codegen, "Submits generation models to")
+Rel(codegen, fs, "Writes generated artifacts to", "File IO")
+Rel(codegen, toolchain, "Invokes for project creation", "Shell")
+@enduml

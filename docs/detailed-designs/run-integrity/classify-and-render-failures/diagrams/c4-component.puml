@@ -1,0 +1,29 @@
+@startuml
+!include <C4/C4_Component>
+LAYOUT_WITH_LEGEND()
+title Components — Classify and render failures
+
+Container_Boundary(core, "CodeGenerator.Core") {
+  Component(exceptions, "CliException hierarchy", "C# classes", "Validation, IO, process, template, configuration, plugin, schema, cancelled, aggregate")
+  Component(exitcodes, "CliExitCodes", "C# static class", "0 success through 8 cancelled and 99 unexpected")
+  Component(codes, "ErrorCodes", "C# static class", "Stable catalog grouped by area")
+  Component(errorinfo, "ErrorInfo", "C# record", "Code, message, category, severity, details")
+  Component(validator, "Validator<T>", "C# class", "RuleFor, Must, When with total accumulation")
+  Component(inputval, "JsonSchemaInputValidator", "C# class", "Validates input against a registered schema")
+}
+Container_Boundary(cli, "create-code-cli") {
+  Component(program, "Program handler chain", "C# try and catch blocks", "Selects the exit code by exception type")
+  Component(consolefmt, "ConsoleErrorFormatter", "C# class", "ERROR [code] message")
+  Component(jsonfmt, "JsonErrorFormatter", "C# class", "Camel-cased JSON, nulls omitted")
+  Component(mdfmt, "MarkdownErrorFormatter", "C# class", "Markdown report form")
+}
+
+Rel(validator, errorinfo, "Reports failures as")
+Rel(inputval, codes, "Reports SCHEMA_INVALID from")
+Rel(exceptions, exitcodes, "Carries the exit code from")
+Rel(errorinfo, codes, "Draws its code from")
+Rel(program, exceptions, "Catches")
+Rel(program, consolefmt, "Renders through by default")
+Rel(program, jsonfmt, "Renders through for machine output")
+Rel(program, mdfmt, "Renders through for reports")
+@enduml

@@ -1,0 +1,18 @@
+@startuml
+!include <C4/C4_Container>
+LAYOUT_WITH_LEGEND()
+title Containers — Classify and render failures
+
+Person(dev, "Developer", "Reads the rendered failure")
+System_Boundary(codegen, "CodeGenerator") {
+  Container(cli, "create-code-cli", ".NET global tool", "Top-level handler chain and the three formatters")
+  Container(core, "CodeGenerator.Core", ".NET library", "Typed exceptions, exit codes, error catalog, validators")
+  Container(targets, "Target packages", ".NET libraries", "Raise classified failures during generation")
+}
+System_Ext(console, "Terminal", "Standard error stream")
+
+Rel(targets, core, "Raise typed exceptions declared in")
+Rel(cli, core, "Catches typed exceptions from")
+Rel(cli, console, "Writes console, JSON, or Markdown output to", "Standard error")
+Rel(dev, console, "Reads")
+@enduml

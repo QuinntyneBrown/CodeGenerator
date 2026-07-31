@@ -1,0 +1,22 @@
+@startuml
+!include <C4/C4_Component>
+LAYOUT_WITH_LEGEND()
+title Components — Generate an artifact from a model
+
+Container_Boundary(core, "CodeGenerator.Core") {
+  Component(gen, "ArtifactGenerator", "C# class", "Validates, dispatches, and aggregates results")
+  Component(cache, "Dispatcher cache", "ConcurrentDictionary<Type, Func>", "One compiled delegate per model type")
+  Component(validatable, "IValidatable", "C# interface", "Model self-validation contract")
+  Component(result, "ArtifactGenerationResult", "C# class", "Succeeded, Failed, Warnings, merged validation")
+}
+Container_Boundary(targets, "Target packages") {
+  Component(strategy, "IArtifactGenerationStrategy<T>", "C# interface", "CanHandle, GetPriority, GenerateAsync")
+}
+ComponentDb(fs, "Local filesystem", "Disk", "Generated artifacts")
+
+Rel(gen, validatable, "Validates model through")
+Rel(gen, cache, "Reads and populates")
+Rel(gen, strategy, "Invokes in priority order")
+Rel(strategy, fs, "Writes generated file to", "File IO")
+Rel(gen, result, "Accumulates outcomes into")
+@enduml

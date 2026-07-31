@@ -1,0 +1,24 @@
+@startuml
+!include <C4/C4_Component>
+LAYOUT_WITH_LEGEND()
+title Components — Discover a template set
+
+Container_Boundary(core, "CodeGenerator.Core") {
+  Component(disc, "ConventionTemplateDiscovery", "C# class", "Walks a style root or resource prefix into a plan")
+  Component(plan, "TemplateFilePlan", "C# class", "Ordered template entries with output paths")
+  Component(resolver, "FilenamePlaceholderResolver", "C# class", "Analyses and resolves file name placeholders")
+  Component(registry, "StyleRegistry", "C# class", "Language and style matrix with _common roots")
+  Component(info, "TemplateSetInfoLoader", "C# class", "Loads the metadata sidecar")
+  Component(part, "TemplatePartitioner", "C# class", "Separates post-processing templates")
+  Component(naming, "NamingConventionConverter", "C# class", "Applies the placeholder filters")
+}
+ComponentDb(styleroot, "Template style root", "Filesystem", "{language}/{style} folders of .liquid files")
+
+Rel(disc, styleroot, "Reads")
+Rel(disc, plan, "Produces")
+Rel(disc, resolver, "Extracts placeholders through")
+Rel(resolver, naming, "Applies filters through")
+Rel(registry, styleroot, "Registers styles from")
+Rel(info, plan, "Supplies default and required tokens to")
+Rel(part, plan, "Partitions")
+@enduml

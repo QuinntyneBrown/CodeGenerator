@@ -1,0 +1,25 @@
+@startuml
+!include <C4/C4_Container>
+LAYOUT_WITH_LEGEND()
+title Containers — Generate a full-stack application
+
+Person(dev, "Developer or coding agent", "Requests a full-stack application")
+System_Boundary(codegen, "CodeGenerator") {
+  Container(core, "CodeGenerator.Core", ".NET library", "Generation engine and template pipeline")
+  Container(dotnet, "CodeGenerator.DotNet", ".NET library", "FullStackFactory and JwtAuthenticatedMvpFactory")
+  Container(mvptpl, "JwtAuthMvp templates", "Embedded resources", "Manifest plus root, _entity, and _page templates")
+}
+System_Boundary(app, "Generated application") {
+  Container(api, "Generated API", "ASP.NET Core", "JWT-authenticated backend")
+  Container(spa, "Generated frontend", "TypeScript SPA", "Authenticated pages and components")
+}
+System_Ext(fs, "Local filesystem", "Generated application tree")
+
+Rel(dev, dotnet, "Calls CreateAsync or GenerateAsync on", "C# API")
+Rel(dotnet, core, "Renders templates through", "ITemplateProcessor")
+Rel(dotnet, mvptpl, "Reads manifest entries from", "Assembly manifest")
+Rel(dotnet, fs, "Writes rendered files to", "File IO")
+Rel(fs, api, "Materializes")
+Rel(fs, spa, "Materializes")
+Rel(spa, api, "Calls with a bearer token", "JSON/HTTPS")
+@enduml

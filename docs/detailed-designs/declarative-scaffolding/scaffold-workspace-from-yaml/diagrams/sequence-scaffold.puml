@@ -1,0 +1,72 @@
+@startuml
+title UML sequence behaviour — Scaffold a workspace from a configuration file
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam defaultFontName Arial
+skinparam ArrowColor #344054
+skinparam rectangle {
+  BorderColor #344054
+  FontColor #101828
+}
+skinparam package {
+  BorderColor #667085
+  FontColor #101828
+  BackgroundColor #F9FAFB
+}
+actor "Developer or coding agent" as actor
+box "Frontend — create-code-cli terminal session" #E0F2FE
+  participant "ScaffoldCommand" as cmd
+end box
+box "Backend — CodeGenerator.Core scaffold engine" #D1FADF
+  participant "ScaffoldEngine" as engine
+  participant "YamlConfigParser" as parser
+  participant "ConfigValidator" as validator
+  participant "ScaffoldOrchestrator" as orch
+  participant "PostScaffoldExecutor" as post
+end box
+box "Backend — Infrastructure" #FFF4E5
+  database "Local filesystem" as fs
+  participant "System shell" as shell
+end box
+
+actor -> cmd : create-code-cli scaffold -c scaffold.yaml
+alt --export-schema or --init requested
+  cmd -> fs : Write JSON Schema or starter scaffold.yaml (L2-047)
+  fs --> cmd : Written
+  cmd --> actor : Report and return without scaffolding (L2-047)
+else Scaffold requested
+  cmd -> fs : Read configuration file
+  fs --> cmd : YAML text
+  cmd -> engine : ScaffoldAsync(yaml, outputPath, dryRun, force, ct)
+  engine -> parser : Parse(yaml)
+  alt YAML malformed
+    parser --> engine : ScaffoldParseException
+    engine --> cmd : Validation error on yaml, code SCAFFOLD_PARSE_FAILED (L2-040)
+  else Parsed
+    parser --> engine : ScaffoldConfiguration
+    engine -> validator : Validate(configuration)
+    validator -> validator : Reject paths containing ".." (L2-090)
+    validator -> validator : Require one content source per file (L2-043)
+    alt Validation failed
+      validator --> engine : Every error collected
+      engine --> cmd : Invalid result, nothing written
+    else Validation passed
+      validator --> engine : Valid
+      engine -> engine : Resolve output root from output, outputPath, name (L2-045)
+      engine -> orch : OrchestrateAsync(config, root, dryRun, force)
+      orch -> fs : Write planned files unless dry run
+      fs --> orch : Files written
+      orch --> engine : Planned files
+      opt Run is not a dry run
+        engine -> post : Execute(postScaffoldCommands, root)
+        post -> shell : Run each command in the output root (L2-046)
+        shell --> post : Exit codes
+        post --> engine : Command results, failures recorded not thrown (L2-046)
+      end
+      engine --> cmd : ScaffoldResult
+    end
+  end
+  cmd --> actor : Report planned files, failures, and duration
+end
+@enduml

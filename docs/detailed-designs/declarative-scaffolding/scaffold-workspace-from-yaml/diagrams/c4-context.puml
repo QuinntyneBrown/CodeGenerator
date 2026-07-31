@@ -1,0 +1,14 @@
+@startuml
+!include <C4/C4_Context>
+LAYOUT_WITH_LEGEND()
+title System Context — Scaffold a workspace from YAML
+
+Person(dev, "Developer or coding agent", "Authors one scaffold.yaml describing a workspace")
+System(codegen, "CodeGenerator", "Model-driven code generation framework")
+System_Ext(shell, "System shell", "Runs declared post-scaffold commands")
+System_Ext(fs, "Local filesystem", "Holds scaffold.yaml and the generated workspace")
+
+Rel(dev, codegen, "Runs the scaffold command against")
+Rel(codegen, fs, "Reads configuration from and writes workspace to", "File IO")
+Rel(codegen, shell, "Runs post-scaffold commands through", "cmd.exe or bash")
+@enduml

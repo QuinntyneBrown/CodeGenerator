@@ -1,0 +1,16 @@
+@startuml
+!include <C4/C4_Container>
+LAYOUT_WITH_LEGEND()
+title Containers — Ingest and normalize an external schema
+
+System_Boundary(codegen, "CodeGenerator") {
+  Container(core, "CodeGenerator.Core", ".NET library", "Format detection, normalizer dispatch, NormalizedSchema")
+  Container(dotnet, "CodeGenerator.DotNet", ".NET library", "PlantUML parsing, validation, solution model factory")
+  Container(targets, "Target packages", ".NET libraries", "Generate from the normalized model")
+}
+System_Ext(schemas, "External schema sources", "Diagram and contract documents")
+
+Rel(core, schemas, "Reads and detects", "File IO")
+Rel(dotnet, core, "Contributes PlantUML normalization to", "ISchemaNormalizer")
+Rel(core, targets, "Supplies NormalizedSchema to", "In-process")
+@enduml

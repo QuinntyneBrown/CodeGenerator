@@ -1,0 +1,89 @@
+@startuml
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam defaultFontName Arial
+skinparam ArrowColor #344054
+skinparam class {
+  BorderColor #344054
+  FontColor #101828
+  BackgroundColor #F9FAFB
+}
+title Class structure — Roll back a failed run
+
+interface IGenerationRollbackService {
+  +TrackFileCreated(filePath: string): void
+  +TrackFileModified(filePath: string): void
+  +TrackFileDeleted(filePath: string, backupPath: string): void
+  +TrackDirectoryCreated(directoryPath: string): void
+  +Commit(): void
+  +Rollback(): void
+  +RollbackWithReport(): RollbackReport
+}
+
+class GenerationRollbackService {
+  -_actions: List<RollbackAction>
+  -_committed: bool
+}
+
+class NullRollbackService {
+}
+
+class RollbackAction {
+  +Type: RollbackActionType
+  +Path: string
+  +BackupPath: string
+}
+
+enum RollbackActionType {
+  FileCreated
+  FileModified
+  FileDeleted
+  DirectoryCreated
+}
+
+class RollbackReport {
+  +FilesDeleted: List<string>
+  +FilesRestored: List<string>
+  +DirectoriesDeleted: List<string>
+  +Failures: List<RollbackFailure>
+}
+
+class RollbackFailure {
+  +Action: RollbackAction
+  +Exception: Exception
+}
+
+class Retry {
+  +{static} ExecuteAsync(action, options: RetryOptions, ct): Task<T>
+  +{static} IsTransient(ex: Exception): bool
+}
+
+class RetryOptions {
+  +MaxAttempts: int
+  +InitialDelay: TimeSpan
+  +MaxDelay: TimeSpan
+  +BackoffMultiplier: double
+  +ShouldRetry: Func<Exception, bool>
+}
+
+interface ICommandService {
+  +Start(command: string, workingDirectory: string, waitForExit: bool, ct: CancellationToken): int
+}
+
+class CommandService {
+  -IsUnix(): bool
+  -UnixBash(arguments, workingDirectory): Process
+  -WindowsCmd(arguments, workingDirectory): Process
+}
+
+GenerationRollbackService ..|> IGenerationRollbackService
+NullRollbackService ..|> IGenerationRollbackService
+GenerationRollbackService *-- RollbackAction
+RollbackAction --> RollbackActionType : typed as
+GenerationRollbackService --> RollbackReport : produces
+RollbackReport *-- RollbackFailure
+RollbackFailure --> RollbackAction : names
+Retry --> RetryOptions : configured by
+CommandService ..|> ICommandService
+@enduml

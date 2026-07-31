@@ -1,0 +1,64 @@
+@startuml
+title UML sequence behaviour — Add a file to an existing project
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam defaultFontName Arial
+skinparam ArrowColor #344054
+skinparam rectangle {
+  BorderColor #344054
+  FontColor #101828
+}
+skinparam package {
+  BorderColor #667085
+  FontColor #101828
+  BackgroundColor #F9FAFB
+}
+actor "Developer or coding agent" as actor
+box "Frontend — create-code-cli terminal session" #E0F2FE
+  participant "Command handler" as cmd
+end box
+box "Backend — CodeGenerator.Core incremental services" #D1FADF
+  participant "ProjectContextFactory" as factory
+  participant "AddFileStrategy" as strategy
+  participant "DefaultConflictResolver" as resolver
+end box
+box "Backend — Infrastructure" #FFF4E5
+  database "Existing project" as project
+end box
+
+actor -> cmd : Add one entity to an existing project
+cmd -> factory : Create(projectDirectory)
+factory -> project : Read top-level file names
+project --> factory : Marker files
+factory -> factory : Apply detection precedence (L2-076)
+alt Directory missing or no marker matches
+  factory --> cmd : ProjectContext typed Unknown, no exception (L2-076)
+else Marker identifies the project
+  factory --> cmd : ProjectContext with the detected type (L2-076)
+end
+cmd -> strategy : GenerateAsync(AddFileModel)
+strategy -> project : Test whether the target file exists
+alt Target does not exist
+  project --> strategy : Absent
+  strategy -> project : Write only the requested file (L2-078)
+  project --> strategy : Written
+  strategy --> cmd : File added, no existing file modified (L2-078)
+else Target already exists
+  project --> strategy : Existing content
+  strategy -> resolver : Resolve(path, existingContent, newContent)
+  alt Policy is Error
+    resolver --> strategy : ConflictAction.Error (L2-077)
+    strategy --> cmd : Failure identifying the conflicting path (L2-077)
+  else Policy is Skip
+    resolver --> strategy : ConflictAction.Skip
+    strategy --> cmd : Existing file left unchanged (L2-077)
+  else Policy is Overwrite
+    resolver --> strategy : ConflictAction.Overwrite
+    strategy -> project : Replace the existing content (L2-077)
+    project --> strategy : Written
+    strategy --> cmd : File replaced
+  end
+end
+cmd --> actor : Report the added or skipped file
+@enduml

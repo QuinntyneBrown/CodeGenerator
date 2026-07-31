@@ -1,0 +1,53 @@
+@startuml
+title UML sequence behaviour — Render a template, or skip the file
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam defaultFontName Arial
+skinparam ArrowColor #344054
+skinparam rectangle {
+  BorderColor #344054
+  FontColor #101828
+}
+skinparam package {
+  BorderColor #667085
+  FontColor #101828
+  BackgroundColor #F9FAFB
+}
+box "Backend — Target package artifact strategy" #ECFDF3
+  participant "Artifact strategy" as strategy
+  participant "TokensBuilder" as tokens
+end box
+box "Backend — CodeGenerator.Core template pipeline" #D1FADF
+  participant "LiquidTemplateProcessor" as proc
+  participant "CodeGeneratorFilters" as filters
+  participant "SharedTemplateFileSystem" as sharedfs
+end box
+box "Backend — Infrastructure" #FFF4E5
+  database "Embedded template resources" as res
+  database "Local filesystem" as fs
+end box
+
+strategy -> tokens : Assemble token dictionary
+tokens --> strategy : Tokens
+strategy -> proc : Process(template, tokens, ignoreTokens)
+proc -> proc : Exclude ignored token names (L2-013)
+proc -> proc : Parse template
+opt Template includes a shared fragment
+  proc -> sharedfs : ReadTemplateFile(name)
+  sharedfs -> res : Search CodeGenerator assembly resources (L2-015)
+  res --> sharedfs : Fragment source
+  sharedfs --> proc : Inlined fragment
+end
+loop For each filtered placeholder
+  proc -> filters : Apply naming or schema filter (L2-014)
+  filters --> proc : Converted value
+end
+alt Template reaches the exit tag
+  proc --> strategy : SkipFileException, no file emitted (L2-016)
+else Render completes
+  proc --> strategy : Rendered text
+  strategy -> fs : Write generated file
+  fs --> strategy : Write acknowledged
+end
+@enduml

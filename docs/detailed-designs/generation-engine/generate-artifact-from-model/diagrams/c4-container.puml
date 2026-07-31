@@ -1,0 +1,21 @@
+@startuml
+!include <C4/C4_Container>
+LAYOUT_WITH_LEGEND()
+title Containers — Generate an artifact from a model
+
+Person(dev, "Developer or coding agent", "Describes artifacts as object models")
+System_Boundary(codegen, "CodeGenerator") {
+  Container(cli, "create-code-cli", ".NET global tool", "Command line entry point")
+  Container(host, "Consuming application", ".NET host", "Registers services and submits models")
+  Container(core, "CodeGenerator.Core", ".NET library", "Generation engine, validation, templates")
+  Container(targets, "Target packages", ".NET libraries", "DotNet, Python, Flask, React, Angular, ReactNative, Playwright, Detox strategies")
+}
+System_Ext(fs, "Local filesystem", "Generated output")
+
+Rel(dev, cli, "Runs", "Terminal")
+Rel(dev, host, "Programs against", "C# API")
+Rel(cli, core, "Submits models to", "IArtifactGenerator")
+Rel(host, core, "Submits models to", "IArtifactGenerator")
+Rel(core, targets, "Resolves strategies from", "Dependency injection")
+Rel(targets, fs, "Writes files to", "File IO")
+@enduml

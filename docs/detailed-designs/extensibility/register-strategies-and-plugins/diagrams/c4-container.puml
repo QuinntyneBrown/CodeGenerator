@@ -1,0 +1,18 @@
+@startuml
+!include <C4/C4_Container>
+LAYOUT_WITH_LEGEND()
+title Containers — Register strategies and plugins
+
+Person(dev, "Developer or coding agent", "Calls AddCoreServices with an assembly")
+System_Boundary(codegen, "CodeGenerator") {
+  Container(host, "Consuming application", ".NET host", "Supplies its own strategy assembly")
+  Container(core, "CodeGenerator.Core", ".NET library", "Assembly scanning, strategy registry, plugin discovery")
+  Container(targets, "Target packages", ".NET libraries", "Register their strategies through one extension method each")
+}
+System_Ext(plugindirs, "Plugin directories", "Assemblies discovered at run time")
+
+Rel(dev, host, "Programs against", "C# API")
+Rel(host, core, "Calls AddCoreServices(assembly) on", "Dependency injection")
+Rel(targets, core, "Register strategies with", "Dependency injection")
+Rel(core, plugindirs, "Enumerates *.dll under", "File IO")
+@enduml

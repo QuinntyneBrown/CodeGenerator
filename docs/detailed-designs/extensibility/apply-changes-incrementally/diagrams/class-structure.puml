@@ -1,0 +1,91 @@
+@startuml
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam defaultFontName Arial
+skinparam ArrowColor #344054
+skinparam class {
+  BorderColor #344054
+  FontColor #101828
+  BackgroundColor #F9FAFB
+}
+title Class structure — Apply changes incrementally
+
+interface IProjectContextFactory {
+  +Create(directory: string): IProjectContext
+}
+
+class ProjectContextFactory {
+  -_fileSystem: IFileSystem
+  -DetectProjectType(directory: string): ProjectType
+}
+
+interface IProjectContext {
+  +Directory: string
+  +Type: ProjectType
+}
+
+class ProjectContext {
+  -_fileSystem: IFileSystem
+}
+
+enum ProjectType {
+  Unknown
+  DotNet
+  Python
+  Flask
+  Angular
+  React
+  ReactNative
+  Playwright
+  Detox
+}
+
+interface IConflictResolver {
+  +Resolve(path: string, existingContent: string, newContent: string): ConflictAction
+}
+
+class DefaultConflictResolver {
+}
+
+enum ConflictAction {
+  Skip
+  Overwrite
+  Error
+}
+
+enum ConflictBehavior {
+  Skip
+  Overwrite
+  Error
+}
+
+class AddFileModel {
+  +ProjectDirectory: string
+  +RelativePath: string
+  +Content: string
+  +Behavior: ConflictBehavior
+}
+
+class IncrementalProjectModel {
+  +ProjectDirectory: string
+  +Files: List<AddFileModel>
+}
+
+class AddFileStrategy {
+  +CanHandle(model: object): bool
+  +GenerateAsync(target: AddFileModel): Task
+}
+
+ProjectContextFactory ..|> IProjectContextFactory
+ProjectContext ..|> IProjectContext
+ProjectContextFactory --> ProjectContext : creates
+IProjectContext --> ProjectType : detected as
+DefaultConflictResolver ..|> IConflictResolver
+IConflictResolver --> ConflictAction : returns
+AddFileModel --> ConflictBehavior : declares
+IncrementalProjectModel *-- AddFileModel
+AddFileStrategy ..> AddFileModel : realizes
+AddFileStrategy ..> IConflictResolver : consults
+AddFileStrategy ..> IProjectContext : targets
+@enduml

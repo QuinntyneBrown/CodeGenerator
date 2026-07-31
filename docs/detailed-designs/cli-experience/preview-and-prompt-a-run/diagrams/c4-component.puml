@@ -1,0 +1,30 @@
+@startuml
+!include <C4/C4_Component>
+LAYOUT_WITH_LEGEND()
+title Components — Preview and prompt a run
+
+Container_Boundary(cli, "create-code-cli") {
+  Component(tty, "TtyDetector", "C# static class", "Reports whether standard input is redirected")
+  Component(spectreprompt, "SpectrePromptService", "C# class", "Interactive prompts")
+  Component(nonprompt, "NonInteractivePromptService", "C# class", "Declines to prompt")
+  Component(spectrerender, "SpectreConsoleRenderer", "C# class", "Rich tree, steps, and summary")
+  Component(plainrender, "PlainConsoleRenderer", "C# class", "Plain-text fallback")
+  Component(dryformat, "DryRunOutputFormatter", "C# class", "Renders the plan with human-readable sizes")
+  Component(progress, "GenerationProgressReporter", "C# class", "Reports numbered step progress")
+}
+Container_Boundary(core, "CodeGenerator.Core") {
+  Component(drycmd, "DryRunCommandService", "C# class", "Records commands instead of launching them")
+  Component(result, "GenerationResult", "C# class", "Generated files and suppressed commands")
+  Component(engine, "ScaffoldEngine", "C# class", "Computes planned files")
+}
+
+Rel(tty, spectreprompt, "Selects when a terminal is attached")
+Rel(tty, nonprompt, "Selects when input is redirected")
+Rel(engine, result, "Accumulates planned files into")
+Rel(engine, drycmd, "Executes commands through when previewing")
+Rel(drycmd, result, "Records suppressed commands in")
+Rel(dryformat, result, "Renders")
+Rel(dryformat, spectrerender, "Writes through when the terminal is rich")
+Rel(dryformat, plainrender, "Writes through otherwise")
+Rel(progress, spectrerender, "Reports steps through")
+@enduml

@@ -1,0 +1,28 @@
+@startuml
+!include <C4/C4_Component>
+LAYOUT_WITH_LEGEND()
+title Components — Roll back a failed run
+
+Container_Boundary(core, "CodeGenerator.Core") {
+  Component(rollback, "GenerationRollbackService", "C# scoped service", "Tracks actions, commits, reverses LIFO")
+  Component(action, "RollbackAction", "C# record", "FileCreated, FileModified, FileDeleted, DirectoryCreated")
+  Component(report, "RollbackReport", "C# class", "Deleted, restored, directories, failures")
+  Component(nullrb, "NullRollbackService", "C# class", "Inert implementation")
+  Component(wrapper, "CommandRollbackWrapper", "C# class", "Ties command execution to the rollback scope")
+  Component(retry, "Retry", "C# static class", "Exponential backoff over transient IO failures")
+  Component(cmdsvc, "CommandService", "C# class", "cmd.exe /C on Windows, bash -c elsewhere")
+}
+Container_Boundary(cli, "create-code-cli") {
+  Component(program, "Program", "C# top-level statements", "Registers the token source and Ctrl+C handler")
+}
+ComponentDb(fs, "Local filesystem", "Disk", "Generated output and backups")
+
+Rel(rollback, action, "Records")
+Rel(rollback, report, "Produces on reversal")
+Rel(rollback, fs, "Deletes, restores, and backs up in", "File IO")
+Rel(wrapper, cmdsvc, "Runs commands through")
+Rel(wrapper, rollback, "Registers reversal with")
+Rel(retry, fs, "Reattempts transient operations against", "File IO")
+Rel(program, rollback, "Opens the scope for each command")
+Rel(program, cmdsvc, "Cancels in-flight work in")
+@enduml

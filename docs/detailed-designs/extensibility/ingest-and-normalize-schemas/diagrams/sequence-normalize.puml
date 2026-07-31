@@ -1,0 +1,66 @@
+@startuml
+title UML sequence behaviour — Normalize a PlantUML class diagram
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam defaultFontName Arial
+skinparam ArrowColor #344054
+skinparam rectangle {
+  BorderColor #344054
+  FontColor #101828
+}
+skinparam package {
+  BorderColor #667085
+  FontColor #101828
+  BackgroundColor #F9FAFB
+}
+actor "Developer or coding agent" as actor
+box "Frontend — create-code-cli terminal session" #E0F2FE
+  participant "Command handler" as cmd
+end box
+box "Backend — CodeGenerator.Core schema pipeline" #D1FADF
+  participant "SchemaFormatDetector" as detector
+  participant "SchemaNormalizerDispatcher" as dispatcher
+  participant "NormalizedSchema" as normalized
+end box
+box "Backend — CodeGenerator.DotNet PlantUML services" #ECFDF3
+  participant "PlantUmlValidationService" as valid
+  participant "PlantUmlParserService" as parser
+  participant "PlantUmlSolutionModelFactory" as factory
+end box
+box "Backend — Infrastructure" #FFF4E5
+  database "Local filesystem" as fs
+end box
+
+actor -> cmd : Generate from a domain diagram
+cmd -> fs : Read the schema document
+fs --> cmd : Content and file path
+cmd -> detector : Detect(content, filePath)
+detector -> detector : Match extension .puml, .plantuml, .proto, .avsc (L2-037)
+alt Extension identifies the format
+  detector --> cmd : SchemaFormat.PlantUml (L2-037)
+else Inspect content
+  detector -> detector : Look for @startuml, openapi, $schema, syntax = "proto"
+  alt No format matches
+    detector --> cmd : SchemaFormatDetectionException (L2-037)
+  else Content identifies the format
+    detector --> cmd : Detected format (L2-037)
+  end
+end
+cmd -> dispatcher : Normalize(content, format)
+dispatcher -> valid : Validate(content)
+alt Diagram malformed
+  valid --> dispatcher : Validation failure naming the document (L2-039)
+  dispatcher --> cmd : Normalization refused
+else Diagram well formed
+  valid --> dispatcher : Valid
+  dispatcher -> parser : Parse(content)
+  parser -> normalized : Populate entities, relationships, endpoints (L2-038)
+  normalized --> parser : NormalizedSchema with SourceFormat set
+  parser --> dispatcher : NormalizedSchema
+  dispatcher --> cmd : NormalizedSchema
+  cmd -> factory : Build a solution model from the parsed diagram (L2-039)
+  factory --> cmd : SolutionModel
+  cmd --> actor : Report the generated solution
+end
+@enduml

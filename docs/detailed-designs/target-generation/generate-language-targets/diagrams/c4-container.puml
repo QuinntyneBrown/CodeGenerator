@@ -1,0 +1,29 @@
+@startuml
+!include <C4/C4_Container>
+LAYOUT_WITH_LEGEND()
+title Containers — Generate non-.NET language targets
+
+Person(dev, "Developer or coding agent", "Requests a target project")
+System_Boundary(codegen, "CodeGenerator") {
+  Container(core, "CodeGenerator.Core", ".NET library", "Generation engine and template pipeline")
+  Container(python, "CodeGenerator.Python", ".NET library", "Classes, functions, modules, venv, requirements")
+  Container(flask, "CodeGenerator.Flask", ".NET library", "App factory, blueprints, models, repositories, schemas")
+  Container(react, "CodeGenerator.React", ".NET library", "Vite workspace, components, hooks, stores, API clients")
+  Container(rn, "CodeGenerator.ReactNative", ".NET library", "Screens, navigation, styles, stores")
+  Container(ng, "CodeGenerator.Angular", ".NET library", "Workspace, projects, HTTP services, Jest")
+  Container(pw, "CodeGenerator.Playwright", ".NET library", "Page objects, specs, fixtures, browser config")
+  Container(detox, "CodeGenerator.Detox", ".NET library", "testID page objects, specs, Detox and Jest config")
+}
+System_Ext(fs, "Local filesystem", "Generated project tree")
+
+Rel(dev, core, "Registers packages and submits models to", "C# API")
+Rel(core, python, "Dispatches to", "Dependency injection")
+Rel(core, flask, "Dispatches to", "Dependency injection")
+Rel(core, react, "Dispatches to", "Dependency injection")
+Rel(core, rn, "Dispatches to", "Dependency injection")
+Rel(core, ng, "Dispatches to", "Dependency injection")
+Rel(core, pw, "Dispatches to", "Dependency injection")
+Rel(core, detox, "Dispatches to", "Dependency injection")
+Rel(flask, fs, "Writes generated files to", "File IO")
+Rel(react, fs, "Writes generated files to", "File IO")
+@enduml

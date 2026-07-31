@@ -1,0 +1,26 @@
+@startuml
+!include <C4/C4_Component>
+LAYOUT_WITH_LEGEND()
+title Components — Resolve layered configuration
+
+Container_Boundary(cli, "create-code-cli") {
+  Component(program, "Program", "C# top-level statements", "Composition root, parses --verbose before DI")
+  Component(bootstrap, "ConfigBootstrap", "C# static class", "Built-in defaults tier")
+  Component(loader, "ConfigurationLoader", "C# class", "Upward discovery of .codegenerator.json")
+  Component(filemap, "ConfigFileMapper", "C# static class", "Flattens the file into the file tier")
+  Component(envmap, "EnvironmentVariableMapper", "C# static class", "Maps five CODEGEN_ variables")
+  Component(scaffoldcmd, "ScaffoldCommand", "System.CommandLine Command", "Reads defaults from the merged view")
+}
+Container_Boundary(core, "CodeGenerator.Core") {
+  Component(config, "CodeGeneratorConfiguration", "C# class", "Merged case-insensitive view of four tiers")
+}
+ComponentDb(fs, "Local filesystem", "Disk", ".codegenerator.json")
+
+Rel(program, bootstrap, "Reads defaults tier from")
+Rel(program, loader, "Reads file tier through")
+Rel(loader, fs, "Searches upward in")
+Rel(loader, filemap, "Flattens result through")
+Rel(program, envmap, "Reads environment tier through")
+Rel(program, config, "Composes four tiers into")
+Rel(scaffoldcmd, config, "Reads option defaults from")
+@enduml

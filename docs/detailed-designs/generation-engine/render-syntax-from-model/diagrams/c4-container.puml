@@ -1,0 +1,20 @@
+@startuml
+!include <C4/C4_Container>
+LAYOUT_WITH_LEGEND()
+title Containers — Render syntax from a model
+
+System_Boundary(codegen, "CodeGenerator") {
+  Container(core, "CodeGenerator.Core", ".NET library", "Syntax dispatcher, strategy executor, caches")
+  Container(dotnet, "CodeGenerator.DotNet", ".NET library", "C# syntax strategies")
+  Container(web, "Frontend target packages", ".NET libraries", "React, Angular, ReactNative syntax strategies")
+  Container(py, "Python target packages", ".NET libraries", "Python and Flask syntax strategies")
+  Container(test, "Test target packages", ".NET libraries", "Playwright and Detox syntax strategies")
+}
+System_Ext(fs, "Local filesystem", "Generated source files")
+
+Rel(core, dotnet, "Resolves strategies from", "Dependency injection")
+Rel(core, web, "Resolves strategies from", "Dependency injection")
+Rel(core, py, "Resolves strategies from", "Dependency injection")
+Rel(core, test, "Resolves strategies from", "Dependency injection")
+Rel(core, fs, "Emits rendered text to", "File IO")
+@enduml

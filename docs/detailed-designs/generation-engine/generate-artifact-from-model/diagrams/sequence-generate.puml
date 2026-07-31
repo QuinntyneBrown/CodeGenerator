@@ -1,0 +1,58 @@
+@startuml
+title UML sequence behaviour — Dispatch a model to its strategies
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam defaultFontName Arial
+skinparam ArrowColor #344054
+skinparam rectangle {
+  BorderColor #344054
+  FontColor #101828
+}
+skinparam package {
+  BorderColor #667085
+  FontColor #101828
+  BackgroundColor #F9FAFB
+}
+actor "Developer or coding agent" as actor
+box "Frontend — create-code-cli terminal session" #E0F2FE
+  participant "Command handler" as cmd
+end box
+box "Backend — CodeGenerator.Core generation engine" #D1FADF
+  participant "ArtifactGenerator" as gen
+  participant "Dispatcher cache" as cache
+end box
+box "Backend — Target package strategies" #ECFDF3
+  participant "IArtifactGenerationStrategy" as strategy
+end box
+box "Backend — Infrastructure" #FFF4E5
+  database "Local filesystem" as fs
+end box
+
+actor -> cmd : Invoke generation command
+cmd -> gen : GenerateAsync(model, ct)
+gen -> gen : Throw if cancellation requested (L2-006)
+gen -> gen : Validate model under L2-007
+alt Model reports validation errors
+  gen --> cmd : ModelValidationException
+else Model valid
+  gen -> cache : Get dispatcher for runtime type (L2-094)
+  cache --> gen : Compiled dispatch delegate
+  gen -> gen : Select CanHandle strategies, order by priority (L2-002)
+  loop For each eligible strategy
+    gen -> strategy : GenerateAsync(model)
+    alt Strategy writes output
+      strategy -> fs : Write generated file
+      fs --> strategy : Write acknowledged
+      strategy --> gen : Completed
+    else Strategy signals SkipFileException
+      strategy --> gen : Deliberate skip, no error recorded (L2-005)
+    else Strategy throws
+      strategy --> gen : Exception captured as ArtifactError (L2-003)
+      gen -> gen : Stop remaining strategies when FailFast (L2-004)
+    end
+  end
+  gen --> cmd : ArtifactGenerationResult
+end
+cmd --> actor : Present generated files and failures
+@enduml

@@ -1,0 +1,16 @@
+@startuml
+!include <C4/C4_Context>
+LAYOUT_WITH_LEGEND()
+title System Context — Generate non-.NET language targets
+
+Person(dev, "Developer or coding agent", "Requests a project for a language target")
+System(codegen, "CodeGenerator", "Model-driven code generation framework")
+System_Ext(node, "Node and npm", "Installs React, React Native, Angular, Playwright, and Detox dependencies")
+System_Ext(python, "Python and pip", "Creates virtual environments and installs Flask dependencies")
+System_Ext(fs, "Local filesystem", "Holds the generated project")
+
+Rel(dev, codegen, "Requests a target project from")
+Rel(codegen, fs, "Writes the generated project to", "File IO")
+Rel(codegen, node, "Invokes for JavaScript targets", "Shell")
+Rel(codegen, python, "Invokes for Python targets", "Shell")
+@enduml

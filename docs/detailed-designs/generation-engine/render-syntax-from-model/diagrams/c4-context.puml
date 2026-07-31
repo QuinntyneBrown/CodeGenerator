@@ -1,0 +1,12 @@
+@startuml
+!include <C4/C4_Context>
+LAYOUT_WITH_LEGEND()
+title System Context — Render syntax from a model
+
+Person(dev, "Developer or coding agent", "Describes language constructs as syntax models")
+System(codegen, "CodeGenerator", "Model-driven code generation framework")
+System_Ext(fs, "Local filesystem", "Receives the rendered source text as files")
+
+Rel(dev, codegen, "Submits syntax models to")
+Rel(codegen, fs, "Writes rendered source text to", "File IO")
+@enduml

@@ -1,0 +1,20 @@
+@startuml
+!include <C4/C4_Container>
+LAYOUT_WITH_LEGEND()
+title Containers — Roll back a failed run
+
+Person(dev, "Developer or coding agent", "Runs and may interrupt a generation")
+System_Boundary(codegen, "CodeGenerator") {
+  Container(cli, "create-code-cli", ".NET global tool", "Creates the rollback scope and handles Ctrl+C")
+  Container(core, "CodeGenerator.Core", ".NET library", "Rollback service, retry, command service")
+  Container(targets, "Target packages", ".NET libraries", "Strategies whose writes are tracked")
+}
+System_Ext(shell, "System shell", "Runs external toolchain commands")
+System_Ext(fs, "Local filesystem", "Generated output and backup files")
+
+Rel(dev, cli, "Runs and interrupts", "Terminal")
+Rel(cli, core, "Opens a scoped rollback unit of work in", "Dependency injection")
+Rel(core, targets, "Dispatches tracked writes to", "Dependency injection")
+Rel(core, shell, "Runs commands through", "Process")
+Rel(core, fs, "Writes, backs up, and restores in", "File IO")
+@enduml

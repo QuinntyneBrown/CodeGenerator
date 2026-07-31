@@ -1,0 +1,110 @@
+@startuml
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam defaultFontName Arial
+skinparam ArrowColor #344054
+skinparam class {
+  BorderColor #344054
+  FontColor #101828
+  BackgroundColor #F9FAFB
+}
+title Class structure — Classify and render failures
+
+abstract class CliException {
+  +ExitCode: int
+}
+
+class CliValidationException {
+  +ValidationResult: ValidationResult
+}
+class CliIOException {
+}
+class CliProcessException {
+}
+class CliTemplateException {
+}
+class CliConfigurationException {
+}
+class CliPluginException {
+}
+class CliSchemaException {
+}
+class CliCancelledException {
+}
+class CliAggregateException {
+  +InnerExceptions: IReadOnlyList<CliException>
+}
+
+class CliExitCodes {
+  +{static} Success: int
+  +{static} ValidationError: int
+  +{static} IoError: int
+  +{static} ProcessError: int
+  +{static} TemplateError: int
+  +{static} ConfigurationError: int
+  +{static} PluginError: int
+  +{static} SchemaError: int
+  +{static} Cancelled: int
+  +{static} UnexpectedError: int
+}
+
+class ErrorInfo {
+  +Code: string
+  +Message: string
+  +Category: ErrorCategory
+  +Severity: ErrorSeverity
+  +Details: Dictionary<string, object>
+  +StackTrace: string
+}
+
+class ValidationResult {
+  +IsValid: bool
+  +Errors: List<ValidationError>
+  +Warnings: List<ValidationError>
+  +AddError(property: string, message: string): void
+  +AddWarning(property: string, message: string): void
+  +Merge(other: ValidationResult): void
+}
+
+class "Validator<T>" as ValidatorT {
+  +RuleFor(expression, predicate, errorMessage): Validator<T>
+  +Must(predicate, errorMessage): Validator<T>
+  +When(condition, ruleBuilder): Validator<T>
+  +Validate(instance: T): ValidationResult
+}
+
+interface IErrorFormatter {
+  +FormatError(error: ErrorInfo): string
+  +FormatValidationResult(result: ValidationResult): string
+  +FormatArtifactResult(result: ArtifactGenerationResult): string
+  +FormatScaffoldResult(result: ScaffoldResult): string
+  +FormatException(exception: CliException, verbose: bool): string
+}
+
+class ConsoleErrorFormatter {
+}
+class JsonErrorFormatter {
+}
+class MarkdownErrorFormatter {
+}
+
+CliValidationException --|> CliException
+CliIOException --|> CliException
+CliProcessException --|> CliException
+CliTemplateException --|> CliException
+CliConfigurationException --|> CliException
+CliPluginException --|> CliException
+CliSchemaException --|> CliException
+CliCancelledException --|> CliException
+CliAggregateException --|> CliException
+CliAggregateException o-- CliException : aggregates
+CliException ..> CliExitCodes : takes its exit code from
+CliValidationException --> ValidationResult : carries
+ValidatorT --> ValidationResult : produces
+ConsoleErrorFormatter ..|> IErrorFormatter
+JsonErrorFormatter ..|> IErrorFormatter
+MarkdownErrorFormatter ..|> IErrorFormatter
+IErrorFormatter ..> ErrorInfo : renders
+IErrorFormatter ..> ValidationResult : renders
+@enduml

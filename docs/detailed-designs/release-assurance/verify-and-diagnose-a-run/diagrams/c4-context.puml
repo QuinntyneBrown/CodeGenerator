@@ -1,0 +1,16 @@
+@startuml
+!include <C4/C4_Context>
+LAYOUT_WITH_LEGEND()
+title System Context — Verify and diagnose a run
+
+Person(dev, "Developer or coding agent", "Wants assurance that generated output builds")
+System(codegen, "CodeGenerator", "Model-driven code generation framework")
+System_Ext(sdk, "dotnet SDK", "Builds and tests the generated output")
+System_Ext(console, "Terminal", "Receives the diagnostics report")
+System_Ext(fs, "Local filesystem", "Holds the generated output under verification")
+
+Rel(dev, codegen, "Runs generation with verification and diagnostics")
+Rel(codegen, sdk, "Builds and tests the generated output through", "Shell")
+Rel(codegen, fs, "Verifies output written to", "File IO")
+Rel(codegen, console, "Renders the environment and per-step timings to", "Standard output")
+@enduml

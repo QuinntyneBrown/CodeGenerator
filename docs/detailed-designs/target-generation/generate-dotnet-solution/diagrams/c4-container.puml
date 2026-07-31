@@ -1,0 +1,22 @@
+@startuml
+!include <C4/C4_Container>
+LAYOUT_WITH_LEGEND()
+title Containers — Generate a .NET solution
+
+Person(dev, "Developer or coding agent", "Describes a solution as models")
+System_Boundary(codegen, "CodeGenerator") {
+  Container(core, "CodeGenerator.Core", ".NET library", "Generation engine and template pipeline")
+  Container(dotnet, "CodeGenerator.DotNet", ".NET library", "Solution, project, and C# syntax strategies")
+  Container(templates, "DotNet embedded templates", "Embedded resources", "Liquid templates across 27 categories")
+}
+System_Ext(sdk, "dotnet SDK", "Solution and project tooling")
+System_Ext(git, "Git repository", "Initialized for the generated solution")
+System_Ext(fs, "Local filesystem", "Generated solution tree")
+
+Rel(dev, core, "Submits a SolutionModel to", "IArtifactGenerator")
+Rel(core, dotnet, "Dispatches to strategies in", "Dependency injection")
+Rel(dotnet, templates, "Renders", "ITemplateProcessor")
+Rel(dotnet, sdk, "Invokes", "Shell")
+Rel(dotnet, git, "Initializes", "LibGit2Sharp")
+Rel(dotnet, fs, "Writes solution, projects, and sources to", "File IO")
+@enduml

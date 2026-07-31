@@ -1,0 +1,26 @@
+@startuml
+!include <C4/C4_Component>
+LAYOUT_WITH_LEGEND()
+title Components — Register strategies and plugins
+
+Container_Boundary(core, "CodeGenerator.Core") {
+  Component(configure, "ConfigureServices", "C# static class", "AddCoreServices entry point")
+  Component(artscan, "AddArifactGenerator", "C# extension method", "Scans for IArtifactGenerationStrategy implementations")
+  Component(synscan, "AddSyntaxGenerator", "C# extension method", "Scans for ISyntaxGenerationStrategy implementations")
+  Component(safetypes, "SafeGetTypes", "C# helper", "Skips types that cannot be loaded")
+  Component(registry, "StrategyRegistry", "C# class", "Registry of syntax strategies")
+  Component(composite, "CompositePluginDiscovery", "C# class", "Aggregates discovery sources")
+  Component(dirdisc, "DirectoryPluginDiscovery", "C# class", "Searches the two plugin directories")
+  Component(explicitdisc, "ExplicitPluginDiscovery", "C# class", "Searches caller-supplied paths")
+}
+ComponentDb(plugindirs, "Plugin directories", "Filesystem", "*.dll candidates")
+
+Rel(configure, artscan, "Runs")
+Rel(configure, synscan, "Runs")
+Rel(artscan, safetypes, "Enumerates types through")
+Rel(synscan, safetypes, "Enumerates types through")
+Rel(synscan, registry, "Registers strategies into")
+Rel(composite, dirdisc, "Aggregates")
+Rel(composite, explicitdisc, "Aggregates")
+Rel(dirdisc, plugindirs, "Enumerates")
+@enduml

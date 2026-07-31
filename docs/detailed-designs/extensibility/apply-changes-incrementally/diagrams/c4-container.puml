@@ -1,0 +1,18 @@
+@startuml
+!include <C4/C4_Container>
+LAYOUT_WITH_LEGEND()
+title Containers — Apply changes incrementally
+
+Person(dev, "Developer or coding agent", "Requests an incremental addition")
+System_Boundary(codegen, "CodeGenerator") {
+  Container(cli, "create-code-cli", ".NET global tool", "Supplies --force to select the overwrite policy")
+  Container(core, "CodeGenerator.Core", ".NET library", "Project detection, conflict policy, AddFileStrategy")
+  Container(targets, "Target packages", ".NET libraries", "Render the content being added")
+}
+System_Ext(project, "Existing project", "Solution or workspace on disk")
+
+Rel(dev, cli, "Runs", "Terminal")
+Rel(cli, core, "Requests the addition through", "IArtifactGenerator")
+Rel(core, targets, "Renders added content through", "Dependency injection")
+Rel(core, project, "Detects type and writes added files to", "File IO")
+@enduml

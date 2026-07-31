@@ -1,0 +1,18 @@
+@startuml
+!include <C4/C4_Container>
+LAYOUT_WITH_LEGEND()
+title Containers — Resolve layered configuration
+
+Person(dev, "Developer or coding agent", "Runs a command with arguments")
+System_Boundary(codegen, "CodeGenerator") {
+  Container(cli, "create-code-cli", ".NET global tool", "Composition root and command surface")
+  Container(core, "CodeGenerator.Core", ".NET library", "ICodeGeneratorConfiguration and the merged view")
+}
+System_Ext(env, "Shell environment", "CODEGEN_ variables")
+System_Ext(fs, "Local filesystem", ".codegenerator.json")
+
+Rel(dev, cli, "Supplies command-line arguments to", "Terminal")
+Rel(cli, fs, "Reads .codegenerator.json from", "File IO")
+Rel(cli, env, "Reads CODEGEN_ variables from", "Environment")
+Rel(cli, core, "Registers the merged configuration with", "Dependency injection")
+@enduml

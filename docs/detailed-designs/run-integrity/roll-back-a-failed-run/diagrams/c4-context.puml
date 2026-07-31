@@ -1,0 +1,15 @@
+@startuml
+!include <C4/C4_Context>
+LAYOUT_WITH_LEGEND()
+title System Context — Roll back a failed run
+
+Person(dev, "Developer or coding agent", "Runs a generation that may fail part-way")
+System(codegen, "CodeGenerator", "Model-driven code generation framework")
+System_Ext(toolchain, "Language toolchains", "dotnet, npm, python; may fail or be interrupted")
+System_Ext(fs, "Local filesystem", "Holds partially written output until reversal")
+
+Rel(dev, codegen, "Runs a generation with")
+Rel(dev, codegen, "Interrupts with Ctrl+C")
+Rel(codegen, toolchain, "Invokes and may fail against", "Shell")
+Rel(codegen, fs, "Writes to, then reverses on failure", "File IO")
+@enduml

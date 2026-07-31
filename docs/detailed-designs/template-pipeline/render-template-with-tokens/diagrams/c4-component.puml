@@ -1,0 +1,22 @@
+@startuml
+!include <C4/C4_Component>
+LAYOUT_WITH_LEGEND()
+title Components — Render a template with tokens
+
+Container_Boundary(core, "CodeGenerator.Core") {
+  Component(proc, "LiquidTemplateProcessor", "C# class", "Binds tokens and renders the template")
+  Component(filters, "CodeGeneratorFilters", "C# static class", "pascal, camel, snake, kebab, pluralize, schema_type")
+  Component(naming, "NamingConventionConverter", "C# class", "Case conversion and pluralization")
+  Component(exit, "ExitTag", "DotLiquid tag", "Raises SkipFileException on reach")
+  Component(sharedfs, "SharedTemplateFileSystem", "DotLiquid IFileSystem", "Resolves includes across CodeGenerator assemblies")
+  Component(tokens, "TokensBuilder", "C# class", "Assembles the token dictionary")
+}
+ComponentDb(resources, "Embedded template resources", "Assembly manifest", "Liquid sources shipped in each package")
+
+Rel(proc, filters, "Registers with DotLiquid")
+Rel(filters, naming, "Converts case through")
+Rel(proc, exit, "Registers as tag 'exit'")
+Rel(proc, sharedfs, "Resolves includes through")
+Rel(sharedfs, resources, "Reads")
+Rel(tokens, proc, "Supplies token dictionary to")
+@enduml

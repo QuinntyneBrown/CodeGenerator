@@ -1,0 +1,64 @@
+@startuml
+title UML sequence behaviour — Gate and publish a change
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam defaultFontName Arial
+skinparam ArrowColor #344054
+skinparam rectangle {
+  BorderColor #344054
+  FontColor #101828
+}
+skinparam package {
+  BorderColor #667085
+  FontColor #101828
+  BackgroundColor #F9FAFB
+}
+actor "Maintainer" as actor
+box "Frontend — Git hosting" #E0F2FE
+  participant "Git repository" as repo
+end box
+box "Backend — CI and CD test job" #D1FADF
+  participant "Restore and Build" as build
+  participant "Run Unit Tests" as tests
+end box
+box "Backend — CI and CD publish job" #ECFDF3
+  participant "Detect changed packages" as detect
+  participant "Pack and push" as pack
+end box
+box "Backend — Infrastructure" #FFF4E5
+  participant "NuGet" as nuget
+end box
+
+actor -> repo : Push a change to the default branch
+repo -> build : Trigger the workflow
+build -> build : dotnet restore and dotnet build in Release (L2-102)
+alt Build fails
+  build --> actor : Workflow fails, publish job does not run (L2-102)
+else Build succeeds
+  build -> tests : Run the unit test projects (L2-103)
+  alt Tests fail
+    tests --> actor : Workflow fails, publish job does not run (L2-102)
+  else Tests pass
+    tests -> detect : Release the publish job gate
+    detect -> repo : Diff the files changed in the last commit
+    repo --> detect : Changed file paths
+    detect -> detect : Skip projects without a PackageId or marked non-packable (L2-100)
+    alt No packable project changed
+      detect --> actor : Nothing packed or published (L2-102)
+    else One or more packable projects changed
+      detect -> detect : Increment the patch version of each changed project (L2-102)
+      detect -> pack : Supply the changed project list
+      pack -> pack : dotnet pack each changed project
+      pack -> nuget : Push with --skip-duplicate (L2-102)
+      alt Version already published
+        nuget --> pack : Duplicate skipped, job continues (L2-102)
+      else New version
+        nuget --> pack : Package accepted
+      end
+      pack -> repo : Commit the version bump with [skip ci] (L2-102)
+      repo --> actor : Release published without retriggering the workflow
+    end
+  end
+end
+@enduml

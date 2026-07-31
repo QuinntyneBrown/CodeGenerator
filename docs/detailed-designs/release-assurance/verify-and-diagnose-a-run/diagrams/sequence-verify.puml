@@ -1,0 +1,69 @@
+@startuml
+title UML sequence behaviour — Verify generated output and report timings
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam defaultFontName Arial
+skinparam ArrowColor #344054
+skinparam rectangle {
+  BorderColor #344054
+  FontColor #101828
+}
+skinparam package {
+  BorderColor #667085
+  FontColor #101828
+  BackgroundColor #F9FAFB
+}
+actor "Developer or coding agent" as actor
+box "Frontend — create-code-cli terminal session" #E0F2FE
+  participant "Command handler" as cmd
+  participant "DiagnosticsRenderer" as renderer
+end box
+box "Backend — CodeGenerator.Core diagnostics" #D1FADF
+  participant "DiagnosticContext" as ctx
+  participant "IGenerationTimer" as timer
+  participant "DiagnosticsCollector" as collector
+end box
+box "Backend — CodeGenerator.Core verification" #ECFDF3
+  participant "VerificationRunner" as runner
+  participant "IPostGenerationVerifier" as verifier
+end box
+box "Backend — Infrastructure" #FFF4E5
+  participant "dotnet SDK" as sdk
+end box
+
+actor -> cmd : Run generation with --diagnostics
+cmd -> ctx : Assign a fresh correlation identifier (L2-097)
+alt --diagnostics supplied
+  cmd -> timer : Install GenerationTimer (L2-098)
+else Flag absent
+  cmd -> timer : Install NullGenerationTimer, no measurement cost (L2-098)
+end
+loop For each generation step
+  cmd -> timer : TimeStep(name)
+  timer --> cmd : Disposable scope recording the duration
+end
+cmd -> runner : RunAllAsync(options)
+runner -> verifier : VerifyAsync for the dotnet build verifier
+verifier -> sdk : Build the generated output within the timeout (L2-083)
+alt Build passes
+  sdk --> verifier : Success
+  verifier --> runner : Passed with duration
+  loop For each remaining verifier
+    runner -> verifier : VerifyAsync
+    verifier --> runner : Step result with name and duration (L2-082)
+  end
+else Build fails
+  sdk --> verifier : Failure
+  verifier --> runner : Failed with reason
+  loop For each remaining verifier
+    runner -> runner : Record skipped with reason "Skipped: build failed" (L2-082)
+  end
+end
+runner --> cmd : VerificationResult
+cmd -> collector : CollectEnvironment(cliVersion)
+collector --> cmd : Runtime version, operating system, tool version (L2-098)
+cmd -> renderer : Render the report
+renderer -> renderer : Redact values sourced from environment variables (L2-093)
+renderer --> actor : Environment, each timed step, and total duration (L2-098)
+@enduml

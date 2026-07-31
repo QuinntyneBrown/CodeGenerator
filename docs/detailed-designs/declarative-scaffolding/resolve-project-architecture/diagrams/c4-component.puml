@@ -1,0 +1,26 @@
+@startuml
+!include <C4/C4_Component>
+LAYOUT_WITH_LEGEND()
+title Components — Resolve a project architecture
+
+Container_Boundary(core, "CodeGenerator.Core") {
+  Component(validator, "ConfigValidator", "C# class", "Root, project, reference, file, and directory rules")
+  Component(resolver, "ArchitectureResolver", "C# class", "Expands clean-architecture, vertical-slices, custom, none")
+  Component(resolved, "ResolvedArchitecture", "C# class", "Ordered layers with references and members")
+  Component(projscaf, "ProjectScaffolder", "C# class", "Realizes one resolved layer")
+  Component(refs, "CrossProjectReferenceResolver", "C# class", "Wires references between layers")
+  Component(entities, "EntityGenerator", "C# class", "Generates declared entities into the Domain layer")
+  Component(dtos, "DtoGenerator", "C# class", "Generates declared DTOs")
+  Component(types, "TypeMapper", "C# class", "Maps declared types to the target language")
+}
+ComponentDb(fs, "Local filesystem", "Disk", "Expanded layer projects")
+
+Rel(validator, resolver, "Passes a valid definition to")
+Rel(resolver, resolved, "Produces")
+Rel(resolved, projscaf, "Realized layer by layer through")
+Rel(projscaf, refs, "Wires layer references through")
+Rel(projscaf, entities, "Generates entities through")
+Rel(projscaf, dtos, "Generates DTOs through")
+Rel(entities, types, "Maps property types through")
+Rel(projscaf, fs, "Writes layer projects to", "File IO")
+@enduml

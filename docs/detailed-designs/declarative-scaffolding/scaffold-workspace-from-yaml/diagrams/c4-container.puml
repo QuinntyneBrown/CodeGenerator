@@ -1,0 +1,21 @@
+@startuml
+!include <C4/C4_Container>
+LAYOUT_WITH_LEGEND()
+title Containers — Scaffold a workspace from YAML
+
+Person(dev, "Developer or coding agent", "Runs create-code-cli scaffold")
+System_Boundary(codegen, "CodeGenerator") {
+  Container(cli, "create-code-cli", ".NET global tool", "ScaffoldCommand and its options")
+  Container(core, "CodeGenerator.Core", ".NET library", "Scaffold engine, validator, orchestrator")
+  Container(targets, "Target packages", ".NET libraries", "Strategies that realize each planned project")
+}
+System_Ext(shell, "System shell", "Post-scaffold command execution")
+System_Ext(fs, "Local filesystem", "scaffold.yaml and generated workspace")
+
+Rel(dev, cli, "Runs", "Terminal")
+Rel(cli, fs, "Reads scaffold.yaml from", "File IO")
+Rel(cli, core, "Calls ScaffoldAsync on", "IScaffoldEngine")
+Rel(core, targets, "Realizes planned projects through", "Dependency injection")
+Rel(core, fs, "Writes planned files to", "File IO")
+Rel(core, shell, "Executes post-scaffold commands through", "Process")
+@enduml

@@ -1,0 +1,70 @@
+@startuml
+title UML sequence behaviour — Register a consumer assembly and discover plugins
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam defaultFontName Arial
+skinparam ArrowColor #344054
+skinparam rectangle {
+  BorderColor #344054
+  FontColor #101828
+}
+skinparam package {
+  BorderColor #667085
+  FontColor #101828
+  BackgroundColor #F9FAFB
+}
+actor "Developer or coding agent" as actor
+box "Frontend — Consuming application startup" #E0F2FE
+  participant "Startup registration" as startup
+end box
+box "Backend — CodeGenerator.Core registration" #D1FADF
+  participant "ConfigureServices" as configure
+  participant "ServiceCollection" as di
+  participant "CompositePluginDiscovery" as composite
+end box
+box "Backend — Plugin discovery sources" #ECFDF3
+  participant "DirectoryPluginDiscovery" as dirdisc
+  participant "ExplicitPluginDiscovery" as explicitdisc
+end box
+box "Backend — Infrastructure" #FFF4E5
+  database "Plugin directories" as plugindirs
+end box
+
+actor -> startup : Register CodeGenerator with a consumer assembly
+startup -> configure : AddCoreServices(services, assembly)
+configure -> configure : Select non-abstract strategy implementations (L2-079)
+loop For each implementation and each closed interface it implements
+  configure -> di : Register as a singleton (L2-079)
+end
+opt Assembly contains an unloadable type
+  configure -> configure : Skip the type, continue registration (L2-079)
+end
+configure --> startup : Strategies registered
+startup -> composite : DiscoverAsync()
+composite -> dirdisc : DiscoverAsync()
+dirdisc -> plugindirs : Enumerate *.dll recursively in both search paths (L2-080)
+alt Directory absent
+  plugindirs --> dirdisc : No such directory
+  dirdisc --> composite : Empty list, no exception (L2-080)
+else Candidates found
+  plugindirs --> dirdisc : Candidate assemblies
+  dirdisc --> composite : DiscoveredPlugin records
+end
+composite -> explicitdisc : DiscoverAsync()
+alt Source throws
+  explicitdisc --> composite : Failure recorded, other sources still returned (L2-081)
+else Source succeeds
+  explicitdisc --> composite : Caller-supplied candidates
+end
+composite -> composite : De-duplicate assemblies reported by two sources (L2-081)
+loop For each discovered plugin
+  alt Plugin loading enabled and assembly loads
+    composite -> di : Register the plugin strategies
+  else Assembly fails to load
+    composite --> startup : PLUGIN_LOAD_FAILED recorded, run continues (L2-092)
+  end
+end
+composite --> startup : Discovery complete
+startup --> actor : Generation ready with registered strategies
+@enduml

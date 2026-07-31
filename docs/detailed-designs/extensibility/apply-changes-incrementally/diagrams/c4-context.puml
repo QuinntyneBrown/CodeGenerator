@@ -1,0 +1,12 @@
+@startuml
+!include <C4/C4_Context>
+LAYOUT_WITH_LEGEND()
+title System Context — Apply changes incrementally
+
+Person(dev, "Developer or coding agent", "Adds one more entity or screen to an existing project")
+System(codegen, "CodeGenerator", "Model-driven code generation framework")
+System_Ext(project, "Existing project", "Already-built solution or workspace on disk")
+
+Rel(dev, codegen, "Requests an incremental addition from")
+Rel(codegen, project, "Detects the type of and adds files to", "File IO")
+@enduml

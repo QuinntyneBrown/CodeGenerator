@@ -1,0 +1,14 @@
+@startuml
+!include <C4/C4_Context>
+LAYOUT_WITH_LEGEND()
+title System Context — Ingest and normalize an external schema
+
+Person(architect, "Architect", "Describes the domain as a diagram or an API contract")
+Person(dev, "Developer or coding agent", "Generates code from that description")
+System(codegen, "CodeGenerator", "Model-driven code generation framework")
+System_Ext(schemas, "External schema sources", "PlantUML, OpenAPI, JSON Schema, Proto, Avro documents")
+
+Rel(architect, schemas, "Authors")
+Rel(dev, codegen, "Supplies a schema document to")
+Rel(codegen, schemas, "Detects the format of and normalizes", "File IO")
+@enduml

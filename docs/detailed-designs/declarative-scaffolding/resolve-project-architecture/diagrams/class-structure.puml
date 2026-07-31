@@ -1,0 +1,113 @@
+@startuml
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam defaultFontName Arial
+skinparam ArrowColor #344054
+skinparam class {
+  BorderColor #344054
+  FontColor #101828
+  BackgroundColor #F9FAFB
+}
+title Class structure — Resolve a project architecture
+
+interface IArchitectureResolver {
+  +Resolve(project: ProjectDefinition): ResolvedArchitecture
+}
+
+class ArchitectureResolver {
+  -ResolveCleanArchitecture(project): ResolvedArchitecture
+  -ResolveVerticalSlices(project): ResolvedArchitecture
+  -ResolveCustomLayers(project): ResolvedArchitecture
+}
+
+class ProjectDefinition {
+  +Name: string
+  +Type: ScaffoldProjectType
+  +Path: string
+  +Architecture: string
+  +Layers: List<LayerDefinition>
+  +Entities: List<EntityDefinition>
+  +Dtos: List<DtoDefinition>
+  +Endpoints: List<EndpointDefinition>
+  +Services: List<string>
+  +References: List<string>
+}
+
+class ResolvedArchitecture {
+  +Pattern: string
+  +Layers: List<ResolvedLayer>
+}
+
+class ResolvedLayer {
+  +Name: string
+  +Type: string
+  +Path: string
+  +References: List<string>
+  +Entities: List<EntityDefinition>
+  +Services: List<string>
+  +Endpoints: List<EndpointDefinition>
+}
+
+class LayerDefinition {
+  +Name: string
+  +Type: string
+  +References: List<string>
+  +Entities: List<EntityDefinition>
+  +Services: List<string>
+  +Endpoints: List<EndpointDefinition>
+}
+
+class EntityDefinition {
+  +Name: string
+  +Properties: List<PropertyDefinition>
+}
+
+class PropertyDefinition {
+  +Name: string
+  +Type: string
+}
+
+class EndpointDefinition {
+  +Name: string
+  +Method: string
+  +Route: string
+  +RequestType: string
+  +ResponseType: string
+}
+
+enum ScaffoldProjectType {
+  DotnetWebapi
+  DotnetClasslib
+  DotnetConsole
+  ReactApp
+  ReactLib
+  AngularApp
+  AngularLib
+  ReactNativeApp
+  StaticSite
+  PythonApp
+  PythonLib
+  FlaskApp
+  PlaywrightTests
+  DetoxTests
+  Custom
+}
+
+class ConfigValidator {
+  +Validate(config: ScaffoldConfiguration): ValidationResult
+}
+
+ArchitectureResolver ..|> IArchitectureResolver
+ArchitectureResolver ..> ProjectDefinition : reads
+ArchitectureResolver --> ResolvedArchitecture : produces
+ResolvedArchitecture *-- ResolvedLayer
+ProjectDefinition *-- LayerDefinition
+ProjectDefinition *-- EntityDefinition
+ProjectDefinition *-- EndpointDefinition
+ProjectDefinition --> ScaffoldProjectType : typed as
+EntityDefinition *-- PropertyDefinition
+ResolvedLayer --> EntityDefinition : owns assigned
+ResolvedLayer --> EndpointDefinition : exposes assigned
+ConfigValidator ..> ProjectDefinition : validates
+@enduml
