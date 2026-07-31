@@ -1,0 +1,47 @@
+/* Type and density tuned toward a reference-heavy documentation site: long option
+   tables need to stay scannable, and code identifiers appear constantly in prose. */
+
+:root {
+  --sl-content-width: 50rem;
+  --sl-text-code: 0.9em;
+}
+
+:root[data-theme='dark'] {
+  --sl-color-accent-low: #10243e;
+  --sl-color-accent: #2f6fb2;
+  --sl-color-accent-high: #a5cbf0;
+}
+
+:root[data-theme='light'] {
+  --sl-color-accent-low: #d3e3f5;
+  --sl-color-accent: #2c6bab;
+  --sl-color-accent-high: #123a63;
+}
+
+/* Reference tables carry five columns of short values; the default cell padding
+   wastes horizontal space and forces avoidable wrapping. */
+.sl-markdown-content table {
+  display: block;
+  overflow-x: auto;
+  font-size: var(--sl-text-sm);
+}
+
+.sl-markdown-content th,
+.sl-markdown-content td {
+  padding: 0.4rem 0.75rem;
+  vertical-align: top;
+}
+
+.sl-markdown-content td:first-child {
+  white-space: nowrap;
+}
+
+/* Inline code in a table cell should not wrap mid-identifier. */
+.sl-markdown-content td code {
+  white-space: nowrap;
+}
+
+/* Give the generated-file banner comment no visual weight; it is for editors. */
+.sl-markdown-content h2 {
+  margin-top: 2rem;
+}

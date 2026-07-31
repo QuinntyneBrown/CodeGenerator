@@ -3,6 +3,8 @@ name: CI/CD
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
 
 permissions:
   contents: write
@@ -27,12 +29,18 @@ jobs:
       - name: Build
         run: dotnet build CodeGenerator.sln --configuration Release --no-restore
 
-      - name: Run Unit Tests
-        run: dotnet test tests/CodeGenerator.Core.UnitTests/CodeGenerator.Core.UnitTests.csproj --configuration Release --no-build --verbosity normal
+      # Every test project, not just Core. Compiling the others while running only one
+      # meant a failing assertion anywhere else surfaced as a build error at best, and
+      # not at all at worst.
+      - name: Run Tests
+        run: dotnet test CodeGenerator.sln --configuration Release --no-build --verbosity normal
 
   publish:
     name: Version Bump & Publish
     needs: test
+    # Never publish from a pull request: the job pushes packages to NuGet and commits
+    # version bumps to the default branch.
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

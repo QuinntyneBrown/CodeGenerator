@@ -1,0 +1,96 @@
+{
+  "cliVersion": "1.2.1",
+  "limitations": [
+    {
+      "id": "KL-001",
+      "surfaces": ["--force"],
+      "kind": "destructive",
+      "headline": "`--force` has no effect.",
+      "expected": "Existing files are preserved unless --force is passed",
+      "actual": "Scaffolding overwrites any existing file at a target path whether or not `--force` is passed. The flag is accepted, validated, and never read.",
+      "workaround": "Commit or back up your work before scaffolding into a directory that already contains files. Run with `--dry-run` first to see which paths are targeted.",
+      "severity": "high",
+      "since": "1.2.1",
+      "docPath": "/cli/scaffold/",
+      "characterizationTest": "ScaffoldOverwritesWithoutForce"
+    },
+    {
+      "id": "KL-002",
+      "surfaces": ["--dry-run"],
+      "kind": "limitation",
+      "headline": "`--dry-run` does not list individual files.",
+      "expected": "Every file the run would write is listed",
+      "actual": "It lists one path per project and one per solution. A real run creates substantially more files than the preview reports.",
+      "workaround": "Use `--dry-run` to confirm where output lands, not what is produced. To see the full file set, scaffold into an empty temporary directory and list it.",
+      "severity": "medium",
+      "since": "1.2.1",
+      "docPath": "/guides/dry-run/",
+      "characterizationTest": "DryRunPlansProjectDirectoriesNotFiles"
+    },
+    {
+      "id": "KL-003",
+      "surfaces": ["template"],
+      "kind": "limitation",
+      "headline": "`file.template` has no effect and the file is created empty.",
+      "expected": "The named template is rendered into the file",
+      "actual": "The key passes schema validation, but content resolution handles only `content` and `source`, so the file is written with no bytes.",
+      "workaround": "Use `content:` for inline text, or `source:` for a path to an existing file to copy.",
+      "severity": "medium",
+      "since": "1.2.1",
+      "docPath": "/scaffold/files/",
+      "characterizationTest": "FileTemplateProducesEmptyFile"
+    },
+    {
+      "id": "KL-004",
+      "surfaces": ["gitInit"],
+      "kind": "not-implemented",
+      "headline": "`gitInit` has no effect.",
+      "expected": "A Git repository is initialized in the output directory",
+      "actual": "The key is accepted by the schema and validated. No repository is created.",
+      "workaround": "Run `git init` in the output directory yourself, or add it to `postScaffoldCommands`.",
+      "severity": "low",
+      "since": "1.2.1",
+      "docPath": "/scaffold/root/",
+      "characterizationTest": "GitInitCreatesNoRepository"
+    },
+    {
+      "id": "KL-005",
+      "surfaces": ["encoding"],
+      "kind": "not-implemented",
+      "headline": "`file.encoding` has no effect.",
+      "expected": "The file is written in the named encoding",
+      "actual": "The key is parsed and validated. Files are always written as UTF-8.",
+      "workaround": "None required for UTF-8 output. Convert the file in a `postScaffoldCommands` step if another encoding is needed.",
+      "severity": "low",
+      "since": "1.2.1",
+      "docPath": "/scaffold/files/",
+      "characterizationTest": "FileEncodingIsIgnored"
+    },
+    {
+      "id": "KL-006",
+      "surfaces": ["dependencies", "devDependencies", "features"],
+      "kind": "not-implemented",
+      "headline": "`dependencies`, `devDependencies`, and `features` have no effect.",
+      "expected": "Packages are added to the generated project and named features are enabled",
+      "actual": "All three keys are parsed and validated, then ignored. No package reference or feature is emitted.",
+      "workaround": "Add packages with a `postScaffoldCommands` entry such as `dotnet add package <name>` or `npm install <name>`.",
+      "severity": "medium",
+      "since": "1.2.1",
+      "docPath": "/scaffold/projects/",
+      "characterizationTest": "ProjectDependenciesAreIgnored"
+    },
+    {
+      "id": "KL-007",
+      "surfaces": ["--diagnostics"],
+      "kind": "limitation",
+      "headline": "`--diagnostics` prints nothing when generation fails.",
+      "expected": "Timings are reported whether the run succeeds or fails",
+      "actual": "On the root command, the report is rendered after the error-handling block, so a failure skips it. Timings are collected and discarded.",
+      "workaround": "Combine with `--verbose` to see the failure detail. Timings for a failing step are available only by re-running the command against a case that succeeds.",
+      "severity": "low",
+      "since": "1.2.1",
+      "docPath": "/guides/diagnostics/",
+      "characterizationTest": "DiagnosticsSuppressedOnFailure"
+    }
+  ]
+}

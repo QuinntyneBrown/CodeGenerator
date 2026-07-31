@@ -1,0 +1,98 @@
+name: Docs
+
+# Kept separate from ci-cd.yml deliberately. Pages deployment needs `pages: write` and
+# `id-token: write`, while the NuGet publish job needs `contents: write`; merging them
+# would grant each job the other's tokens. The two also need different concurrency
+# semantics, and docs need a pull_request trigger that must never reach a job which
+# pushes packages.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'website/**'
+      - 'eng/DocsGen/**'
+      - 'docs/specs/**'
+      - 'src/CodeGenerator.Cli/**'
+      - 'src/CodeGenerator.Core/Errors/**'
+      - 'src/CodeGenerator.Core/Scaffold/**'
+      - '.github/workflows/docs.yml'
+      # The version-bump commit from ci-cd.yml touches only csproj files. It already
+      # carries [skip ci], which suppresses this workflow; this exclusion is the second
+      # layer, so the loop guard does not rest on a magic string in another job.
+      - '!**/*.csproj'
+  pull_request:
+    paths:
+      - 'website/**'
+      - 'eng/DocsGen/**'
+      - 'docs/specs/**'
+      - 'src/CodeGenerator.Cli/**'
+      - 'src/CodeGenerator.Core/Errors/**'
+      - 'src/CodeGenerator.Core/Scaffold/**'
+      - '.github/workflows/docs.yml'
+      - '!**/*.csproj'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build site
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '9.0.x'
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+
+      # Fails if the committed reference pages no longer match the command tree. The
+      # generator writes nothing in --check mode, so a red build never leaves the
+      # working tree dirty.
+      - name: Check generated reference is current
+        run: dotnet run --project eng/DocsGen -c Release -- --check
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: website
+
+      # starlight-links-validator runs during the build and fails it on a broken
+      # internal link or anchor.
+      - name: Build
+        run: npm run build
+        working-directory: website
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: website/dist
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    concurrency:
+      group: pages
+      # Never cancel an in-flight deployment: a half-uploaded artifact would leave the
+      # published site inconsistent.
+      cancel-in-progress: false
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

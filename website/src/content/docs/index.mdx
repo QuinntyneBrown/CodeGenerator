@@ -1,0 +1,47 @@
+---
+title: create-code-cli
+description: Scaffold .NET solutions, multi-project workspaces, and full-stack applications from a model or a single YAML file.
+template: splash
+hero:
+  tagline: Scaffold .NET solutions, multi-project workspaces, and full-stack applications — from a model, or from a single YAML file.
+  actions:
+    - text: Get started
+      link: /CodeGenerator/install/
+      icon: right-arrow
+    - text: CLI reference
+      link: /CodeGenerator/cli/
+      icon: document
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## Install and run
+
+```bash
+dotnet tool install -g QuinntyneBrown.CodeGenerator.Cli
+create-code-cli --name MyGenerator
+```
+
+<CardGrid stagger>
+  <Card title="Generate a project" icon="rocket">
+    The root command creates a code generator CLI already wired to every target
+    package, with example commands and an install script.
+    [Your first generator project](/CodeGenerator/start/first-project/)
+  </Card>
+  <Card title="Scaffold from YAML" icon="document">
+    Describe a whole workspace — solutions, projects, entities, endpoints — in one
+    file and generate it in a single run.
+    [Scaffold a workspace](/CodeGenerator/start/first-scaffold/)
+  </Card>
+  <Card title="Nine targets" icon="puzzle">
+    .NET, Python, Flask, Angular, React, React Native, Playwright, and Detox,
+    each as a separately consumable package.
+    [Project types](/CodeGenerator/scaffold/project-types/)
+  </Card>
+  <Card title="Known limitations" icon="warning">
+    Where a surface does not behave the way its name implies, it is listed and
+    cited at the point of use.
+    [Known limitations](/CodeGenerator/reference/known-limitations/)
+  </Card>
+</CardGrid>

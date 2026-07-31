@@ -1,0 +1,29 @@
+version: 2
+
+updates:
+  # The documentation site is the only npm surface in the repository. Grouped and
+  # monthly so upgrades arrive as one reviewable pull request rather than a stream.
+  - package-ecosystem: npm
+    directory: /website
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 3
+    groups:
+      astro:
+        patterns:
+          - 'astro'
+          - '@astrojs/*'
+          - 'starlight-*'
+      tooling:
+        patterns:
+          - '*'
+        exclude-patterns:
+          - 'astro'
+          - '@astrojs/*'
+          - 'starlight-*'
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 3

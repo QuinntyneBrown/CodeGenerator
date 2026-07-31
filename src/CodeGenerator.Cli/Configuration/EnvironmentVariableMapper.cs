@@ -7,14 +7,20 @@ namespace CodeGenerator.Cli.Configuration;
 
 public static class EnvironmentVariableMapper
 {
-    private static readonly Dictionary<string, string> KeyMap = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["CODEGEN_FRAMEWORK"] = "framework",
-        ["CODEGEN_OUTPUT"] = "output",
-        ["CODEGEN_SLNX"] = "slnx",
-        ["CODEGEN_AUTHOR"] = "templates.author",
-        ["CODEGEN_LICENSE"] = "templates.license",
-    };
+    /// <summary>
+    /// Environment variable to resolved configuration key. Public so the documentation
+    /// generator emits the reference table from the same map the tool reads, rather than
+    /// from a hand-maintained copy.
+    /// </summary>
+    public static IReadOnlyDictionary<string, string> KeyMap { get; } =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["CODEGEN_FRAMEWORK"] = "framework",
+            ["CODEGEN_OUTPUT"] = "output",
+            ["CODEGEN_SLNX"] = "slnx",
+            ["CODEGEN_AUTHOR"] = "templates.author",
+            ["CODEGEN_LICENSE"] = "templates.license",
+        };
 
     public static Dictionary<string, string> Map(IConfiguration configuration)
     {

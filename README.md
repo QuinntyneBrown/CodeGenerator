@@ -175,10 +175,18 @@ At runtime, models are dispatched to compatible generation strategies. Target pa
 
 ## Documentation
 
+**[create-code-cli documentation site](https://quinntynebrown.github.io/CodeGenerator/)** — every
+command, option, configuration key, `scaffold.yaml` key, exit code, and error code. The
+reference sections are generated from the source on every build, so they cannot drift from
+the tool.
+
 | Document | Purpose |
 | --- | --- |
+| [Documentation site](https://quinntynebrown.github.io/CodeGenerator/) | CLI reference, guides, and the `scaffold.yaml` schema |
+| [Known limitations](https://quinntynebrown.github.io/CodeGenerator/reference/known-limitations/) | Surfaces that do not behave the way their name implies |
 | [High-level requirements](docs/specs/L1.md) | Product scope and system-level capabilities reverse-engineered from the implementation |
 | [Detailed requirements](docs/specs/L2.md) | Traceable behavior and acceptance criteria for each high-level requirement |
+| [Detailed designs](docs/detailed-designs/) | Feature-by-feature design with C4, class, and sequence diagrams |
 
 ## Build and test
 
