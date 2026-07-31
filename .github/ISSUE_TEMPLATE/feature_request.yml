@@ -1,0 +1,63 @@
+name: Feature request
+description: Propose a scoped improvement to CodeGenerator.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Explain the generation problem before proposing an implementation. Large public API or target-framework changes should be discussed before development begins.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What use case or limitation should CodeGenerator address?
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+      description: Describe the model, API, command, or generated output you expect.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Abstractions and public contracts
+        - Core generation engine
+        - .NET
+        - Angular
+        - React
+        - React Native
+        - Python
+        - Flask
+        - Playwright
+        - Detox
+        - CLI and scaffolding
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Describe current workarounds or alternative designs.
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Include examples, compatibility considerations, or related projects.
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Confirmation
+      options:
+        - label: I searched existing issues and pull requests.
+          required: true
+        - label: I agree to follow the Code of Conduct.
+          required: true

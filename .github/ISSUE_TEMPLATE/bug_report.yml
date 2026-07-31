@@ -1,0 +1,85 @@
+name: Bug report
+description: Report reproducible incorrect behavior in CodeGenerator.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for helping improve CodeGenerator. Do not report security vulnerabilities here; use the private process in SECURITY.md.
+  - type: dropdown
+    id: package
+    attributes:
+      label: Package
+      description: Which package or tool is affected?
+      options:
+        - CodeGenerator.Abstractions
+        - CodeGenerator.Core
+        - CodeGenerator.DotNet
+        - CodeGenerator.Angular
+        - CodeGenerator.React
+        - CodeGenerator.ReactNative
+        - CodeGenerator.Python
+        - CodeGenerator.Flask
+        - CodeGenerator.Playwright
+        - CodeGenerator.Detox
+        - CodeGenerator.Cli
+        - Multiple or unknown
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Provide the package or tool version.
+      placeholder: 1.2.3
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Include the operating system, .NET SDK, and relevant target-tool versions.
+      placeholder: Windows 11, .NET SDK 9.0.3; Node.js 22 if relevant
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Clearly describe the problem.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Provide the smallest model, template, YAML configuration, command, or repository that reproduces the problem.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Include sanitized logs or generated output when useful.
+    validations:
+      required: true
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Confirmation
+      options:
+        - label: I searched existing issues and confirmed this is not a public security report.
+          required: true
+        - label: I removed secrets, private source code, personal data, and other sensitive information.
+          required: true
+        - label: I agree to follow the Code of Conduct.
+          required: true

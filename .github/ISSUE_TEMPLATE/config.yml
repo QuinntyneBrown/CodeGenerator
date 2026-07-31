@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/QuinntyneBrown/CodeGenerator/security/advisories/new
+    about: Report a suspected vulnerability privately.
+  - name: Support guidance
+    url: https://github.com/QuinntyneBrown/CodeGenerator/blob/main/SUPPORT.md
+    about: Review the support policy and the information needed for a useful report.
